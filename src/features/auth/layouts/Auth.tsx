@@ -1,8 +1,8 @@
-import {Outlet} from "react-router";
+import { Outlet } from 'react-router';
 
 export function AuthLayout() {
     return (
-        <div className="w-full h-full flex justify-center items-center">
+        <div className="flex min-h-dvh w-full items-center justify-center">
             <Outlet />
         </div>
     );

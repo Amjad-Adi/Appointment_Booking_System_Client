@@ -1,4 +1,4 @@
-import type { ImgHTMLAttributes } from "react";
+import type { ImgHTMLAttributes } from 'react';
 
 export interface ImageModel extends ImgHTMLAttributes<HTMLImageElement> {
     src: string;
@@ -6,5 +6,5 @@ export interface ImageModel extends ImgHTMLAttributes<HTMLImageElement> {
 }
 
 export function Image({ src, alt, ...props }: ImageModel) {
-    return (<img src={src} alt={alt}{...props}/>);
+    return <img src={src} alt={alt} {...props} />;
 }

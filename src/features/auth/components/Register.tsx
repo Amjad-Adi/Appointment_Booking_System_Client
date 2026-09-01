@@ -1,6 +1,3 @@
-
 export function Register() {
-    return (
-        <div></div>
-    );
+    return <div></div>;
 }
