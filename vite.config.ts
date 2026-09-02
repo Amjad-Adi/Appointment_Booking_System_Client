@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => {
             port: Number(env.VITE_CLIENT_PORT) || 8080,
             proxy: {
                 '/api': {
-                    target: `http://localhost:${Number(env.VITE_SERVER_PORT) || 3000}`,
+                    target:
+                        env.VITE_NODE_ENV == 'development'
+                            ? env.VITE_SERVER_DEVELOPMENT + (Number(env.VITE_SERVER_PORT) || 3000)
+                            : env.VITE_DEPLOYMENT_SERVER,
                     changeOrigin: true,
                 },
             },

@@ -9,17 +9,39 @@ import { CheckboxField } from '../../../../../components/CheckBoxField.tsx';
 import { Image } from '../../../../../components/Image.tsx';
 import { Button } from '../../../../../components/Button.tsx';
 
-import { apiService } from '../../../../../services/api.ts';
-
+import { api } from '../../../../../services/axios.ts';
+import type { UserResponse } from '../../../../../models/user.model.ts';
+import { useForm } from 'react-hook-form';
+import { loginUserSchema } from '../../../../../zod-schemas/user.schema.ts';
+import { z } from 'zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+let token: string;
 export function LoginForm() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    type LoginForm = z.infer<typeof loginUserSchema>;
+    const { register, handleSubmit, formState } = useForm<LoginForm>();
 
+    const queryClient = useQueryClient();
+    const loginMutation = useMutation({
+        mutationFn: async (loginForm: LoginForm) => {
+            const response = await api.post('api/auth/login', loginForm);
+            return response.data;
+        },
+        onSuccess: async (data) => {
+            await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            console.log(data);
+        },
+        onError: (error) => {
+            console.log(error);
+        },
+    });
+    function submitLogin(loginForm: LoginForm) {
+        loginMutation.mutate(loginForm);
+    }
     return (
         <div className="flex w-full flex-col items-center px-5 sm:w-[35%] sm:p-[1.5vw] lg:w-1/2">
             <form
                 className="flex w-full flex-col items-center gap-2 sm:gap-[0.8vw]"
-                onSubmit={LoginWithAccount}
+                onSubmit={handleSubmit(submitLogin)}
             >
                 <p className="w-full py-1 text-center font-[Poppins,serif] text-[10px] font-bold sm:text-[12px] md:text-[16px] lg:text-[20px]">
                     Sign in to manage your appointments and organizations
@@ -27,23 +49,19 @@ export function LoginForm() {
 
                 <TextField
                     label="email"
-                    name="Email"
                     type="email"
                     placeholder="Enter your Email"
-                    onChange={(event) => {
-                        setEmail(event.target.value);
-                    }}
+                    id="email"
+                    {...register('email')}
                     isLabelDisabled={true}
                 />
 
                 <TextField
                     label="password"
-                    name="Password"
+                    id="password"
                     type="password"
                     placeholder="Enter your Password"
-                    onChange={(event) => {
-                        setPassword(event.target.value);
-                    }}
+                    {...register('password')}
                     isLabelDisabled={true}
                 />
 
@@ -61,6 +79,7 @@ export function LoginForm() {
                 <Button
                     type="submit"
                     className="h-11 w-[90%] max-[200px]:h-[40px] sm:h-[3.75vw] md:h-[3.5vw]"
+                    disabled={loginMutation.isPending}
                 >
                     Sign In
                 </Button>
@@ -104,18 +123,4 @@ export function LoginForm() {
             </section>
         </div>
     );
-
-    async function LoginWithAccount(event: React.SubmitEvent<HTMLFormElement>) {
-        event.preventDefault();
-
-        const response = await apiService('auth/login', {
-            method: 'POST',
-            body: {
-                email,
-                password,
-            },
-        });
-
-        return response;
-    }
 }
