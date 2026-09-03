@@ -3,16 +3,31 @@ import { ActivationStatus } from '../models/enums/activation-status.js';
 import { Role } from '../models/enums/roles.js';
 import { querySchema } from './query.schema.js';
 export const DEFAULT_LANGUAGE = 'en';
+
 export const createUserSchema = z
+
     .object({
         firstName: z.string().trim().nonempty().max(64),
         lastName: z.string().trim().nonempty().max(64),
         email: z.email(),
-        password: z.string().trim().nonempty().max(64),
-        confirmPassword: z.string().trim().nonempty().max(64),
+        password: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Password is required' })
+            .min(8, 'Password must be at least 8 characters')
+            .max(64, 'Password must be at most 64 characters'),
+        confirmPassword: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Confirm Password is required' })
+            .min(8, 'Password must be at least 8 characters')
+            .max(64, 'Password must be at most 64 characters'),
         profilePicturePath: z.string().trim().nonempty().optional(),
-        language: z.string().trim().length(2).default('en'),
-        role: z.enum(Role).refine((role) => role == Role.CUSTOMER || role == Role.OWNER),
+        language: z.string().trim().length(2),
+        role: z.enum([Role.CUSTOMER, Role.OWNER]),
+        privacyPolicy: z.literal(true, {
+            error: 'You must accept the Privacy Policy',
+        }),
     })
     .strict()
     .refine((data) => data.password === data.confirmPassword);
@@ -30,8 +45,18 @@ export const updateUserSchema = z
     .object({
         firstName: z.string().trim().nonempty().max(64).optional(),
         lastName: z.string().trim().nonempty().max(64).optional(),
-        password: z.string().trim().nonempty().max(64).optional(),
-        confirmPassword: z.string().trim().nonempty().max(64).optional(),
+        password: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Password is required' })
+            .min(8, 'Password must be at least 8 characters')
+            .max(64, 'Password must be at most 64 characters'),
+        confirmPassword: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Confirm Password is required' })
+            .min(8, { error: 'Password must be at least 8 characters' })
+            .max(64, { error: 'Password must be at most 64 characters' }),
         profilePicturePath: z.string().trim().nonempty().optional(),
         language: z.string().trim().length(2).default(DEFAULT_LANGUAGE),
     })
@@ -40,8 +65,13 @@ export const updateUserSchema = z
 
 export const loginUserSchema = z
     .object({
-        email: z.email(),
-        password: z.string().trim().nonempty().max(64),
+        email: z.email('Invalid email'),
+        password: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Password is required' })
+            .min(8, { error: 'Password must be at least 8 characters' })
+            .max(64, { error: 'Password must be at most 64 characters' }),
     })
     .strict();
 

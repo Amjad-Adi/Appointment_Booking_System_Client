@@ -28,8 +28,7 @@ export function Login() {
                     </div>
                 </div>
 
-                <div className="h-px w-[90%] shrink-0 bg-[#ccc] sm:h-[90%] sm:w-px" />
-
+                <div className="h-px w-[90%] shrink-0 bg-[#ccc] sm:h-auto sm:w-px sm:self-stretch" />
                 <LoginForm />
             </main>
         </div>

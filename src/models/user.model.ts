@@ -4,7 +4,6 @@ import { ActivationStatus } from './enums/activation-status.js';
 import {
     createUserSchema,
     inviteUserSchema,
-    queryUserSchema,
     updateUserByAdminSchema,
     updateUserSchema,
     userFilterSchema,
@@ -33,4 +32,3 @@ export type CreateUser = z.infer<typeof createUserSchema> & { uid: string };
 export type InviteUser = z.infer<typeof inviteUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema> & { uid: string; uuid: string };
 export type UpdateUserByAdmin = z.infer<typeof updateUserByAdminSchema> & { uuid: string };
-export type QueryUser = z.infer<typeof queryUserSchema> & { offset: number };
