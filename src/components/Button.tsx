@@ -11,7 +11,7 @@ export function Button({ children, type = 'button', className = '', ...props }: 
             type={type}
             className={twMerge(
                 'w-full cursor-pointer rounded-lg border border-solid',
-                'bg-action hover:bg-action-hover',
+                'bg-action ',
                 'text-text-primary',
                 'h-11 px-4 text-sm',
                 'text-center font-bold',

@@ -4,7 +4,6 @@ import { LoginForm } from './components/LoginForm.tsx';
 
 export function Login() {
     return (
-        <div className="flex min-h-dvh w-full items-center justify-center py-[5dvh]">
             <main className="border-secondary flex w-[80%] flex-col items-center gap-y-[2vw] rounded-[20px] border-[3px] border-solid bg-[#e9e9f1] py-[2vw] sm:flex-row sm:p-[2vw]">
                 <div className="relative flex w-full items-center justify-center px-[4vw] sm:w-[70%] sm:self-stretch sm:p-[1.5vw] lg:w-1/2">
                     <div className="relative aspect-square w-[90%] overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10 sm:aspect-auto sm:h-full sm:w-full">
@@ -31,6 +30,5 @@ export function Login() {
                 <div className="h-px w-[90%] shrink-0 bg-[#ccc] sm:h-auto sm:w-px sm:self-stretch" />
                 <LoginForm />
             </main>
-        </div>
     );
 }

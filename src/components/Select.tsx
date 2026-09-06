@@ -9,9 +9,10 @@ import { twMerge } from 'tailwind-merge';
 
 export interface SelectModel extends SelectHTMLAttributes<HTMLSelectElement> {
     children: ReactNode;
+    hasError?: boolean;
 }
 
-export function Select({ children, className = '', ...props }: SelectModel) {
+export function Select({hasError=false, children, className = '', ...props }: SelectModel) {
     return (
         <div className="w-full py-1">
             <select
@@ -25,6 +26,11 @@ export function Select({ children, className = '', ...props }: SelectModel) {
                     'disabled:bg-input-disabled disabled:text-input-disabled-text disabled:cursor-not-allowed',
                     'sm:h-[3.2vw] sm:px-[1vw] sm:text-[1.1vw]',
                     'md:h-[3vw] md:text-[1vw]',
+                    `${
+                        hasError
+                            ? 'focus:border-error focus:ring-error/20'
+                            : 'border-gray-300'
+                    }`,
                     className,
                 )}
             >

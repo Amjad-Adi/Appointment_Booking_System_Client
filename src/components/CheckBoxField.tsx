@@ -4,6 +4,7 @@ import { Label } from './Label.tsx';
 
 export interface CheckboxFieldModel extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
     children: ReactNode;
+    hasError?: boolean;
 }
 
 export function CheckboxField({ children, id, disabled = false, ...props }: CheckboxFieldModel) {
@@ -17,7 +18,7 @@ export function CheckboxField({ children, id, disabled = false, ...props }: Chec
                 type="checkbox"
                 disabled={disabled}
                 {...props}
-                className="h-3 w-3 shrink-0 sm:h-[1.2vw] sm:w-[1.2vw] md:h-[1vw] md:w-[1vw]"
+                className="h-3 w-3 shrink-0 sm:h-[1.2vw] sm:w-[1.2vw] md:h-[1vw] md:w-[1vw] "
             />
 
             <span className="whitespace-nowrap">{children}</span>
