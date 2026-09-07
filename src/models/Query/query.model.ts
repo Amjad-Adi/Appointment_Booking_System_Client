@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Order } from '../enums/order.ts';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface Filter {}
 export interface DataResponses {}
@@ -15,7 +16,6 @@ export interface Query {
     limit?: number;
 }
 
-// FIX: Added generic `<T = DataResponses>` for reusable array typings
 export class QueryResponse<T = DataResponses> {
     data: T[];
     pagination: Pagination;

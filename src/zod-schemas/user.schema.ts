@@ -35,17 +35,20 @@ export const createUserSchema = z
         profilePicturePath: z.string().trim().nonempty().optional(),
         language: z.string().trim().length(2),
         role: z.enum([Role.CUSTOMER, Role.OWNER]),
-        privacyPolicy: z.literal(true, {
-            error: 'You must accept the Privacy Policy',
-        }),
     })
     .strict()
     .refine((data) => data.password === data.confirmPassword);
 
+export const registerUserSchema = createUserSchema
+    .extend({
+        privacyPolicy: z.literal(true, {
+            error: 'You must accept the Privacy Policy',
+        }),
+    })
+    .strict();
+
 export const inviteUserSchema = z
     .object({
-        firstName: z.string().trim().nonempty().max(64),
-        lastName: z.string().trim().nonempty().max(64),
         email: z.email(),
         role: z.enum(Role).refine((role) => role != Role.SUPER_ADMIN && role != Role.CUSTOMER),
     })

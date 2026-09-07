@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import {
+    flexRender,
     type OnChangeFn,
     type PaginationState,
     type RowData,
@@ -12,10 +13,14 @@ import {
     TableBody,
     TableCaption,
     TableCell,
+    TableFooter,
     TableHead,
     TableHeader,
     TableRow,
 } from './ui/Table.tsx';
+import { MoreHorizontalIcon } from 'lucide-react';
+
+import { Button } from './Button.tsx';
 interface DataTableProps<TData extends RowData> {
     tableKey: string;
     data: TData[];
@@ -79,30 +84,38 @@ export function DataTable<TData extends RowData>({
                 {' '}
                 {caption && <TableCaption>{caption}</TableCaption>}{' '}
                 <TableHeader>
-                    {' '}
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
-                            {' '}
-                            {headerGroup.headers.map((header) => (
-                                <TableHead key={header.id}>
-                                    {' '}
-                                    {header.isPlaceholder ? null : (
-                                        <button
-                                            type="button"
-                                            onClick={header.column.getToggleSortingHandler()}
-                                        >
-                                            {' '}
-                                            <table.FlexRender header={header} />{' '}
-                                            {{ asc: ' ↑', desc: ' ↓' }[
-                                                header.column.getIsSorted() as string
-                                            ] ?? null}{' '}
-                                        </button>
-                                    )}{' '}
-                                </TableHead>
-                            ))}{' '}
+                            {headerGroup.headers.map((header, index) => {
+                                const isLast = index === headerGroup.headers.length - 1;
+
+                                return (
+                                    <TableHead key={header.id}>
+                                        {header.isPlaceholder ? null : isLast ? (
+                                            'Actions'
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={header.column.getToggleSortingHandler()}
+                                                disabled={!header.column.getCanSort()}
+                                            >
+                                                {flexRender(
+                                                    header.column.columnDef.header,
+                                                    header.getContext(),
+                                                )}
+
+                                                {{
+                                                    asc: ' ↑',
+                                                    desc: ' ↓',
+                                                }[header.column.getIsSorted() as string] ?? null}
+                                            </button>
+                                        )}
+                                    </TableHead>
+                                );
+                            })}
                         </TableRow>
-                    ))}{' '}
-                </TableHeader>{' '}
+                    ))}
+                </TableHeader>
                 <TableBody>
                     {' '}
                     {table.getRowModel().rows.length === 0 ? (
@@ -127,6 +140,35 @@ export function DataTable<TData extends RowData>({
                         ))
                     )}{' '}
                 </TableBody>{' '}
+                <TableFooter>
+                    <TableRow>
+                        <TableCell colSpan={columns.length} className="p-3">
+                            <div className="flex w-full items-center justify-center gap-4">
+                                <Button
+                                    type="button"
+                                    disabled={!table.getCanPreviousPage()}
+                                    onClick={() => table.previousPage()}
+                                    className="h-9 rounded-lg px-4 text-sm sm:w-1/10"
+                                >
+                                    Previous
+                                </Button>
+
+                                <span className="text-foreground text-sm font-medium">
+                                    Page {pagination.pageIndex + 1} of {table.getPageCount()}
+                                </span>
+
+                                <Button
+                                    type="button"
+                                    disabled={!table.getCanNextPage()}
+                                    onClick={() => table.nextPage()}
+                                    className="h-9 rounded-lg px-4 text-sm sm:w-1/10"
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                </TableFooter>
             </Table>{' '}
         </div>
     );
