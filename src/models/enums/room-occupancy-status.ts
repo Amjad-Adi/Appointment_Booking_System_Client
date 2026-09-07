@@ -1,4 +1,4 @@
 export enum RoomOccupancyStatus {
-    OCCUPIED = 'OCCUPIED',
-    AVAILABLE = 'AVAILABLE',
+OCCUPIED='OCCUPIED',
+AVAILABLE='AVAILABLE'
 }

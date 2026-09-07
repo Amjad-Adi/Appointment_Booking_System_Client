@@ -1,4 +1,4 @@
-export enum PaymentMethod {
-    CASH = 'CASH',
-    VISA = 'VISA',
+export enum PaymentMethod{
+    CASH="CASH",
+    VISA="VISA"
 }
