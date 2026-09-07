@@ -1,13 +1,9 @@
-import * as React from 'react';
-import { Link } from 'react-router';
-
+import { Link, useNavigate } from 'react-router';
 import googleLogo from '../../../../../assets/images/login-images/google-logo.svg';
-
 import { TextField } from '../../../../../components/TextField.tsx';
 import { CheckboxField } from '../../../../../components/CheckBoxField.tsx';
 import { Image } from '../../../../../components/Image.tsx';
 import { Button } from '../../../../../components/Button.tsx';
-
 import { api } from '../../../../../services/axios.ts';
 import { useForm } from 'react-hook-form';
 import { loginUserSchema } from '../../../../../zod-schemas/user.schema.ts';
@@ -23,7 +19,7 @@ export function LoginForm() {
     const { register, handleSubmit, formState } = useForm<InputLoginForm, never, OutputLoginForm>({
         resolver: zodResolver(loginUserSchema),
     });
-
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const loginMutation = useMutation({
         mutationFn: async (loginForm: OutputLoginForm) => {
@@ -32,6 +28,7 @@ export function LoginForm() {
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            navigate('../../management/admins');
         },
         onError: (error) => {
             console.log(error);

@@ -4,7 +4,7 @@ import { ActivationStatus } from './enums/activation-status.js';
 import { createRoomSchema, queryRoomSchema, updateRoomSchema } from '../zod-schemas/room.schema.js';
 import { RoomOccupancyStatus } from './enums/room-occupancy-status.js';
 import { queryServiceSchema } from '../zod-schemas/service.schema.js';
-import type { DataResponses } from './query.model.js';
+import type { DataResponses } from './Query/query.model.ts';
 export interface Room {
     uuid: string;
     name: string;

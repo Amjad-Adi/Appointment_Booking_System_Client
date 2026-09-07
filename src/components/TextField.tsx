@@ -1,13 +1,12 @@
 import type { InputHTMLAttributes } from 'react';
 import { Input } from './Input.tsx';
 import { Label } from './Label.tsx';
-import { z } from 'zod';
 
 export interface TextFieldModel extends InputHTMLAttributes<HTMLInputElement> {
     label: string;
     isLabelDisabled?: boolean;
     hasError?: boolean;
-    errorMessage?: string; // Add this prop
+    errorMessage?: string;
 }
 
 export function TextField({

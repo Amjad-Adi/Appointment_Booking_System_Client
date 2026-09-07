@@ -5,11 +5,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
     hasError?: boolean;
 };
 
-export function Input({
-    hasError = false,
-    className,
-    ...props
-}: InputProps) {
+export function Input({ hasError = false, className, ...props }: InputProps) {
     return (
         <input
             className={twMerge(

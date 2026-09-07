@@ -5,7 +5,7 @@ import {
     queryServiceSchema,
     updateServiceSchema,
 } from '../zod-schemas/service.schema.js';
-import type { DataResponses } from './query.model.js';
+import type { DataResponses } from './Query/query.model.ts';
 export interface Service {
     uuid: string;
     name: string;

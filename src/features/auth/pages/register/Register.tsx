@@ -1,6 +1,5 @@
 import registerImageGeneral from '../../../../assets/images/register_images/register-image-general.png';
 import registerImageFlow from '../../../../assets/images/register_images/register-image-flow.png';
-
 import { Image } from '../../../../components/Image.tsx';
 import { RegisterForm } from './components/RegisterForm.tsx';
 

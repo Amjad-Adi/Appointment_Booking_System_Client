@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { TextField } from '../../../../../components/TextField.tsx';
@@ -19,6 +18,7 @@ export function RegisterForm() {
     type UserFormInput = z.input<typeof createUserSchema>;
     type UserFormOutput = z.output<typeof createUserSchema>;
     type RegisterRequest = Omit<UserFormOutput, 'privacyPolicy'>;
+
     const { register, handleSubmit, formState, control } = useForm<
         UserFormInput,
         any,
@@ -30,6 +30,7 @@ export function RegisterForm() {
             language: 'en',
         },
     });
+
     const navigate = useNavigate();
     const registerMutation = useMutation({
         mutationFn: async (userForm: RegisterRequest) => {
@@ -43,10 +44,12 @@ export function RegisterForm() {
             console.log(error);
         },
     });
+
     function submitRegister(userForm: UserFormOutput) {
         const { privacyPolicy, ...registerForm } = userForm;
         registerMutation.mutate(registerForm);
     }
+
     const [language, setLanguage] = useState('en');
 
     return (
@@ -58,6 +61,7 @@ export function RegisterForm() {
                 <p className="w-full py-1 text-center text-[16px] font-bold text-taupe-950 sm:text-[20px] md:text-[22px] lg:text-[24px]">
                     Create an account
                 </p>
+
                 <Controller
                     control={control}
                     name="role"
@@ -87,6 +91,7 @@ export function RegisterForm() {
                                     </div>
                                 </Button>
                             </div>
+
                             <div className="group w-full max-w-xs md:w-1/2 lg:w-1/3">
                                 <Button
                                     type="button"

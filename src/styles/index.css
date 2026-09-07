@@ -1,18 +1,16 @@
 <<<<<<< Updated upstream
 @import "tailwindcss";
 =======
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @theme {
     --animate-slide: slide 6s infinite;
     @keyframes slide {
-        0%,
-        40% {
+        0%, 40% {
             transform: translateX(0);
         }
 
-        50%,
-        90% {
+        50%, 90% {
             transform: translateX(-50%);
         }
 
@@ -90,9 +88,22 @@ body {
     width: 100%;
     @apply flex items-center justify-center;
     background:
-        radial-gradient(ellipse at 70% 50%, rgba(120, 190, 255, 0.08), transparent 45%),
-        radial-gradient(ellipse at 15% 20%, rgba(255, 255, 255, 0.06), transparent 35%),
-        linear-gradient(135deg, hsl(214, 53%, 8%), hsl(214, 51%, 10%), hsl(214, 53%, 8%));
+            radial-gradient(
+                    ellipse at 70% 50%,
+                    rgba(120, 190, 255, 0.08),
+                    transparent 45%
+            ),
+            radial-gradient(
+                    ellipse at 15% 20%,
+                    rgba(255, 255, 255, 0.06),
+                    transparent 35%
+            ),
+            linear-gradient(
+                    135deg,
+                    hsl(214, 53%, 8%),
+                    hsl(214, 51%, 10%),
+                    hsl(214, 53%, 8%)
+            );
 }
 
 :root {
