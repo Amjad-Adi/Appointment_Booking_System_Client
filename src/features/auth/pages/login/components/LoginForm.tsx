@@ -11,39 +11,24 @@ import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CURRENT_USER } from '../../../../../utlis/query-keys.ts';
+import { useLogin } from '../../../../management/hooks/users/users-hook.ts';
+import type { LoginForm } from '../../../../../models/user.model.ts';
 
 export function LoginForm() {
-    type InputLoginForm = z.input<typeof loginUserSchema>;
-    type OutputLoginForm = z.input<typeof loginUserSchema>;
-
-    const { register, handleSubmit, formState } = useForm<InputLoginForm, never, OutputLoginForm>({
+    const { register, handleSubmit, formState } = useForm<LoginForm, never, LoginForm>({
         resolver: zodResolver(loginUserSchema),
     });
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
-    const loginMutation = useMutation({
-        mutationFn: async (loginForm: OutputLoginForm) => {
-            const response = await api.post('api/auth/login', loginForm);
-            return response.data;
-        },
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-            navigate('../../management/admins');
-        },
-        onError: (error) => {
-            console.log(error);
-        },
-    });
+    const loginMutation = useLogin();
 
-    function submitLogin(loginForm: OutputLoginForm) {
-        loginMutation.mutate(loginForm);
-    }
-
+    const onSubmit = (data: LoginForm) => {
+        loginMutation.mutate(data);
+    };
     return (
         <div className="flex w-full flex-col items-center px-5 sm:w-[35%] sm:p-[1.5vw] lg:w-1/2">
             <form
                 className="flex w-full flex-col items-center gap-1 sm:gap-[0.5vw]"
-                onSubmit={handleSubmit(submitLogin)}
+                onSubmit={handleSubmit(onSubmit)}
             >
                 <p className="w-full py-1 text-center text-[10px] font-bold sm:text-[12px] md:text-[16px] lg:text-[20px]">
                     Sign in to manage your appointments and organizations

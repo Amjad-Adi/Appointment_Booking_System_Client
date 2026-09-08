@@ -5,7 +5,7 @@ import { CheckboxField } from '../../../../../components/CheckBoxField.tsx';
 import { Button } from '../../../../../components/Button.tsx';
 import { api } from '../../../../../services/axios.ts';
 import { Controller, useForm } from 'react-hook-form';
-import { createUserSchema } from '../../../../../zod-schemas/user.schema.ts';
+import { createUserSchema, registerUserSchema } from '../../../../../zod-schemas/user.schema.ts';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { Select } from '../../../../../components/Select.tsx';
@@ -13,40 +13,21 @@ import { Role } from '../../../../../models/enums/roles.ts';
 import { ShieldUser, User } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
+import { useRegisterUser } from '../../../../management/hooks/users/users-hook.ts';
+import type { RegisterUser } from '../../../../../models/user.model.ts';
 
 export function RegisterForm() {
-    type UserFormInput = z.input<typeof createUserSchema>;
-    type UserFormOutput = z.output<typeof createUserSchema>;
-    type RegisterRequest = Omit<UserFormOutput, 'privacyPolicy'>;
-
-    const { register, handleSubmit, formState, control } = useForm<
-        UserFormInput,
-        any,
-        UserFormOutput
-    >({
-        resolver: zodResolver(createUserSchema),
-        defaultValues: {
-            role: Role.CUSTOMER,
-            language: 'en',
+    const { register, handleSubmit, formState, control } = useForm<RegisterUser, any, RegisterUser>(
+        {
+            resolver: zodResolver(registerUserSchema),
+            defaultValues: {
+                role: Role.CUSTOMER,
+                language: 'en',
+            },
         },
-    });
-
-    const navigate = useNavigate();
-    const registerMutation = useMutation({
-        mutationFn: async (userForm: RegisterRequest) => {
-            const response = await api.post('api/users/register', userForm);
-            return response.data;
-        },
-        onSuccess: async () => {
-            navigate('../login');
-        },
-        onError: (error) => {
-            console.log(error);
-        },
-    });
-
-    function submitRegister(userForm: UserFormOutput) {
-        const { privacyPolicy, ...registerForm } = userForm;
+    );
+    const registerMutation = useRegisterUser();
+    function submitRegister(registerForm: RegisterUser) {
         registerMutation.mutate(registerForm);
     }
 

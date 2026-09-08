@@ -4,7 +4,9 @@ import { ActivationStatus } from './enums/activation-status.js';
 import {
     createUserSchema,
     inviteUserSchema,
+    loginUserSchema,
     queryUserSchema,
+    registerUserSchema,
     updateUserByAdminSchema,
     updateUserSchema,
     userFilterSchema,
@@ -29,8 +31,11 @@ export interface UserResponse extends User, DataResponses {
     organizationUuid: string;
 }
 
-export type CreateUser = z.infer<typeof createUserSchema> & { uid: string };
+export type CreateUser = z.infer<typeof createUserSchema>;
 export type InviteUser = z.infer<typeof inviteUserSchema>;
-export type UpdateUser = z.infer<typeof updateUserSchema> & { uid: string; uuid: string };
-export type UpdateUserByAdmin = z.infer<typeof updateUserByAdminSchema> & { uuid: string };
+export type UpdateUser = z.infer<typeof updateUserSchema> & { uuid: string };
+export type UpdateUserByAdminForm = z.infer<typeof updateUserByAdminSchema>;
+export type UpdateUserByAdmin = UpdateUserByAdminForm & { uuid: string };
 export type QueryUser = z.infer<typeof queryUserSchema>;
+export type LoginForm = z.infer<typeof loginUserSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
