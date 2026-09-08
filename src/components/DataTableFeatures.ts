@@ -9,12 +9,10 @@ import {
 } from '@tanstack/react-table';
 
 export const dataTableFeatures = tableFeatures({
-    columnFilteringFeature,
-    globalFilteringFeature,
     rowPaginationFeature,
     rowSortingFeature,
 });
 
 export const PAGE_SIZE = 20;
 
-export type DataTableColumn<TData extends RowData> = ColumnDef<typeof dataTableFeatures, TData>;
+export type DataTableColumn<T extends RowData> = ColumnDef<typeof dataTableFeatures, T>;

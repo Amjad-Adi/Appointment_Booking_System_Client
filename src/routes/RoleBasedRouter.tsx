@@ -4,7 +4,7 @@ import type { UserResponse } from '../models/user.model.ts';
 import { rolesPermissions } from '../permissions/roles-permissions.ts';
 import { Navigate } from 'react-router';
 import { Route } from 'lucide-react';
-import { useCurrentUser } from '../features/management/hooks/users/users-hook.ts';
+import { useCurrentUser } from '../features/management/hooks/users-hook.ts';
 type RoleBasedRouterProps = {
     children: React.ReactElement;
     permission: string;
@@ -19,7 +19,7 @@ export function RoleBasedRouter({ children, permission }: RoleBasedRouterProps) 
         return <Navigate to="/login" replace />;
     }
     if (!rolesPermissions[user.role]?.includes(permission)) {
-        return <Navigate to="/forbidden" replace />;
+        return <Navigate to="/login" replace />;
     }
     return children;
 }
