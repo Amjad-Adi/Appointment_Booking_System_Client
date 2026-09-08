@@ -1,8 +1,8 @@
 import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 
-import { api } from '../../../../services/axios.ts';
-import type { QueryResponse } from '../../../../models/Query/query.model.ts';
+import { api } from '../../../services/axios.ts';
+import type { QueryResponse } from '../../../models/Query/query.model.ts';
 import type {
     CreateUser,
     LoginForm,
@@ -11,8 +11,9 @@ import type {
     UpdateUser,
     UpdateUserByAdmin,
     UserResponse,
-} from '../../../../models/user.model.ts';
-import { CURRENT_USER, USER_TABLE } from '../../../../utlis/query-keys.ts';
+} from '../../../models/user.model.ts';
+import { CURRENT_USER, ORGANIZATION, USER, USER_TABLE } from '../../../utlis/query-keys.ts';
+import type { OrganizationResponse } from '../../../models/organization.model.ts';
 
 export function useUsers(query: QueryUser) {
     return useQuery({
@@ -84,6 +85,34 @@ export function useRegisterUser() {
             return response.data;
         },
         onSuccess: async () => {
+            navigate('/login');
+        },
+        onError: (error) => {
+            console.log(error);
+        },
+    });
+}
+
+export function useUser(userUuid: string) {
+    return useQuery({
+        queryKey: [USER, userUuid],
+        queryFn: async (): Promise<UserResponse> => {
+            const response = await api.get<UserResponse>(`/api/users/${userUuid}`);
+            return response.data;
+        },
+    });
+}
+
+export function useLogout() {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            const response = await api.post('api/auth/logout');
+            return response.data;
+        },
+        onSuccess: async () => {
+            queryClient.removeQueries({ queryKey: [CURRENT_USER] });
             navigate('/login');
         },
         onError: (error) => {

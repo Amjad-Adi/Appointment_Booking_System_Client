@@ -12,7 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CURRENT_USER } from '../../../../../utlis/query-keys.ts';
-import { useLogin } from '../../../../management/hooks/users/users-hook.ts';
+import { useLogin } from '../../../../management/hooks/users-hook.ts';
 import type { LoginForm } from '../../../../../models/user.model.ts';
 
 export function LoginForm() {

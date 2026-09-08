@@ -54,7 +54,7 @@ api.interceptors.response.use(
             await refreshPromise;
             return api(config);
         } catch (refreshError) {
-            window.location.href = '/auth/login';
+            window.location.href = '/login';
             return Promise.reject(refreshError);
         }
     },

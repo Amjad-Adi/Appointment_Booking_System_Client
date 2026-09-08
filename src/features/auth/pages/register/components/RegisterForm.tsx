@@ -13,7 +13,7 @@ import { Role } from '../../../../../models/enums/roles.ts';
 import { ShieldUser, User } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
-import { useRegisterUser } from '../../../../management/hooks/users/users-hook.ts';
+import { useRegisterUser } from '../../../../management/hooks/users-hook.ts';
 import type { RegisterUser } from '../../../../../models/user.model.ts';
 
 export function RegisterForm() {
