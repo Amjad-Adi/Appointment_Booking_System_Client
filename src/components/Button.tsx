@@ -11,14 +11,12 @@ export function Button({ children, type = 'button', className = '', ...props }: 
             type={type}
             className={twMerge(
                 'w-full cursor-pointer rounded-lg border border-solid',
-                'bg-action ',
+                'bg-action',
                 'text-text-primary',
-                'h-11 px-4 text-sm',
+                'h-8 px-2 text-[11px]',
                 'text-center font-bold',
                 'transition-[background-color,transform] duration-200',
                 'hover:-translate-y-0.5',
-                'sm:h-[3.75vw] sm:px-[2vw] sm:text-[1.2vw]',
-                'md:h-[3.5vw] md:text-[1.1vw]',
                 className,
             )}
             {...props}

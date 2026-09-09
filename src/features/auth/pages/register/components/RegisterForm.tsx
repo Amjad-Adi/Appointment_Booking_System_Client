@@ -204,11 +204,7 @@ export function RegisterForm() {
                 </div>
 
                 <div className="flex w-full flex-col items-center justify-center">
-                    <Button
-                        type="submit"
-                        className="h-11 w-full max-w-xs max-[200px]:h-[40px] md:h-[3.5vw] md:w-[50%]"
-                        disabled={registerMutation.isPending}
-                    >
+                    <Button type="submit" className="w-1/3" disabled={registerMutation.isPending}>
                         Sign Up
                     </Button>
 

@@ -28,7 +28,6 @@ interface DataTableProps<TData extends RowData> {
     tableKey: string;
     data: TData[];
     columns: DataTableColumn<TData>[];
-    caption?: string;
     sorting: SortingState;
     onSortingChange: OnChangeFn<SortingState>;
     pagination: PaginationState;
@@ -44,7 +43,6 @@ export function DataTable<TData extends RowData>({
     tableKey,
     data,
     columns,
-    caption,
     sorting,
     onSortingChange,
     pagination,
@@ -82,44 +80,24 @@ export function DataTable<TData extends RowData>({
 
     return (
         <div className="w-full max-w-full min-w-0">
-            {caption && (
-                <div className="mb-3 px-1 text-left">
-                    <h2 className="text-[15px] font-semibold tracking-tight text-[#343447]">
-                        {caption}
-                    </h2>
-
-                    <p className="mt-0.5 text-[11px] leading-4 text-[#777789]">
-                        Manage and monitor system users, their roles, and account status.
-                    </p>
-                </div>
-            )}
-
             <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-[#dedee8] bg-[#f5f5f8]">
-                {/* Toolbar */}
                 <div className="flex min-w-0 flex-col gap-2 bg-[#dedee8] p-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[4%]">
                         <Input
                             type="search"
                             placeholder="Search..."
                             id="search"
                             value={search}
                             onChange={(event) => handleSearchChange(event.target.value)}
-                            className="h-8 w-full min-w-0 bg-[#f1f1f6] text-[11px] text-[#343447] placeholder:text-[#888899] sm:w-56 sm:max-w-xs sm:flex-1"
+                            className="!h-8 w-full min-w-0 bg-[#f1f1f6] !text-[11px] text-[#343447] placeholder:text-[#888899] sm:w-56 sm:max-w-xs sm:flex-1"
                         />
 
                         {filters}
                     </div>
-
-                    <div className="flex shrink-0 items-center rounded-lg border border-[#c9c9d6] bg-[#ededf2] px-2.5 py-1.5">
-                        <span className="text-[11px] font-medium whitespace-nowrap text-[#666679]">
-                            {rowCountLabel}
-                        </span>
-                    </div>
                 </div>
 
-                {/* Single horizontal scroll container */}
-                <div className="w-full max-w-full min-w-0">
-                    <Table className="min-w-[900px] table-auto">
+                <div className="w-full min-w-0">
+                    <Table className="min-w-[900px] table-fixed">
                         <TableHeader>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow
@@ -200,30 +178,44 @@ export function DataTable<TData extends RowData>({
                             <TableRow className="border-0 bg-[#dedee8] hover:bg-[#dedee8]">
                                 <TableCell colSpan={columns.length} className="p-2">
                                     <div className="flex w-full min-w-0 items-center justify-between">
-                                        <span className="text-[11px] font-medium whitespace-nowrap text-[#666679]">
+                                        <span className="min-w-0 truncate text-[11px] font-medium text-[#666679]">
                                             {rowCountLabel}
                                         </span>
 
-                                        <div className="flex shrink-0 items-center gap-1">
-                                            <Button
-                                                type="button"
-                                                disabled={!table.getCanPreviousPage()}
-                                                onClick={() => table.previousPage()}
-                                                aria-label="Previous page"
-                                                className="size-7 min-w-0 border border-[#b9b9cc] bg-[#dedee8] p-0 text-[#666679] hover:bg-[#d3d3df] hover:text-[#4f4f62] disabled:opacity-40"
-                                            >
-                                                <ChevronLeft className="size-4" strokeWidth={2} />
-                                            </Button>
+                                        <div className="flex shrink-0 items-center">
+                                            <div className="group">
+                                                <Button
+                                                    type="button"
+                                                    disabled={!table.getCanPreviousPage()}
+                                                    onClick={() => table.previousPage()}
+                                                    aria-label="Previous page"
+                                                    className="flex h-7 min-h-0 w-7 min-w-0 shrink-0 items-center justify-center border border-[#b9b9cc] bg-transparent p-0 text-[#666679] group-hover:bg-[#ededf2] group-hover:text-[#343447] disabled:cursor-not-allowed disabled:opacity-40 disabled:group-hover:bg-transparent disabled:group-hover:text-[#666679] sm:h-7 sm:w-7 sm:px-0 md:h-7 md:w-7 md:px-0"
+                                                >
+                                                    <ChevronLeft
+                                                        className="size-4 shrink-0"
+                                                        strokeWidth={2}
+                                                    />
+                                                </Button>
+                                            </div>
 
-                                            <Button
-                                                type="button"
-                                                disabled={!table.getCanNextPage()}
-                                                onClick={() => table.nextPage()}
-                                                aria-label="Next page"
-                                                className="size-7 min-w-0 border border-[#b9b9cc] bg-[#dedee8] p-0 text-[#666679] hover:bg-[#d3d3df] hover:text-[#4f4f62] disabled:opacity-40"
-                                            >
-                                                <ChevronRight className="size-4" strokeWidth={2} />
-                                            </Button>
+                                            <span className="flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[11px] font-semibold text-[#454556]">
+                                                {pagination.pageIndex + 1}
+                                            </span>
+
+                                            <div className="group">
+                                                <Button
+                                                    type="button"
+                                                    disabled={!table.getCanNextPage()}
+                                                    onClick={() => table.nextPage()}
+                                                    aria-label="Next page"
+                                                    className="flex h-7 min-h-0 w-7 min-w-0 shrink-0 items-center justify-center border border-[#b9b9cc] bg-transparent p-0 text-[#666679] group-hover:bg-[#ededf2] group-hover:text-[#343447] disabled:cursor-not-allowed disabled:opacity-40 disabled:group-hover:bg-transparent disabled:group-hover:text-[#666679] sm:h-7 sm:w-7 sm:px-0 md:h-7 md:w-7 md:px-0"
+                                                >
+                                                    <ChevronRight
+                                                        className="size-4 shrink-0"
+                                                        strokeWidth={2}
+                                                    />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </TableCell>

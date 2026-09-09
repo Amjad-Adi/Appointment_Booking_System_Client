@@ -5,12 +5,12 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
     return (
         <div
             data-slot="table-container"
-            className="border-secondary relative w-full overflow-x-auto rounded-[20px] border-[3px] bg-[#e9e9f1] p-2 shadow-xl sm:p-4"
+            className="relative w-full min-w-0 overflow-x-auto bg-[#f5f5f8]"
         >
             <table
                 data-slot="table"
                 className={cn(
-                    'w-full caption-bottom text-center text-xs text-[#222] sm:text-sm',
+                    'w-full caption-bottom text-center text-xs text-[#454556] sm:text-sm',
                     className,
                 )}
                 {...props}
@@ -20,17 +20,7 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
-    return (
-        <thead
-            data-slot="table-header"
-            className={cn(
-                'border-b border-[#ccc] bg-[#dfdfe9]',
-                '[&_tr]:border-b [&_tr]:border-[#ccc]',
-                className,
-            )}
-            {...props}
-        />
-    );
+    return <thead data-slot="table-header" className={cn('bg-[#dedee8]', className)} {...props} />;
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
@@ -47,12 +37,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
     return (
         <tfoot
             data-slot="table-footer"
-            className={cn(
-                'border-t border-[#ccc] bg-[#dfdfe9]',
-                'font-bold text-[#222]',
-                '[&>tr]:last:border-b-0',
-                className,
-            )}
+            className={cn('bg-[#dedee8] font-medium text-[#454556]', className)}
             {...props}
         />
     );
@@ -63,9 +48,9 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
         <tr
             data-slot="table-row"
             className={cn(
-                'border-b border-[#ccc] transition-colors duration-150',
-                'hover:bg-[#d8d8e5]',
-                'data-[state=selected]:bg-action/20',
+                'border-0 bg-[#f5f5f8] transition-colors duration-150',
+                'hover:bg-[#ededf2]',
+                'data-[state=selected]:bg-[#e3e3eb]',
                 className,
             )}
             {...props}
@@ -78,7 +63,8 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
         <th
             data-slot="table-head"
             className={cn(
-                'h-10 px-3 text-center align-middle font-bold whitespace-nowrap text-[#222] sm:h-12 sm:px-4',
+                'h-9 px-3 text-center align-middle text-[11px] font-semibold whitespace-nowrap text-[#454556]',
+                'sm:h-10 sm:px-4',
                 'has-[[role=checkbox]]:pr-0',
                 className,
             )}
@@ -92,7 +78,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
         <td
             data-slot="table-cell"
             className={cn(
-                'p-3 text-center align-middle whitespace-nowrap text-[#333] sm:p-4',
+                'text-center align-middle text-[11px] whitespace-nowrap text-[#454556]',
                 '[&:has([role=checkbox])]:pr-0',
                 className,
             )}
@@ -103,11 +89,11 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
 
 function TableCaption({ className, ...props }: React.ComponentProps<'caption'>) {
     return (
-        <caption
-            data-slot="table-caption"
-            className={cn('mt-3 text-center text-[10px] text-[#777] sm:text-[12px]', className)}
-            {...props}
-        />
+        <caption data-slot="table-caption" className={cn('h-10', className)} {...props}>
+            <div className="flex h-full items-center justify-center text-center text-[10px] text-[#777789] sm:text-[12px]">
+                {props.children}
+            </div>
+        </caption>
     );
 }
 

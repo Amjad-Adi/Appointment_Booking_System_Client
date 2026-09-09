@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { type PaginationState, type SortingState } from '@tanstack/react-table';
-import { DataTable } from '../../../../../../components/Table.tsx';
+import { DataTable } from '../../../../../../components/DataTable.tsx';
 import { type DataTableColumn, PAGE_SIZE } from '../../../../../../components/DataTableFeatures.ts';
 import { useUsers } from '../../../../hooks/users-hook.ts';
 import type { UserResponse } from '../../../../../../models/user.model.ts';
@@ -11,7 +11,7 @@ import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deo
 import { EditUserDialog } from '../EditUserDialog.tsx';
 import { useDialog } from '../../../../../../hooks/open-dialog.ts';
 import { getUserColumns } from './columns/UserColumns.tsx';
-
+import { Select } from '../../../../../../components/Select.tsx';
 export function UsersTable() {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [pagination, setPagination] = useState<PaginationState>({
@@ -43,8 +43,8 @@ export function UsersTable() {
         },
     });
     const filters = (
-        <>
-            <select
+        <div className="flex min-w-0 flex-1 gap-2 max-sm:justify-between sm:gap-[4%]">
+            <Select
                 value={role ?? ''}
                 onChange={(event) => {
                     const value = event.target.value;
@@ -56,36 +56,42 @@ export function UsersTable() {
                         pageIndex: 0,
                     }));
                 }}
-                className="h-10 rounded-md border px-3 text-sm"
+                wrapperClassName="w-36 max-sm:w-[48%] max-[350px]:w-full"
+                className="!h-8 px-2 text-[11px]"
             >
                 <option value="">All roles</option>
 
-                {Object.values(Role).map((value) => (
-                    <option key={value} value={value}>
-                        {value}
+                {Object.values(Role).map((role) => (
+                    <option key={role} value={role}>
+                        {role}
                     </option>
                 ))}
-            </select>
-            <select
+            </Select>
+
+            <Select
                 value={status ?? ''}
                 onChange={(event) => {
                     const value = event.target.value;
+
                     setStatus(value === '' ? undefined : (value as ActivationStatus));
+
                     setPagination((previous) => ({
                         ...previous,
                         pageIndex: 0,
                     }));
                 }}
-                className="h-10 rounded-md border px-3 text-sm"
+                wrapperClassName="w-40 max-sm:w-[48%] max-[350px]:w-full"
+                className="!h-8 px-2 text-[11px]"
             >
                 <option value="">All statuses</option>
-                {Object.values(ActivationStatus).map((value) => (
-                    <option key={value} value={value}>
-                        {value}
+
+                {Object.values(ActivationStatus).map((status) => (
+                    <option key={status} value={status}>
+                        {status}
                     </option>
                 ))}
-            </select>
-        </>
+            </Select>
+        </div>
     );
     if (isLoading) {
         return <div>Loading users...</div>; //Needs Improvement
@@ -99,7 +105,6 @@ export function UsersTable() {
                 tableKey="users-table"
                 data={data?.data ?? []}
                 columns={columns}
-                caption="System Users"
                 sorting={sorting}
                 onSortingChange={setSorting}
                 pagination={pagination}

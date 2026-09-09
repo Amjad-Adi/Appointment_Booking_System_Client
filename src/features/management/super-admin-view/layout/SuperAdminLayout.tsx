@@ -13,13 +13,6 @@ export function SuperAdminLayout() {
             sidebar={{
                 title: 'Super Admin',
                 subtitle: 'Management',
-                logo: (
-                    <Image
-                        src={icon}
-                        alt="Smart Appointment Booking icon"
-                        className="h-full w-full object-cover"
-                    />
-                ),
                 groups: adminSidebarGroups,
                 profile: {
                     name: `${data?.firstName} ${data?.lastName}`,

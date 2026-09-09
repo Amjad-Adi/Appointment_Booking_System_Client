@@ -7,7 +7,7 @@ export function NotFoundPage() {
                 <h1 className="text-[80px] font-bold tracking-[0.15em] text-sky-400 sm:text-[96px]">
                     404
                 </h1>
-                <h2 className="mt-2 text-xl font-semibold text-slate-200 sm:text-2xl">
+                <h2 className="mt-5 text-xl font-semibold text-slate-200 sm:text-2xl">
                     Page not found
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-lg">

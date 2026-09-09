@@ -13,6 +13,6 @@ export const dataTableFeatures = tableFeatures({
     rowSortingFeature,
 });
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 2;
 
 export type DataTableColumn<T extends RowData> = ColumnDef<typeof dataTableFeatures, T>;
