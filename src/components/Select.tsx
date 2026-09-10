@@ -18,7 +18,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectModel>(function Select
                 ref={ref}
                 className={twMerge(
                     'font-inter box-border h-8 w-full min-w-0 cursor-pointer rounded-lg border px-2 py-1 text-[11px] outline-none',
-                    'bg-input text-shadow-text-secondary',
+                    'bg-input text-input-placeholder',
                     'border-input-border',
                     'hover:border-input-border-hover hover:bg-input-hover',
                     'focus:border-input-border-focus focus:ring-primary/20 focus:ring-2',

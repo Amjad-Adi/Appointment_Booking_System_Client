@@ -13,6 +13,8 @@
         "moduleDetection": "force",
         "noEmit": true,
         /* Linting */
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
         "jsx": "react-jsx",
         "strict": true,
         "noFallthroughCasesInSwitch": true

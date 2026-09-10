@@ -8,9 +8,9 @@ import { Order } from '../../../../../../models/enums/order.ts';
 import { Role } from '../../../../../../models/enums/roles.ts';
 import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deounce.ts';
-import { EditUserDialog } from '../EditUserDialog.tsx';
+import { EditUserDialog } from '../components/EditUserDialog.tsx';
 import { useDialog } from '../../../../../../hooks/open-dialog.ts';
-import { getUserColumns } from './columns/UserColumns.tsx';
+import { getUserColumns } from '../columns/UserColumns.tsx';
 import { Select } from '../../../../../../components/Select.tsx';
 export function UsersTable() {
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -113,7 +113,7 @@ export function UsersTable() {
                 onSearchChange={setSearch}
                 filters={filters}
                 rowCount={data?.pagination?.totalItems ?? 0}
-                rowCountLabel={`${data?.pagination?.totalItems ?? 'No'} Users`}
+                rowCountLabel={`${data?.pagination?.totalItems == 0 ? 'No' : `${data?.pagination.totalItems}`} Users`}
             />
 
             {userDialog.selectedItem && (

@@ -12,7 +12,7 @@ import type {
     UpdateUserByAdmin,
     UserResponse,
 } from '../../../models/user.model.ts';
-import { CURRENT_USER, ORGANIZATION, USER, USER_TABLE } from '../../../utlis/query-keys.ts';
+import { CURRENT_USER, ORGANIZATION, ORGANIZATION_TABLE, USER, USER_TABLE } from '../../../utlis/query-keys.ts';
 import type { OrganizationResponse } from '../../../models/organization.model.ts';
 
 export function useUsers(query: QueryUser) {
@@ -66,11 +66,15 @@ export function useUpdateUser() {
             const response = await api.patch(`/api/users/${uuid}`, userData);
             return response.data;
         },
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: [USER_TABLE],
-            });
-        },
+        onSuccess: async (users:UserResponse) => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: [USER_TABLE],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: [USER, users.uuid],
+                }),
+            ]);},
         onError: (error) => {
             console.log(error);
         },
@@ -80,7 +84,7 @@ export function useUpdateUser() {
 export function useRegisterUser() {
     const navigate = useNavigate();
     return useMutation({
-        mutationFn: async (userForm: RegisterUser) => {
+        mutationFn: async (userForm: CreateUser) => {
             const response = await api.post('api/users/register', userForm);
             return response.data;
         },

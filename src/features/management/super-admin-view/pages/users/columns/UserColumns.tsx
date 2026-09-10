@@ -1,17 +1,17 @@
-import type { UserResponse } from '../../../../../../../models/user.model.ts';
-import type { DataTableColumn } from '../../../../../../../components/DataTableFeatures.ts';
+import type { UserResponse } from '../../../../../../models/user.model.ts';
+import type { DataTableColumn } from '../../../../../../components/DataTableFeatures.ts';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '../../../../../../../components/DropdownMenu.tsx';
-import { Button } from '../../../../../../../components/Button.tsx';
+} from '../../../../../../components/DropdownMenu.tsx';
+import { Button } from '../../../../../../components/Button.tsx';
 import { MoreHorizontalIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
-export const USER_TABLE_COLUMN = {
+import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
+const USER_TABLE_COLUMN = {
     NAME: 'name',
     EMAIL: 'email',
     ROLE: 'role',
@@ -19,7 +19,7 @@ export const USER_TABLE_COLUMN = {
     CREATED_AT: 'createdAtUTC',
     ACTIONS: 'actions',
 };
-export const USER_TABLE_HEADER = {
+const USER_TABLE_HEADER = {
     NAME: 'Full Name',
     EMAIL: 'Email',
     ROLE: 'Role',

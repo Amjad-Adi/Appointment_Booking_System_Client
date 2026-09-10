@@ -14,7 +14,7 @@ import { ShieldUser, User } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { useRegisterUser } from '../../../../management/hooks/users-hook.ts';
-import type { RegisterUser } from '../../../../../models/user.model.ts';
+import type { CreateUser, RegisterUser } from '../../../../../models/user.model.ts';
 
 export function RegisterForm() {
     const { register, handleSubmit, formState, control } = useForm<RegisterUser, any, RegisterUser>(
@@ -28,7 +28,8 @@ export function RegisterForm() {
     );
     const registerMutation = useRegisterUser();
     function submitRegister(registerForm: RegisterUser) {
-        registerMutation.mutate(registerForm);
+        const { privacyPolicy,...user } = registerForm;
+        registerMutation.mutate(user as CreateUser);
     }
 
     const [language, setLanguage] = useState('en');

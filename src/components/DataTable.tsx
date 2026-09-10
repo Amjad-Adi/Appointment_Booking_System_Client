@@ -89,7 +89,7 @@ export function DataTable<TData extends RowData>({
                             id="search"
                             value={search}
                             onChange={(event) => handleSearchChange(event.target.value)}
-                            className="!h-8 w-full min-w-0 bg-[#f1f1f6] !text-[11px] text-[#343447] placeholder:text-[#888899] sm:w-56 sm:max-w-xs sm:flex-1"
+                            className="!h-8 w-full min-w-0  !text-[11px] sm:w-56 sm:max-w-xs sm:flex-1"
                         />
 
                         {filters}

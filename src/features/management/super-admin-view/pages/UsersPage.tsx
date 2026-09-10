@@ -1,8 +1,8 @@
 import { ManagementPage } from '../../components/ManagementPage.tsx';
 
-import { UsersTable } from './components/tables/UserTable.tsx';
+import { UsersTable } from './users/tables/UsersTable.tsx';
 
-export function User() {
+export function SuperAdminUsersPage(){
     return (
         <ManagementPage
             title="System Users"

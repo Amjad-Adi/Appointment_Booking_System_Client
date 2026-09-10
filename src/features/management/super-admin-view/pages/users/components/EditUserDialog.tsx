@@ -2,20 +2,20 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { TextField } from '../../../../../components/TextField.tsx';
-import { Select } from '../../../../../components/Select.tsx';
-import { Button } from '../../../../../components/Button.tsx';
+import { TextField } from '../../../../../../components/TextField.tsx';
+import { Select } from '../../../../../../components/Select.tsx';
+import { Button } from '../../../../../../components/Button.tsx';
 
-import { useUpdateUser } from '../../../hooks/users-hook.ts';
-import { updateUserByAdminSchema } from '../../../../../zod-schemas/user.schema.ts';
+import { useUpdateUser } from '../../../../hooks/users-hook.ts';
+import { updateUserByAdminSchema } from '../../../../../../zod-schemas/user.schema.ts';
 
-import { Role } from '../../../../../models/enums/roles.ts';
-import { ActivationStatus } from '../../../../../models/enums/activation-status.ts';
+import { Role } from '../../../../../../models/enums/roles.ts';
+import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
 
-import type { UserResponse, UpdateUserByAdminForm } from '../../../../../models/user.model.ts';
+import type { UserResponse, UpdateUserByAdminForm } from '../../../../../../models/user.model.ts';
 import toast from 'react-hot-toast';
-import { Toast } from '../../../../../utlis/toast.ts';
-import { Label } from '../../../../../components/Label.tsx';
+import { Toast } from '../../../../../../utlis/toast.ts';
+import { Label } from '../../../../../../components/Label.tsx';
 
 interface EditUserDialogProps {
     user: UserResponse;

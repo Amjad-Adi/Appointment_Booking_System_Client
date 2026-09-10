@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { CircleUserRound } from 'lucide-react';
+import { CircleUserRound, UserCircle } from 'lucide-react';
 
 import type { UserResponse } from '../../../models/user.model.ts';
 import { AppSidebar } from '../../../components/sidebar/AppSideBar.tsx';
@@ -15,18 +15,14 @@ type ManagementLayoutProps = {
 export function ManagementLayout({ sidebar }: ManagementLayoutProps) {
     const queryClient = useQueryClient();
     const location = useLocation();
-
     const user = queryClient.getQueryData<UserResponse>([CURRENT_USER]);
-
-    const activeItem = sidebar.groups
-        .flatMap((group) => group.items)
-        .find(
-            (item) =>
-                location.pathname === item.url || location.pathname.startsWith(`${item.url}/`),
-        );
-
+    const allItems = sidebar.groups.flatMap((group) => group.items);
+    const activeItem =
+        allItems.find((item) => location.pathname === item.url) ||
+        allItems
+            .filter((item) => item.url !== '/' && location.pathname.startsWith(`${item.url}/`))
+            .sort((a, b) => b.url.length - a.url.length)[0];
     const ActiveIcon = activeItem?.icon;
-
     return (
         <SidebarProvider className="min-h-svh w-full">
             <AppSidebar {...sidebar} />
@@ -55,7 +51,7 @@ export function ManagementLayout({ sidebar }: ManagementLayoutProps) {
                     {user && (
                         <div className="flex shrink-0 items-center gap-2.5 rounded-xl bg-[#dedee8] px-2.5 pr-3">
                             <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#cfcfdd]">
-                                <CircleUserRound className="size-4 text-[#5a5a6d]" />
+                                <UserCircle />
                             </div>
 
                             <div className="hidden leading-tight sm:block">

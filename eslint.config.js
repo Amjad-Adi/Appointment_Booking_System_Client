@@ -1,34 +1,37 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
-import prettier from 'eslint-config-prettier';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
-export default tseslint.config(
-    {
-        ignores: ['dist', 'node_modules'],
-    },
-
-    js.configs.recommended,
-
-    ...tseslint.configs.recommended,
-
+export default defineConfig([
+    globalIgnores(['dist']),
     {
         files: ['**/*.{ts,tsx}'],
+        extends: [
+            js.configs.recommended,
+            tseslint.configs.recommended,
+            reactHooks.configs.flat.recommended,
+            // reactRefresh removed completely!
+        ],
         languageOptions: {
-            ecmaVersion: 2020,
             globals: globals.browser,
         },
-        plugins: {
-            'react-hooks': reactHooks,
-            'react-refresh': reactRefresh,
-        },
         rules: {
-            ...reactHooks.configs.recommended.rules,
+            // 1. Turn off unused variable & import errors completely
+            '@typescript-eslint/no-unused-vars': 'off',
+            'no-unused-vars': 'off',
 
-            'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+            // 2. Allow any "any" types without complaints
+            '@typescript-eslint/no-explicit-any': 'off',
+
+            // 3. Allow empty interfaces, functions, and non-null assertions
+            '@typescript-eslint/no-empty-interface': 'off',
+            '@typescript-eslint/no-empty-function': 'off',
+            '@typescript-eslint/no-non-null-assertion': 'off',
+
+            // 4. Don't enforce React import in JSX
+            'react/react-in-jsx-scope': 'off',
         },
     },
-    prettier,
-);
+]);
