@@ -7,8 +7,8 @@ import type {
     CreateOrganizationByAdmin,
     OrganizationResponse,
     QueryOrganization,
-    UpdateUserByAdminForm,
-    UpdateUserByAdmin
+    UpdateOrganizationByAdminForm,
+    UpdateOrganizationByAdmin,
 } from '../../../models/organization.model.ts';
 
 import { ORGANIZATION, ORGANIZATION_TABLE } from '../../../utlis/query-keys.ts';
@@ -46,7 +46,7 @@ export function useUpdateOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (organization: UpdateUserByAdmin) => {
+        mutationFn: async (organization: UpdateOrganizationByAdmin) => {
             const { uuid, ...organizationData } = organization;
             const response = await api.patch(`/api/organizations/${uuid}`, organizationData);
             return response.data;

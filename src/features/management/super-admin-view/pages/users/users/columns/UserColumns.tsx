@@ -1,17 +1,18 @@
-import type { UserResponse } from '../../../../../../models/user.model.ts';
-import type { DataTableColumn } from '../../../../../../components/DataTableFeatures.ts';
+import type { UserResponse } from '../../../../../../../models/user.model.ts';
+import type { DataTableColumn } from '../../../../../../../components/DataTableFeatures.ts';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '../../../../../../components/DropdownMenu.tsx';
-import { Button } from '../../../../../../components/Button.tsx';
+} from '../../../../../../../components/DropdownMenu.tsx';
+import { Button } from '../../../../../../../components/Button.tsx';
 import { MoreHorizontalIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
-const USER_TABLE_COLUMN = {
+import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
+import { ActivationStatusRender } from '../../../../../components/ActivationStatusRender.tsx';
+export const USER_TABLE_COLUMN = {
     NAME: 'name',
     EMAIL: 'email',
     ROLE: 'role',
@@ -19,7 +20,7 @@ const USER_TABLE_COLUMN = {
     CREATED_AT: 'createdAtUTC',
     ACTIONS: 'actions',
 };
-const USER_TABLE_HEADER = {
+export const USER_TABLE_HEADER = {
     NAME: 'Full Name',
     EMAIL: 'Email',
     ROLE: 'Role',
@@ -32,6 +33,14 @@ export function getUserColumns(
     onEdit: (user: UserResponse) => void,
 ): DataTableColumn<UserResponse>[] {
     return [
+        {
+            accessorKey: USER_TABLE_COLUMN.STATUS,
+            header: USER_TABLE_HEADER.STATUS,
+            enableSorting: false,
+            cell: ({ row }) => {
+                return ActivationStatusRender({ status: row.original.status });
+            },
+        },
         {
             id: USER_TABLE_COLUMN.NAME,
             accessorFn: (user) => `${user.firstName} ${user.lastName}`,
@@ -46,30 +55,6 @@ export function getUserColumns(
             accessorKey: USER_TABLE_COLUMN.ROLE,
             header: USER_TABLE_HEADER.ROLE,
             enableSorting: false,
-        },
-        {
-            accessorKey: USER_TABLE_COLUMN.STATUS,
-            header: USER_TABLE_HEADER.STATUS,
-            enableSorting: false,
-            cell: ({ row }) => {
-                const isActive = row.original.status === ActivationStatus.ACTIVE;
-
-                return (
-                    <div className="flex items-center justify-center">
-                        <span className="relative size-2.5">
-                            {isActive && (
-                                <span className="absolute inset-0 size-2.5 rounded-full bg-emerald-500 opacity-15" />
-                            )}
-
-                            <span
-                                className={`absolute inset-0 size-2.5 rounded-full ${
-                                    isActive ? 'bg-emerald-500' : 'bg-red-400'
-                                }`}
-                            />
-                        </span>
-                    </div>
-                );
-            },
         },
         {
             accessorKey: USER_TABLE_COLUMN.CREATED_AT,
@@ -117,7 +102,7 @@ function UserActions({
 
                 <DropdownMenuItem
                     className="h-7 px-2 text-[11px]"
-                    onClick={() => navigate(`/users/${user.uuid}`)}
+                    onClick={() => navigate(`/admin/users/${user.uuid}`)}
                 >
                     View Profile
                 </DropdownMenuItem>
@@ -127,7 +112,7 @@ function UserActions({
                         <DropdownMenuSeparator className="my-1" />
                         <DropdownMenuItem
                             className="h-7 px-2 text-[11px]"
-                            onClick={() => navigate(`/organizations/${user.organizationUuid}`)}
+                            onClick={() => navigate(`admin/organizations/${user.organizationUuid}`)}
                         >
                             View Organization Profile
                         </DropdownMenuItem>

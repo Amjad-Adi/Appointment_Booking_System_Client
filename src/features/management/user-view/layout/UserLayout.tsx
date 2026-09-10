@@ -6,7 +6,7 @@ import { useCurrentUser, useLogout } from '../../hooks/users-hook.ts';
 import toast from 'react-hot-toast';
 import { Toast } from '../../../../utlis/toast.ts';
 
-export function SuperAdminLayout() {
+export function UserLayout() {
     const { data, isLoading, isError } = useCurrentUser();
     return (
         <ManagementLayout

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ActivationStatus } from './enums/activation-status.js';
 import {
+    serviceFilterSchema,
     createServiceSchema,
     queryServiceSchema,
     updateServiceSchema,
@@ -11,7 +12,7 @@ export interface Service {
     name: string;
     description: string;
     price: number;
-    durationInMinutes: string;
+    durationInMinutes: number;
     servicePicturePath: string;
     createdAtUTC: Date;
     updatedAtUTC: Date;

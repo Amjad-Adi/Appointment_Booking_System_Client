@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { type PaginationState, type SortingState } from '@tanstack/react-table';
-import { DataTable } from '../../../../../../components/DataTable.tsx';
-import { type DataTableColumn, PAGE_SIZE } from '../../../../../../components/DataTableFeatures.ts';
-import { useUsers } from '../../../../hooks/users-hook.ts';
-import type { UserResponse } from '../../../../../../models/user.model.ts';
-import { Order } from '../../../../../../models/enums/order.ts';
-import { Role } from '../../../../../../models/enums/roles.ts';
-import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
-import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deounce.ts';
+import { DataTable } from '../../../../../../../components/DataTable.tsx';
+import {
+    type DataTableColumn,
+    PAGE_SIZE,
+} from '../../../../../../../components/DataTableFeatures.ts';
+import { useUsers } from '../../../../../hooks/users-hook.ts';
+import type { UserResponse } from '../../../../../../../models/user.model.ts';
+import { Order } from '../../../../../../../models/enums/order.ts';
+import { Role } from '../../../../../../../models/enums/roles.ts';
+import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
+import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../../hooks/deounce.ts';
 import { EditUserDialog } from '../components/EditUserDialog.tsx';
-import { useDialog } from '../../../../../../hooks/open-dialog.ts';
+import { useDialog } from '../../../../../../../hooks/open-dialog.ts';
 import { getUserColumns } from '../columns/UserColumns.tsx';
-import { Select } from '../../../../../../components/Select.tsx';
+import { Select } from '../../../../../../../components/Select.tsx';
 export function UsersTable() {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [pagination, setPagination] = useState<PaginationState>({

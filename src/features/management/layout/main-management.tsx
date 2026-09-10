@@ -47,24 +47,6 @@ export function ManagementLayout({ sidebar }: ManagementLayoutProps) {
                             </h1>
                         </div>
                     </div>
-
-                    {user && (
-                        <div className="flex shrink-0 items-center gap-2.5 rounded-xl bg-[#dedee8] px-2.5 pr-3">
-                            <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#cfcfdd]">
-                                <UserCircle />
-                            </div>
-
-                            <div className="hidden leading-tight sm:block">
-                                <p className="text-[11px] font-semibold text-[#343447]">
-                                    {user.firstName} {user.lastName}
-                                </p>
-
-                                <p className="text-[10px] font-medium text-[#777789]">
-                                    {sidebar.title}
-                                </p>
-                            </div>
-                        </div>
-                    )}
                 </header>
 
                 <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-[1%]">

@@ -89,7 +89,7 @@ export function DataTable<TData extends RowData>({
                             id="search"
                             value={search}
                             onChange={(event) => handleSearchChange(event.target.value)}
-                            className="!h-8 w-full min-w-0  !text-[11px] sm:w-56 sm:max-w-xs sm:flex-1"
+                            className="!h-8 w-full min-w-0 !text-[11px] sm:w-56 sm:max-w-xs sm:flex-1"
                         />
 
                         {filters}
@@ -97,7 +97,7 @@ export function DataTable<TData extends RowData>({
                 </div>
 
                 <div className="w-full min-w-0">
-                    <Table className="min-w-[900px] table-fixed">
+                    <Table className="w-max min-w-full table-auto">
                         <TableHeader>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow
@@ -110,10 +110,12 @@ export function DataTable<TData extends RowData>({
                                         return (
                                             <TableHead
                                                 key={header.id}
-                                                className="h-9 px-3 py-1 text-center text-[11px] font-semibold whitespace-nowrap text-[#454556]"
+                                                className={`h-9 px-3 py-1 text-[11px] font-semibold whitespace-nowrap text-[#454556] ${
+                                                    isLast ? 'text-right' : 'text-left'
+                                                }`}
                                             >
                                                 {header.isPlaceholder ? null : isLast ? (
-                                                    'Actions'
+                                                    <div className="flex justify-end">Actions</div>
                                                 ) : (
                                                     <button
                                                         type="button"
@@ -158,17 +160,23 @@ export function DataTable<TData extends RowData>({
                                         key={row.id}
                                         className="border-0 bg-[#f5f5f8] transition-colors hover:bg-[#ededf2]"
                                     >
-                                        {row.getAllCells().map((cell) => (
-                                            <TableCell
-                                                key={cell.id}
-                                                className="py-1 text-[11px] whitespace-nowrap text-[#454556]"
-                                            >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </TableCell>
-                                        ))}
+                                        {row.getAllCells().map((cell, index) => {
+                                            const isLast = index === row.getAllCells().length - 1;
+
+                                            return (
+                                                <TableCell
+                                                    key={cell.id}
+                                                    className={`py-1 text-[11px] whitespace-nowrap text-[#454556] ${
+                                                        isLast ? 'text-right' : 'text-left'
+                                                    }`}
+                                                >
+                                                    {flexRender(
+                                                        cell.column.columnDef.cell,
+                                                        cell.getContext(),
+                                                    )}
+                                                </TableCell>
+                                            );
+                                        })}
                                     </TableRow>
                                 ))
                             )}

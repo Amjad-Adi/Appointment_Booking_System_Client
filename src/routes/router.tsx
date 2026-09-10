@@ -1,24 +1,27 @@
 import { createBrowserRouter } from 'react-router';
+
 import { Login } from '../features/auth/pages/login/Login.tsx';
 import { AuthLayout } from '../features/auth/layouts/Auth.tsx';
 import { Register } from '../features/auth/pages/register/Register.tsx';
-import { ManagementLayout } from '../features/management/layout/main-management.tsx';
-import {
-    SuperAdminUsersPage,
-} from '../features/management/super-admin-view/pages/UsersPage.tsx';
+
+import { SuperAdminUsersPage } from '../features/management/super-admin-view/pages/users/users/UsersPage.tsx';
+import { SuperAdminOrganizationsPage } from '../features/management/super-admin-view/pages/organizations/OrganizationsPage.tsx';
+
+import { SuperAdminLayout } from '../features/management/super-admin-view/layout/SuperAdminLayout.tsx';
+
+import { UserProfilePage } from '../features/management/super-admin-view/pages/users/users-profile/UserProfilePage.tsx';
+import { OrganizationProfilePage } from '../features/management/super-admin-view/pages/organizations/organization-profile/OrganizationProfilePage.tsx';
+
 import { RoleBasedRouter } from './RoleBasedRouter.tsx';
+
 import {
     HAS_LOGIN,
     SUPER_ADMIN_ORGANIZATIONS_MANAGEMENT_PAGE,
     SUPER_ADMIN_USER_MANAGEMENT_PAGE,
 } from '../permissions/permissions.ts';
-import { OrganizationProfile } from '../features/management/organizations/OrganizationProfile.tsx';
-import { UserProfile } from '../features/management/users/UserProfile.tsx';
+
 import { NotFoundPage } from '../features/NotFoundPage.tsx';
-import { SuperAdminLayout } from '../features/management/super-admin-view/layout/SuperAdminLayout.tsx';
-import {
-    SuperAdminOrganizationsPage
-} from '../features/management/super-admin-view/pages/organizations/OrganizationsPage.tsx';
+import { ProfilePage } from '../features/management/user-view/pages/user-profile/ProfilePage.tsx';
 
 export const router = createBrowserRouter([
     {
@@ -37,6 +40,7 @@ export const router = createBrowserRouter([
                     },
                 ],
             },
+
             {
                 element: (
                     <RoleBasedRouter permission={HAS_LOGIN}>
@@ -49,33 +53,70 @@ export const router = createBrowserRouter([
                         children: [
                             {
                                 path: 'users',
-                                element: (
-                                    <RoleBasedRouter permission={SUPER_ADMIN_USER_MANAGEMENT_PAGE}>
-                                        <SuperAdminUsersPage />
-                                    </RoleBasedRouter>
-                                ),
+                                children: [
+                                    {
+                                        index: true,
+                                        element: (
+                                            <RoleBasedRouter
+                                                permission={SUPER_ADMIN_USER_MANAGEMENT_PAGE}
+                                            >
+                                                <SuperAdminUsersPage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                    {
+                                        path: ':userUuid/:mode?',
+                                        element: (
+                                            <RoleBasedRouter
+                                                permission={SUPER_ADMIN_USER_MANAGEMENT_PAGE}
+                                            >
+                                                <UserProfilePage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                ],
                             },
+
                             {
                                 path: 'organizations',
-                                element: (
-                                    <RoleBasedRouter
-                                        permission={SUPER_ADMIN_ORGANIZATIONS_MANAGEMENT_PAGE}>
-                                        <SuperAdminOrganizationsPage />
-                                    </RoleBasedRouter>
-                                ),
+                                children: [
+                                    {
+                                        index: true,
+                                        element: (
+                                            <RoleBasedRouter
+                                                permission={
+                                                    SUPER_ADMIN_ORGANIZATIONS_MANAGEMENT_PAGE
+                                                }
+                                            >
+                                                <SuperAdminOrganizationsPage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                    {
+                                        path: ':organizationUuid/:mode?',
+                                        element: (
+                                            <RoleBasedRouter
+                                                permission={SUPER_ADMIN_USER_MANAGEMENT_PAGE}
+                                            >
+                                                <OrganizationProfilePage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                ],
                             },
                         ],
                     },
                     {
-                        path: 'organizations/:organizationUuid',
-                        Component: OrganizationProfile,
-                    },
-                    {
-                        path: 'users/:userUuid',
-                        Component: UserProfile,
+                        path: 'profile/:mode?',
+                        element: (
+                            <RoleBasedRouter permission={HAS_LOGIN}>
+                                <ProfilePage />
+                            </RoleBasedRouter>
+                        ),
                     },
                 ],
             },
+
             {
                 path: '*',
                 Component: NotFoundPage,

@@ -108,7 +108,7 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
                                 className="rounded-xl text-[#555566] transition-colors duration-150 hover:bg-[#d8d8e3] hover:text-[#343447]"
                                 render={
                                     <NavLink
-                                        to={profile.url}
+                                        to={'/profile'}
                                         className={({ isActive }) =>
                                             isActive ? 'bg-[#d3d3df] text-[#343447]' : ''
                                         }

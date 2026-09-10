@@ -53,29 +53,38 @@ export const inviteUserSchema = z
         role: z.enum(Role).refine((role) => role != Role.SUPER_ADMIN && role != Role.CUSTOMER),
     })
     .strict();
-
 export const updateUserSchema = z
     .object({
         firstName: z.string().trim().nonempty().max(64).optional(),
         lastName: z.string().trim().nonempty().max(64).optional(),
+
         password: z
             .string()
             .trim()
-            .nonempty({ error: 'Password is required' })
             .min(8, 'Password must be at least 8 characters')
-            .max(64, 'Password must be at most 64 characters'),
+            .max(64, 'Password must be at most 64 characters')
+            .optional(),
+
         confirmPassword: z
             .string()
             .trim()
-            .nonempty({ error: 'Confirm Password is required' })
-            .min(8, { error: 'Password must be at least 8 characters' })
-            .max(64, { error: 'Password must be at most 64 characters' }),
+            .min(8, 'Password must be at least 8 characters')
+            .max(64, 'Password must be at most 64 characters')
+            .optional(),
+
         profilePicturePath: z.string().trim().nonempty().optional(),
+
         language: z.string().trim().length(2).default(DEFAULT_LANGUAGE),
     })
     .strict()
-    .refine((data) => data.password === data.confirmPassword);
-
+    .refine(
+        (data) =>
+            !data.password && !data.confirmPassword ? true : data.password === data.confirmPassword,
+        {
+            message: 'Passwords do not match',
+            path: ['confirmPassword'],
+        },
+    );
 export const loginUserSchema = z
     .object({
         email: z.email('Invalid email'),

@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { ActivationStatus } from '../models/enums/activation-status.js';
 import { querySchema } from './query.schema.js';
+const SORT_BY_NAME = 'name';
+const SORT_BY_CREATED_AT_UTC = 'createdAtUTC';
+const SORT_BY_PRICE = 'price';
+const SORT_BY_DURATION_IN_MINUTES = 'durationInMinutes';
+
 export const createServiceSchema = z
     .object({
         name: z.string().trim().nonempty().max(256),
@@ -24,5 +29,20 @@ export const serviceFilterSchema = z
         maxPrice: z.coerce.number().positive().optional(),
         maxDurationInMinutes: z.coerce.number().positive().optional(),
         status: z.enum(ActivationStatus).optional(),
+    })
+    .strict();
+
+export const queryServiceSchema = querySchema
+    .extend({
+        search: z.string().trim().nonempty().max(256).optional(),
+        filter: serviceFilterSchema.optional(),
+        sortBy: z
+            .enum([
+                SORT_BY_NAME,
+                SORT_BY_PRICE,
+                SORT_BY_DURATION_IN_MINUTES,
+                SORT_BY_CREATED_AT_UTC,
+            ])
+            .optional(),
     })
     .strict();
