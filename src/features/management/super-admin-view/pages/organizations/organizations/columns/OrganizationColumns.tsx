@@ -15,7 +15,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
-} from '../../../../../../../../@/components/ui/tooltip.tsx';
+} from '../../../../../../../../@/components/ui/Tooltip.tsx';
 
 import { ActivationStatusRender } from '../../../../../components/ActivationStatusRender.tsx';
 

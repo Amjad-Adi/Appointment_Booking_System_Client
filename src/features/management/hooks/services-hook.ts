@@ -5,7 +5,7 @@ import type {
     UpdateService,
 } from '../../../models/service.model.ts';
 
-import { SERVICE_TABLE } from '../../../utlis/query-keys.ts';
+import { SERVICE, SERVICE_TABLE } from '../../../utlis/query-keys.ts';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
@@ -25,7 +25,18 @@ export function useServices(query: QueryService) {
     });
 }
 
-export function useCreateOrganizationService(organizationUuid: string|undefined) {
+export function useService(serviceUuid: string) {
+    return useQuery({
+        queryKey: [SERVICE, serviceUuid],
+        queryFn: async () => {
+            const response = await api.get(`/api/services/${serviceUuid}`);
+            return response.data;
+        },
+        enabled: !!serviceUuid,
+    });
+}
+
+export function useCreateOrganizationService(organizationUuid: string | undefined) {
     const queryClient = useQueryClient();
 
     return useMutation({

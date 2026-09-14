@@ -1,12 +1,5 @@
-import type { ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
-    type DefaultValues,
-    type FieldErrors,
-    type FieldValues,
-    type Path,
-    type Resolver,
-} from 'react-hook-form';
+import type { DefaultValues, FieldErrors, FieldValues, Path, Resolver } from 'react-hook-form';
 
 import { TextField } from './TextField.tsx';
 import { Select } from './Select.tsx';
@@ -40,16 +33,13 @@ interface CreateDialogProps<TInput extends FieldValues, TOutput = TInput> {
     description?: string;
 
     resolver: Resolver<TInput, any, TOutput>;
-
     defaultValues?: DefaultValues<TInput>;
-
     fields: readonly CreateDialogField<TInput>[];
 
     submitLabel?: string;
     cancelLabel?: string;
 
     errorMessage?: string;
-
     fieldErrors?: Partial<Record<Path<TInput>, string>>;
 
     onSubmit: (values: TOutput) => Promise<void>;
@@ -105,7 +95,6 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
             aria-labelledby="create-dialog-title"
         >
             <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#d3d3df] bg-[#f5f5f8] shadow-2xl">
-                {/* Header */}
                 <div className="shrink-0 border-b border-[#d3d3df] px-5 py-4 sm:px-6">
                     <h2
                         id="create-dialog-title"
@@ -119,7 +108,6 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                     )}
                 </div>
 
-                {/* Form */}
                 <form
                     onSubmit={handleSubmit(handleFormSubmit, handleInvalidSubmit)}
                     className="flex min-h-0 flex-col overflow-y-auto px-5 py-4 sm:px-6 sm:py-5"
@@ -165,7 +153,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                         name={fieldName}
                                         control={control}
                                         render={({ field: controllerField }) => {
-                                            const selectedValues = Array.isArray(
+                                            const selectedValues: string[] = Array.isArray(
                                                 controllerField.value,
                                             )
                                                 ? controllerField.value
@@ -314,7 +302,6 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                         )}
                     </div>
 
-                    {/* Actions */}
                     <div className="mt-3 flex shrink-0 flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <div className="group sm:w-auto">
                             <Button

@@ -219,6 +219,7 @@ export const updateUserByAdminSchema = z
 
 export const userFilterSchema = z
     .object({
+        organizationUuid: z.uuid().optional(),
         role: z
             .enum(Role, {
                 error: 'Invalid user role filter',

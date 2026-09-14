@@ -7,12 +7,9 @@ import {
     queryServiceCategorySchema,
     serviceCategoryFilterSchema,
     updateServiceCategorySchema,
-} from '../middlewares/zod-schemas/service-categoty.schema';
+} from '../zod-schemas/service-categoty.schema.js';
 
-import {
-    DataResponses,
-    Filter,
-} from './query.model.js';
+import { type DataResponses, QueryResponse } from './Query/query.model.js';
 
 export interface ServiceCategory {
     uuid: string;
@@ -26,5 +23,5 @@ export interface ServiceCategory {
 
 export interface ServiceCategoryResponse extends ServiceCategory, DataResponses {}
 export type CreateServiceCategory = z.infer<typeof createServiceCategorySchema>;
-export type UpdateServiceCategory = z.infer<typeof updateServiceCategorySchema> & { uuid: string; };
-export type QueryServiceCategory = z.infer<typeof queryServiceCategorySchema> & { offset: number; };
+export type UpdateServiceCategory = z.infer<typeof updateServiceCategorySchema> & { uuid: string };
+export type QueryServiceCategory = z.infer<typeof queryServiceCategorySchema>;

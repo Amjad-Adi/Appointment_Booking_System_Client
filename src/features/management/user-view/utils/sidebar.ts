@@ -1,6 +1,7 @@
 import {
     LayoutDashboard,
     BriefcaseBusiness,
+    DoorOpen,
     CalendarCheck,
     Mail,
     Heart,
@@ -17,7 +18,7 @@ export const userSidebarGroups: SidebarGroup[] = [
         items: [
             {
                 title: 'Dashboard',
-                url: '/user',
+                url: '/customer',
                 icon: LayoutDashboard,
             },
         ],
@@ -27,22 +28,27 @@ export const userSidebarGroups: SidebarGroup[] = [
         items: [
             {
                 title: 'Services',
-                url: '/user/services',
+                url: '/customer/services',
                 icon: BriefcaseBusiness,
             },
             {
+                title: 'Rooms',
+                url: '/customer/rooms',
+                icon: DoorOpen,
+            },
+            {
                 title: 'Booked Appointments',
-                url: '/user/appointments',
+                url: '/customer/appointments',
                 icon: CalendarCheck,
             },
             {
                 title: 'Favourites',
-                url: '/user/favourites',
+                url: '/customer/favourites',
                 icon: Heart,
             },
             {
                 title: 'Reviews',
-                url: '/user/reviews',
+                url: '/customer/reviews',
                 icon: Star,
             },
         ],
@@ -52,17 +58,17 @@ export const userSidebarGroups: SidebarGroup[] = [
         items: [
             {
                 title: 'Invitations',
-                url: '/user/invitations',
+                url: '/customer/invitations',
                 icon: Mail,
             },
             {
                 title: 'Profile',
-                url: '/user/profile',
+                url: '/customer/profile',
                 icon: User,
             },
             {
                 title: 'Settings',
-                url: '/user/settings',
+                url: '/customer/settings',
                 icon: Settings,
             },
         ],

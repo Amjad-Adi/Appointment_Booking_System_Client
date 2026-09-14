@@ -27,6 +27,9 @@ import type { ServiceResponse } from '../../../../../../models/service.model.ts'
 import { CreateServiceDialog } from '../components/CreateServiceDialog.tsx';
 import { EditServiceDialog } from '../components/EditServiceDialog.tsx';
 import { TextField } from '../../../../../../components/TextField.tsx';
+import { ViewMode } from '../../../../../../models/enums/ViewMode.ts';
+import { ServiceViewSwitcher } from '../components/ServiceViewSwitcher.tsx';
+import { ServicesGrid } from '../grids/ServiceGrid.tsx';
 
 interface ServicesTableProps {
     organizationUuid?: string;
@@ -56,14 +59,21 @@ export function ServicesTable({ organizationUuid }: ServicesTableProps) {
     const [createServiceOpen, setCreateServiceOpen] = useState(false);
 
     const serviceDialog = useDialog<ServiceResponse>();
-
+    const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.TABLE);
     const { data: currentUser } = useCurrentUser();
-
     const canManageServices =
-        currentUser?.role === Role.MANAGER || currentUser?.role === Role.OWNER;
-
+        (currentUser?.role === Role.MANAGER || currentUser?.role === Role.OWNER) &&
+        currentUser?.organizationUuid != null;
     const sort = sorting[0];
+    const isCustomer = currentUser?.role === Role.CUSTOMER;
 
+    const effectiveViewMode = isCustomer ? ViewMode.GRID : viewMode;
+    const handleViewModeChange = (mode: ViewMode) => {
+        if (isCustomer) {
+            return;
+        }
+        setViewMode(mode);
+    };
     const sortBy: 'name' | 'price' | 'durationInMinutes' | 'createdAtUTC' | undefined = sort
         ? sort.id === 'name'
             ? 'name'
@@ -120,9 +130,12 @@ export function ServicesTable({ organizationUuid }: ServicesTableProps) {
         setServiceCategoryUuid(categoryUuid);
         resetPage();
     };
-
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        resetPage();
+    };
     const filters = (
-        <div className="flex min-w-0 flex-1 flex-wrap gap-2 max-sm:justify-between sm:gap-[4%]">
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
             <Select
                 label="Status"
                 isLabelDisabled
@@ -156,6 +169,7 @@ export function ServicesTable({ organizationUuid }: ServicesTableProps) {
                     setMinPrice(event.target.value === '' ? 0 : Number(event.target.value));
                     resetPage();
                 }}
+                wrapperClassName="w-32 max-sm:w-[48%] max-[350px]:w-full"
                 className="px-2 text-[11px]"
             />
             <TextField
@@ -169,6 +183,7 @@ export function ServicesTable({ organizationUuid }: ServicesTableProps) {
                     setMaxPrice(event.target.value === '' ? 0 : Number(event.target.value));
                     resetPage();
                 }}
+                wrapperClassName="w-32 max-sm:w-[48%] max-[350px]:w-full"
                 className="px-2 text-[11px]"
             />
             <TextField
@@ -184,11 +199,29 @@ export function ServicesTable({ organizationUuid }: ServicesTableProps) {
                     );
                     resetPage();
                 }}
+                wrapperClassName="w-32 max-sm:w-[48%] max-[350px]:w-full"
                 className="px-2 text-[11px]"
             />
         </div>
     );
+    const actions = (
+        <div className="flex shrink-0 items-center gap-2">
+            {!isCustomer && (
+                <ServiceViewSwitcher value={effectiveViewMode} onChange={handleViewModeChange} />
+            )}
 
+            {canManageServices && (
+                <Button
+                    type="button"
+                    onClick={() => setCreateServiceOpen(true)}
+                    className="flex h-8 min-h-0 w-auto shrink-0 items-center gap-1.5 px-3 text-[11px]"
+                >
+                    <Plus className="size-3.5" strokeWidth={2} />
+                    Add Service
+                </Button>
+            )}
+        </div>
+    );
     if (isLoading) {
         return <div>Loading services...</div>;
     }
@@ -205,34 +238,35 @@ export function ServicesTable({ organizationUuid }: ServicesTableProps) {
                 onSelect={handleCategoryChange}
             />
 
-            <DataTable
-                tableKey="organization-services-table"
-                data={data?.data ?? []}
-                columns={columns}
-                sorting={sorting}
-                onSortingChange={setSorting}
-                pagination={pagination}
-                onPaginationChange={setPagination}
-                search={search}
-                onSearchChange={setSearch}
-                filters={filters}
-                actions={
-                    canManageServices ? (
-                        <Button
-                            type="button"
-                            onClick={() => setCreateServiceOpen(true)}
-                            className="flex h-8 min-h-0 w-auto shrink-0 items-center gap-1.5 px-3 text-[11px]"
-                        >
-                            <Plus className="size-3.5" strokeWidth={2} />
-                            Add Service
-                        </Button>
-                    ) : undefined
-                }
-                rowCount={data?.pagination?.totalItems ?? 0}
-                rowCountLabel={`${
-                    data?.pagination?.totalItems === 0 ? 'No' : data?.pagination?.totalItems
-                } Services`}
-            />
+            {effectiveViewMode === ViewMode.TABLE ? (
+                <DataTable
+                    tableKey="organization-services-table"
+                    data={data?.data ?? []}
+                    columns={columns}
+                    sorting={sorting}
+                    onSortingChange={setSorting}
+                    pagination={pagination}
+                    onPaginationChange={setPagination}
+                    search={search}
+                    onSearchChange={handleSearchChange}
+                    filters={filters}
+                    actions={actions}
+                    rowCount={data?.pagination?.totalItems ?? 0}
+                    rowCountLabel={`${
+                        data?.pagination?.totalItems === 0 ? 'No' : data?.pagination?.totalItems
+                    } Services`}
+                />
+            ) : (
+                <ServicesGrid
+                    services={data?.data ?? []}
+                    search={search}
+                    onSearchChange={handleSearchChange}
+                    filters={filters}
+                    actions={actions}
+                    canEdit={canManageServices}
+                    onEdit={serviceDialog.open}
+                />
+            )}
 
             {canManageServices && (
                 <CreateServiceDialog

@@ -2,7 +2,9 @@ export const CURRENT_USER = 'CURRENT_USER';
 export const USER_TABLE = 'USER_TABLE';
 export const USER = 'USER';
 export const SERVICE_TABLE = 'SERVICE_TABLE';
+export const SERVICE = 'SERVICE';
 export const ORGANIZATION = 'ORGANIZATION';
 export const ORGANIZATION_TABLE = 'ORGANIZATION_TABLE';
 export const SERVICE_CATEGORY_TABLE = 'SERVICE_CATEGORY_TABLE';
-
+export const ROOMS = 'ROOMS';
+export const ROOM = 'ROOM';

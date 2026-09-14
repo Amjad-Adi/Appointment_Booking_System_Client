@@ -41,6 +41,7 @@ import {
     UPDATE_USER_AS_ADMIN,
     UPDATE_ORGANIZATION_AS_ADMIN,
     CREATE_SERVICE_CATEGORY,
+    USER_ROOMS_PAGE,
 } from './permissions.js';
 
 import { Role } from '../models/enums/roles.js';
@@ -58,6 +59,7 @@ const customerPermissions: string[] = [
     CREATE_APPOINTMENT,
     VIEW_OWN_APPOINTMENTS,
     UPDATE_OWN_APPOINTMENT,
+    USER_ROOMS_PAGE,
     CANCEL_OWN_APPOINTMENT,
     VIEW_FAVOURITES,
     ADD_FAVOURITE,
@@ -71,9 +73,19 @@ const customerPermissions: string[] = [
     REJECT_ORGANIZATION_INVITATION,
 ];
 
-const workerPermissions: string[] = [HAS_LOGIN, USER_PROFILE_PAGE, USER_SETTINGS_PAGE];
+const workerPermissions: string[] = [
+    HAS_LOGIN,
+    USER_PROFILE_PAGE,
+    USER_SETTINGS_PAGE,
+    USER_ROOMS_PAGE,
+];
 
-const crmPermissions: string[] = [HAS_LOGIN, USER_PROFILE_PAGE, USER_SETTINGS_PAGE];
+const crmPermissions: string[] = [
+    HAS_LOGIN,
+    USER_PROFILE_PAGE,
+    USER_SETTINGS_PAGE,
+    USER_ROOMS_PAGE,
+];
 
 const managerPermissions: string[] = [
     HAS_LOGIN,
@@ -87,6 +99,7 @@ const managerPermissions: string[] = [
     CREATE_ROOM,
     UPDATE_ROOM,
     ORGANIZATION_INVITATION_PAGE,
+    USER_ROOMS_PAGE,
 ];
 
 const ownerPermissions: string[] = [
@@ -95,6 +108,7 @@ const ownerPermissions: string[] = [
     UPDATE_ORGANIZATION,
     USER_SERVICES_PAGE,
     USER_DASHBOARD_PAGE,
+    USER_ROOMS_PAGE,
 ];
 
 const superAdminPermissions: string[] = [

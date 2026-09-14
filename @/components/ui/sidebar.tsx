@@ -11,7 +11,7 @@ import { Input } from './input';
 import { Separator } from './separator';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './sheet';
 import { Skeleton } from './skeleton';
-import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from './Tooltip.tsx';
 import { PanelLeftIcon } from 'lucide-react';
 import { useIsMobile } from '../../hooks/use-mobile';
 

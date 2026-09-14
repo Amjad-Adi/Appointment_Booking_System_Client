@@ -5,7 +5,7 @@ import { Label } from './Label.tsx';
 import { ErrorField } from './ErrorField.tsx';
 
 export interface SelectModel extends SelectHTMLAttributes<HTMLSelectElement> {
-    label: string;
+    label?: string;
     children: ReactNode;
     isLabelDisabled?: boolean;
     hasError?: boolean;

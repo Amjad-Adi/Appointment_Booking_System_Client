@@ -1,4 +1,4 @@
-import type { ServiceResponse } from '../../../../../../models/service.model.ts';
+import type { RoomResponse } from '../../../../../../models/room.model.ts';
 import type { DataTableColumn } from '../../../../../../components/DataTableFeatures.ts';
 
 import {
@@ -9,7 +9,6 @@ import {
 } from '../../../../../../components/DropdownMenu.tsx';
 
 import { Info, MoreHorizontalIcon } from 'lucide-react';
-
 import { useNavigate } from 'react-router';
 
 import {
@@ -21,78 +20,74 @@ import {
 import { Button } from '../../../../../../components/Button.tsx';
 import { ActivationStatusRender } from '../../../../components/ActivationStatusRender.tsx';
 
-export const SERVICE_TABLE_COLUMN = {
-    STATUS: 'status',
+export const ROOM_TABLE_COLUMN = {
     NAME: 'name',
-    PRICE: 'price',
-    DURATION: 'durationInMinutes',
-    CREATED_AT: 'createdAtUTC',
+    OCCUPANCY_STATUS: 'occupancyStatus',
+    ASSIGNED_USER: 'assignedUser',
+    STATUS: 'status',
+    CREATED_AT_UTC: 'createdAtUTC',
     ACTIONS: 'actions',
-};
+} as const;
 
-export const SERVICE_TABLE_HEADER = {
+export const ROOM_TABLE_HEADER = {
+    NAME: 'Room',
+    OCCUPANCY_STATUS: 'Occupancy Status',
+    ASSIGNED_USER: 'Assigned User',
     STATUS: 'Status',
-    NAME: 'Service',
-    PRICE: 'Price',
-    DURATION: 'Duration',
-    CREATED_AT: 'Created At',
+    CREATED_AT_UTC: 'Created At',
     ACTIONS: 'Actions',
-};
+} as const;
 
-export function getServiceColumns(
-    onEdit?: (service: ServiceResponse) => void,
-): DataTableColumn<ServiceResponse>[] {
+export function getRoomColumns(
+    onEdit?: (room: RoomResponse) => void,
+): DataTableColumn<RoomResponse>[] {
     return [
         {
-            accessorKey: SERVICE_TABLE_COLUMN.STATUS,
-            header: SERVICE_TABLE_HEADER.STATUS,
+            accessorKey: ROOM_TABLE_COLUMN.NAME,
+            header: ROOM_TABLE_HEADER.NAME,
+            cell: ({ row }) => (
+                <RoomName name={row.original.name} description={row.original.description} />
+            ),
+        },
+        {
+            accessorKey: ROOM_TABLE_COLUMN.OCCUPANCY_STATUS,
+            header: ROOM_TABLE_HEADER.OCCUPANCY_STATUS,
             enableSorting: false,
-            cell: ({ row }) => {
-                return ActivationStatusRender({
-                    status: row.original.status,
-                });
-            },
+            cell: ({ row }) => (
+                <span className="whitespace-nowrap">{row.original.occupancyStatus}</span>
+            ),
         },
         {
-            accessorKey: SERVICE_TABLE_COLUMN.NAME,
-            header: SERVICE_TABLE_HEADER.NAME,
-            cell: ({ row }) => {
-                return (
-                    <ServiceName name={row.original.name} description={row.original.description} />
-                );
-            },
-        },
-        {
-            accessorKey: SERVICE_TABLE_COLUMN.PRICE,
-            header: SERVICE_TABLE_HEADER.PRICE,
-            cell: ({ row }) => {
-                return row.original.price;
-            },
-        },
-        {
-            accessorKey: SERVICE_TABLE_COLUMN.DURATION,
-            header: SERVICE_TABLE_HEADER.DURATION,
-            cell: ({ row }) => {
-                return `${row.original.durationInMinutes} min`;
-            },
-        },
-        {
-            accessorKey: SERVICE_TABLE_COLUMN.CREATED_AT,
-            header: SERVICE_TABLE_HEADER.CREATED_AT,
-            cell: ({ row }) => {
-                return new Date(row.original.createdAtUTC).toLocaleDateString();
-            },
-        },
-        {
-            id: SERVICE_TABLE_COLUMN.ACTIONS,
-            header: SERVICE_TABLE_HEADER.ACTIONS,
+            id: ROOM_TABLE_COLUMN.ASSIGNED_USER,
+            header: ROOM_TABLE_HEADER.ASSIGNED_USER,
             enableSorting: false,
-            cell: ({ row }) => <ServiceActions service={row.original} onEdit={onEdit} />,
+            cell: ({ row }) => <AssignedUserName room={row.original} />,
+        },
+        {
+            accessorKey: ROOM_TABLE_COLUMN.STATUS,
+            header: ROOM_TABLE_HEADER.STATUS,
+            enableSorting: false,
+            cell: ({ row }) => <ActivationStatusRender status={row.original.status} />,
+        },
+        {
+            accessorKey: ROOM_TABLE_COLUMN.CREATED_AT_UTC,
+            header: ROOM_TABLE_HEADER.CREATED_AT_UTC,
+            cell: ({ row }) => (
+                <span className="whitespace-nowrap">
+                    {new Date(row.original.createdAtUTC).toLocaleDateString()}
+                </span>
+            ),
+        },
+        {
+            id: ROOM_TABLE_COLUMN.ACTIONS,
+            header: ROOM_TABLE_HEADER.ACTIONS,
+            enableSorting: false,
+            cell: ({ row }) => <RoomActions room={row.original} onEdit={onEdit} />,
         },
     ];
 }
 
-function ServiceName({ name, description }: { name: string; description?: string }) {
+function RoomName({ name, description }: { name: string; description?: string }) {
     const hasDescription = Boolean(description?.trim());
 
     if (!hasDescription) {
@@ -124,12 +119,20 @@ function ServiceName({ name, description }: { name: string; description?: string
     );
 }
 
-function ServiceActions({
-    service,
+function AssignedUserName({ room }: { room: RoomResponse }) {
+    const assignedUserName = room.userUuid
+        ? [room.firstName, room.lastName].filter(Boolean).join(' ')
+        : '';
+
+    return <span className="block max-w-40 truncate">{assignedUserName || 'Unassigned'}</span>;
+}
+
+function RoomActions({
+    room,
     onEdit,
 }: {
-    service: ServiceResponse;
-    onEdit?: (service: ServiceResponse) => void;
+    room: RoomResponse;
+    onEdit?: (room: RoomResponse) => void;
 }) {
     const navigate = useNavigate();
 
@@ -141,6 +144,7 @@ function ServiceActions({
                         <Button
                             type="button"
                             className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-slate-600 transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
+                            aria-label={`Actions for ${room.name}`}
                         >
                             <MoreHorizontalIcon className="size-4 shrink-0" />
                             <span className="sr-only">Open menu</span>
@@ -151,19 +155,16 @@ function ServiceActions({
 
             <DropdownMenuContent className="flex flex-col justify-end p-1">
                 {onEdit && (
-                    <DropdownMenuItem
-                        className="h-7 px-2 text-[11px]"
-                        onClick={() => onEdit(service)}
-                    >
+                    <DropdownMenuItem className="h-7 px-2 text-[11px]" onClick={() => onEdit(room)}>
                         Edit
                     </DropdownMenuItem>
                 )}
 
                 <DropdownMenuItem
                     className="h-7 px-2 text-[11px]"
-                    onClick={() => navigate(`${service.uuid}`)}
+                    onClick={() => navigate(`${room.uuid}`)}
                 >
-                    View Service
+                    View Room
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

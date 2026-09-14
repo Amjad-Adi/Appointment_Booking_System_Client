@@ -8,15 +8,9 @@ import {
     type CreateDialogField,
 } from '../../../../../../components/CreateDialog.tsx';
 
-import {
-    useCreateOrganizationService,
-    useUpdateOrganizationService,
-} from '../../../../hooks/services-hook.ts';
-import {
-    useUpdateServiceJunctionCategories,
-    useCreateServiceJunctionCategories,
-} from '../../../../hooks/service-junction-category-hook.ts'
-import { createServiceSchema } from '../../../../../../zod-schemas/service.schema.ts';
+import { useCreateOrganizationService } from '../../../../hooks/services-hook.ts';
+import { useCreateServiceJunctionCategories } from '../../../../hooks/service-junction-category-hook.ts';
+import { createServiceFormSchema } from '../../../../../../zod-schemas/service.schema.ts';
 
 import type { ServiceCategoryResponse } from '../../../../../../models/service-category.model.ts';
 
@@ -27,13 +21,8 @@ interface CreateServiceDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
-type CreateServiceForm = z.input<typeof createServiceSchema> & {
-    serviceCategoryUuids: string[];
-};
-
-type CreateServiceFormOutput = z.output<typeof createServiceSchema> & {
-    serviceCategoryUuids: string[];
-};
+type CreateServiceForm = z.input<typeof createServiceFormSchema>;
+type CreateServiceFormOutput = z.output<typeof createServiceFormSchema>;
 
 export function CreateServiceDialog({
     organizationUuid,
@@ -43,7 +32,8 @@ export function CreateServiceDialog({
 }: CreateServiceDialogProps) {
     const createMutation = useCreateOrganizationService(organizationUuid);
 
-    const createJunctionMutation = useCreateServiceJunctionCategories();
+    const createJunctionMutation =
+        useCreateServiceJunctionCategories(organizationUuid);
 
     const fields = useMemo<readonly CreateDialogField<CreateServiceForm>[]>(
         () => [
@@ -110,7 +100,7 @@ export function CreateServiceDialog({
             onOpenChange={onOpenChange}
             title="Create Service"
             description="Add a service and assign it to one or more categories."
-            resolver={zodResolver(createServiceSchema)}
+            resolver={zodResolver(createServiceFormSchema)}
             defaultValues={{
                 serviceCategoryUuids: [],
             }}

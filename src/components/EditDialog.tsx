@@ -12,6 +12,7 @@ import {
 
 import { TextField } from './TextField.tsx';
 import { Select } from './Select.tsx';
+import { SearchableSelect } from './SearchableSelect.tsx';
 import { Button } from './Button.tsx';
 
 export interface EditDialogSelectOption<TValue extends string> {
@@ -22,10 +23,12 @@ export interface EditDialogSelectOption<TValue extends string> {
 export interface EditDialogField<TFieldValues extends FieldValues> {
     name: Path<TFieldValues>;
     label: string;
-    type: 'text' | 'email' | 'number' | 'select';
+    type: 'text' | 'email' | 'number' | 'select' | 'searchable-select';
     options?: readonly EditDialogSelectOption<string>[];
     placeholder?: string;
+    searchPlaceholder?: string;
     showPlaceholder?: boolean;
+    onSearchChange?: (search: string) => void;
 }
 
 interface EditDialogProps<TInput extends FieldValues, TOutput = TInput> {
@@ -92,6 +95,7 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
 
             const currentValue = data[fieldName];
             const defaultValue = defaultValues[field.name];
+
             if ((currentValue as unknown) !== (defaultValue as unknown)) {
                 Object.assign(changedValues, {
                     [fieldName]: currentValue,
@@ -128,7 +132,6 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
             aria-labelledby="edit-dialog-title"
         >
             <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#d3d3df] bg-[#f5f5f8] shadow-2xl">
-                {/* Header */}
                 <div className="shrink-0 border-b border-[#d3d3df] px-5 py-4 sm:px-6">
                     <h2
                         id="edit-dialog-title"
@@ -142,19 +145,38 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                     )}
                 </div>
 
-                {/* Form */}
                 <form
                     onSubmit={handleSubmit(handleFormSubmit, handleInvalidSubmit)}
                     className="flex min-h-0 flex-col overflow-y-auto px-5 py-4 sm:px-6 sm:py-5"
                 >
                     <div className="flex flex-col gap-3 sm:gap-4">
-                        {/* Read-only information */}
                         {readOnlyContent}
 
-                        {/* Editable fields */}
                         {fields.map((field) => {
                             const fieldName = field.name;
                             const fieldError = errors[fieldName];
+
+                            const fieldErrorMessage = fieldError?.message
+                                ? String(fieldError.message)
+                                : undefined;
+
+                            if (field.type === 'searchable-select') {
+                                return (
+                                    <SearchableSelect
+                                        key={String(fieldName)}
+                                        id={String(fieldName)}
+                                        label={field.label}
+                                        options={field.options ?? []}
+                                        placeholder={field.placeholder ?? `Select ${field.label}`}
+                                        searchPlaceholder={field.searchPlaceholder ?? 'Search...'}
+                                        hasError={Boolean(fieldError)}
+                                        errorMessage={fieldErrorMessage}
+                                        onSearchChange={field.onSearchChange}
+                                        {...register(fieldName)}
+                                        className="h-8 px-2.5 text-[11px]"
+                                    />
+                                );
+                            }
 
                             if (field.type === 'select') {
                                 return (
@@ -163,11 +185,7 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                                         id={String(fieldName)}
                                         label={field.label}
                                         hasError={Boolean(fieldError)}
-                                        errorMessage={
-                                            fieldError?.message
-                                                ? String(fieldError.message)
-                                                : undefined
-                                        }
+                                        errorMessage={fieldErrorMessage}
                                         {...register(fieldName)}
                                         className="h-8 px-2.5 text-[11px] sm:h-8 sm:px-2.5 sm:text-[11px] md:h-8 md:text-[11px]"
                                     >
@@ -193,15 +211,12 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                                     label={field.label}
                                     type={field.type}
                                     hasError={Boolean(fieldError)}
-                                    errorMessage={
-                                        fieldError?.message ? String(fieldError.message) : undefined
-                                    }
+                                    errorMessage={fieldErrorMessage}
                                     {...register(fieldName)}
                                 />
                             );
                         })}
 
-                        {/* Mutation error */}
                         {errorMessage && (
                             <p className="w-full pt-1 text-center text-[10px] leading-4 text-[#c94a5c]">
                                 {errorMessage}
@@ -209,7 +224,6 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                         )}
                     </div>
 
-                    {/* Actions */}
                     <div className="mt-3 flex shrink-0 flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                         <div className="group sm:w-auto">
                             <Button

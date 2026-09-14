@@ -22,7 +22,6 @@ import {
 } from '../../../utlis/query-keys.ts';
 import type { OrganizationResponse } from '../../../models/organization.model.ts';
 import { Role } from '../../../models/enums/roles.ts';
-import type { DataResponses } from '../../../models/query.model.ts';
 
 export function useUsers(query: QueryUser) {
     return useQuery({
@@ -36,36 +35,42 @@ export function useUsers(query: QueryUser) {
         placeholderData: keepPreviousData,
     });
 }
-
 export function useLogin() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+
     return useMutation({
         mutationFn: async (loginForm: LoginForm) => {
             const response = await api.post('/api/auth/login', loginForm);
             return response.data;
         },
-        onSuccess: async (user:UserResponse) => {
+
+        onSuccess: async (user: UserResponse) => {
             await queryClient.invalidateQueries({
                 queryKey: [CURRENT_USER],
             });
+
             switch (user.role) {
                 case Role.SUPER_ADMIN:
-                    navigate('/admin');
+                    navigate('/admin', { replace: true });
                     break;
-                case Role.CUSTOMER:
-                    navigate('/user');
-                    break;
+
                 case Role.OWNER:
                 case Role.MANAGER:
-                case Role.CRM:
                 case Role.WORKER:
-                    navigate('/user');
+                case Role.CRM:
+                    navigate('/organization', { replace: true });
                     break;
+
+                case Role.CUSTOMER:
+                    navigate('/customer', { replace: true });
+                    break;
+
                 default:
-                    navigate('/login');
+                    navigate('/login', { replace: true });
             }
-            },
+        },
+
         onError: (error) => {
             console.log(error);
         },
@@ -181,7 +186,7 @@ export function useCreateUserByAdmin() {
             return response.data;
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: [USER_TABLE]})
+            await queryClient.invalidateQueries({ queryKey: [USER_TABLE] });
         },
         onError: (error) => {
             console.log(error);

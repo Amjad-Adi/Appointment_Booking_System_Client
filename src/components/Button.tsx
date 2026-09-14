@@ -10,7 +10,7 @@ export function Button({ children, type = 'button', className = '', ...props }: 
         <button
             type={type}
             className={twMerge(
-                'w-full cursor-pointer rounded-lg border border-solid',
+                'w-full cursor-pointer rounded-lg',
                 'bg-action',
                 'text-text-primary',
                 'h-8 px-2 text-[11px]',

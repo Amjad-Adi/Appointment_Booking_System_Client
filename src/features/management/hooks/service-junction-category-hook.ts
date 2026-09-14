@@ -3,29 +3,62 @@ import type {
     UpdateServiceJunctionCategory,
 } from '../../../models/service-junction-category.model.ts';
 
-import { SERVICE_TABLE } from '../../../utlis/query-keys.ts';
+import { SERVICE_TABLE, SERVICE } from '../../../utlis/query-keys.ts';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { api } from '../../../services/axios.ts';
 
-export function useCreateServiceJunctionCategories(organizationUuid: string, serviceUuid: string) {
+async function createServiceJunctionCategories(
+    organizationUuid: string,
+    serviceUuid: string,
+    serviceCategoryUuids: string[],
+) {
+    const data: CreateServiceJunctionCategory = {
+        serviceUuid,
+        serviceCategoryUuids,
+    };
+
+    const response = await api.post(
+        `/api/organizations/${organizationUuid}/services/${serviceUuid}/categories`,
+        data,
+    );
+
+    return response.data;
+}
+
+export function useCreateServiceJunctionCategories(organizationUuid?: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (data: CreateServiceJunctionCategory) => {
-            const response = await api.post(
-                `/api/organizations/${organizationUuid}/services/${serviceUuid}/categories`,
-                data,
-            );
+        mutationFn: async ({
+            serviceUuid,
+            serviceCategoryUuids,
+        }: {
+            serviceUuid: string;
+            serviceCategoryUuids: string[];
+        }) => {
+            if (!organizationUuid) {
+                throw new Error('Organization UUID is required');
+            }
 
-            return response.data;
+            return createServiceJunctionCategories(
+                organizationUuid,
+                serviceUuid,
+                serviceCategoryUuids,
+            );
         },
 
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: [SERVICE_TABLE],
-            });
+        onSuccess: async (_data, variables) => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: [SERVICE_TABLE],
+                }),
+
+                queryClient.invalidateQueries({
+                    queryKey: [SERVICE, variables.serviceUuid],
+                }),
+            ]);
         },
     });
 }
@@ -44,9 +77,15 @@ export function useUpdateServiceJunctionCategories(organizationUuid: string, ser
         },
 
         onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: [SERVICE_TABLE],
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: [SERVICE_TABLE],
+                }),
+
+                queryClient.invalidateQueries({
+                    queryKey: [SERVICE, serviceUuid],
+                }),
+            ]);
         },
     });
 }

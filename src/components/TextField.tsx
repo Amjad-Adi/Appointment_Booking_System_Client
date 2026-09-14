@@ -8,6 +8,7 @@ export interface TextFieldModel extends InputHTMLAttributes<HTMLInputElement> {
     isLabelDisabled?: boolean;
     hasError?: boolean;
     errorMessage?: string;
+    wrapperClassName?: string;
 }
 
 export function TextField({
@@ -15,6 +16,7 @@ export function TextField({
     errorMessage,
     label,
     isLabelDisabled = false,
+    wrapperClassName = '',
     id,
     name,
     ...props
@@ -22,7 +24,7 @@ export function TextField({
     const inputId = id ?? name;
 
     return (
-        <div className={"gap-0"}>
+        <div className={`gap-0 ${wrapperClassName}`}>
             {!isLabelDisabled && <Label htmlFor={inputId}>{label}</Label>}
 
             <Input

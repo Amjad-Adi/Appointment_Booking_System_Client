@@ -111,9 +111,6 @@ export function EditServiceDialog({
                 updateMutation.isError ? 'Failed to update service. Please try again.' : undefined
             }
             onSubmit={handleSubmit}
-            readOnlyContent={
-                <TextField label="Service ID" id="serviceUuid" value={service.uuid} disabled />
-            }
         />
     );
 }

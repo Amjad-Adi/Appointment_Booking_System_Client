@@ -33,23 +33,26 @@ const authApi: AxiosInstance = axios.create({
 });
 
 let refreshPromise: Promise<unknown> | null = null;
-
 api.interceptors.response.use(
     function (response) {
         return response;
     },
     async function (error) {
         const config = error.config as
-            (InternalAxiosRequestConfig & { retry: boolean }) | undefined;
-        if (error.response?.status !== 401 || !config || config.retry) {
+            (InternalAxiosRequestConfig & { retry?: boolean }) | undefined;
+
+        if (error.response?.status !== 401 || !config || config.retry || isAuthRoute(config.url)) {
             return Promise.reject(error);
         }
+
         config.retry = true;
+
         if (!refreshPromise) {
             refreshPromise = authApi.post('/api/auth/refresh').finally(function () {
                 refreshPromise = null;
             });
         }
+
         try {
             await refreshPromise;
             return api(config);
@@ -59,3 +62,12 @@ api.interceptors.response.use(
         }
     },
 );
+
+function isAuthRoute(url?: string): boolean {
+    return (
+        url?.includes('/api/auth/login') ||
+        url?.includes('/api/auth/register') ||
+        url?.includes('/api/auth/refresh') ||
+        false
+    );
+}
