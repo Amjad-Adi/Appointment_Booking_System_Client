@@ -2,6 +2,7 @@ import { Role } from './enums/roles.js';
 import { z } from 'zod';
 import { ActivationStatus } from './enums/activation-status.js';
 import {
+    createUserByAdminSchema,
     createUserSchema,
     inviteUserSchema,
     loginUserSchema,
@@ -32,8 +33,9 @@ export interface UserResponse extends User, DataResponses {
 }
 
 export type CreateUser = z.infer<typeof createUserSchema>;
+export type CreateUserByAdmin = z.infer<typeof createUserByAdminSchema>;
 export type InviteUser = z.infer<typeof inviteUserSchema>;
-export type UpdateUser = z.infer<typeof updateUserSchema> & { uuid: string };
+export type UpdateUser = z.infer<typeof updateUserSchema>
 export type UpdateUserByAdminForm = z.infer<typeof updateUserByAdminSchema>;
 export type UpdateUserByAdmin = UpdateUserByAdminForm & { uuid: string };
 export type QueryUser = z.infer<typeof queryUserSchema>;

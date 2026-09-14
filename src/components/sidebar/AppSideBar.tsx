@@ -46,7 +46,7 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
                         </span>
 
                         {subtitle && (
-                            <span className="truncate text-[11px] leading-tight font-medium text-[#777789]">
+                            <span className="truncate text-[11px] text-left font-medium text-[#777789]">
                                 {subtitle}
                             </span>
                         )}

@@ -12,11 +12,12 @@ import { ActivationStatus } from '../../../../../../../models/enums/activation-s
 
 import type {
     UserResponse,
-    UpdateUserByAdminForm,
+    UpdateUserByAdminForm, CreateUserByAdmin,
 } from '../../../../../../../models/user.model.ts';
 
 import toast from 'react-hot-toast';
 import { Toast } from '../../../../../../../utlis/toast.ts';
+import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
 
 interface EditUserDialogProps {
     user: UserResponse;
@@ -47,9 +48,10 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 type: 'select',
                 options: Object.values(Role).map((role) => ({
                     value: role,
-                    label: role,
+                    label: roleRecord[role]
                 })),
                 placeholder: 'Select role',
+                showPlaceholder: false,
             },
             {
                 name: 'status',
@@ -60,12 +62,13 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                     label: status,
                 })),
                 placeholder: 'Select status',
+                showPlaceholder: false,
             },
         ],
         [],
     );
 
-    const handleSubmit = async (changedValues: Partial<UpdateUserByAdminForm>) => {
+    async function handleSubmit(changedValues: UpdateUserByAdminForm) {
         await toast.promise(
             updateUserMutation.mutateAsync({
                 uuid: user.uuid,
@@ -73,7 +76,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             }),
             new Toast(loading, success, error),
         );
-
         onOpenChange(false);
     };
 
@@ -103,7 +105,6 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
 
                         <TextField label="Last Name" id="lastName" value={user.lastName} disabled />
                     </div>
-
                     <TextField label="Email" id="email" type="email" value={user.email} disabled />
                 </>
             }

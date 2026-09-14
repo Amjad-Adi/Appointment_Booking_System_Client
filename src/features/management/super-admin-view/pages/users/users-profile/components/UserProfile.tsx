@@ -16,7 +16,7 @@ interface UserProfileProps {
     editPath?: string;
 }
 
-export function UserProfile({ user, editPath }: UserProfileProps) {
+export function UserProfile({ user }: UserProfileProps) {
     const { data } = useCurrentUser();
 
     const canEdit = data?.role === Role.SUPER_ADMIN;
@@ -26,7 +26,7 @@ export function UserProfile({ user, editPath }: UserProfileProps) {
             <div className="flex min-w-0 items-center justify-between gap-3">
                 <BackButton backPath="/admin/users" />
 
-                <ProfileActions editPath={`/admin/users/${user.uuid}/edit`} />
+                <ProfileActions editPath={`edit`} />
             </div>
 
             <UserProfileHeader user={user} />

@@ -1,6 +1,8 @@
 import { Mail, Languages, CalendarDays } from 'lucide-react';
 
 import type { UserResponse } from '../../../../../../../models/user.model.ts';
+import { languageRecord } from '../../../../../../../models/enums-mapping/language.ts';
+import type { Language } from '../../../../../../../models/enums/language.ts';
 
 interface UserAboutCardProps {
     user: UserResponse;
@@ -17,7 +19,7 @@ export function UserAboutCard({ user }: UserAboutCardProps) {
                 <InfoRow
                     icon={<Languages className="size-4" />}
                     label="Language"
-                    value={user.language}
+                    value={languageRecord[user.language as Language]}
                 />
 
                 <InfoRow

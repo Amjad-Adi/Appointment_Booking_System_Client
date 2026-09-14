@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 
 import { ManagementPage } from '../../../../components/ManagementPage.tsx';
-import { useOrganization } from '../../../../hooks/orgsnization-hook.ts';
+import { useOrganization } from '../../../../hooks/organization-hook.ts';
 
 import { OrganizationProfile } from './components/OrganizationProfile.tsx';
 import { EditOrganizationProfile } from './components/EditOrganizationProfile.tsx';

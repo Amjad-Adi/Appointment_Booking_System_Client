@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { useOrganization } from '../hooks/orgsnization-hook.ts';
+import { useOrganization } from '../hooks/organization-hook.ts';
 import { Skeleton } from '../../../components/Skeleton.tsx';
 
 export function OrganizationProfile() {

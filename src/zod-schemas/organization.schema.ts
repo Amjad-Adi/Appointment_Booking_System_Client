@@ -44,3 +44,13 @@ export const queryOrganizationSchema = querySchema
         filter: organizationFilterSchema.optional(),
         sortBy: z.enum([SORT_BY_NAME, SORT_BY_CREATED_AT_UTC]).optional(),
 }).strict();
+
+export const createOrganizationByAdminSchema = z.object({
+    name: z.string().trim().nonempty().max(256),
+    email: z.email(),
+    phoneNumber: z.e164(),
+    bio: z.string().trim().nonempty().max(4096).optional(),
+    location: createLocationSchema,
+    profilePicturePath: z.string().trim().nonempty().optional(),
+    userEmail: z.email(),
+}).strict();

@@ -24,6 +24,7 @@ import { useUpdateUser } from '../../../../../hooks/users-hook.ts';
 import { UserProfileHeader } from '../../../../../components/UserProfileHeader.tsx';
 import { UserAboutCard } from './UserAboutCard.tsx';
 import { UserOrganizationCard } from './UserOrganizationCard.tsx';
+import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
 
 interface EditUserProfileProps {
     user: UserResponse;
@@ -136,50 +137,38 @@ export function EditUserProfile({ user }: EditUserProfileProps) {
                         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
                             <UserRound className="size-4" />
                         </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[9px] font-medium tracking-wide text-[#9999aa] uppercase">
-                                Role
-                            </p>
-
-                            <Select
-                                id="role"
-                                hasError={false}
-                                {...register('role')}
-                                className="mt-1 h-8 w-full px-2.5 text-[11px]"
-                            >
-                                {Object.values(Role).map((role) => (
-                                    <option key={role} value={role}>
-                                        {role}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
+                        <Select
+                            id="role"
+                            hasError={false}
+                            {...register('role')}
+                            className="mt-1 h-8 w-full px-2.5 text-[11px]"
+                            label={'Role'}
+                        >
+                            {Object.values(Role).map((role) => (
+                                <option key={role} value={role}>
+                                    {roleRecord[role]}
+                                </option>
+                            ))}
+                        </Select>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-3">
                         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
                             <ShieldCheck className="size-4" />
                         </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[9px] font-medium tracking-wide text-[#9999aa] uppercase">
-                                Status
-                            </p>
-
-                            <Select
-                                id="status"
-                                hasError={false}
-                                {...register('status')}
-                                className="mt-1 h-8 w-full px-2.5 text-[11px]"
-                            >
-                                {Object.values(ActivationStatus).map((status) => (
-                                    <option key={status} value={status}>
-                                        {status}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
+                        <Select
+                            id="status"
+                            hasError={false}
+                            {...register('status')}
+                            className="mt-1 h-8 w-full px-2.5 text-[11px]"
+                            label={'Status'}
+                        >
+                            {Object.values(ActivationStatus).map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
+                        </Select>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-3">

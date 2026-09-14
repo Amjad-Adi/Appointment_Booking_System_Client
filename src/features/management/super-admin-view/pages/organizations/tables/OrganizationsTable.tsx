@@ -5,7 +5,7 @@ import { DataTable } from '../../../../../../components/DataTable.tsx';
 import { type DataTableColumn, PAGE_SIZE } from '../../../../../../components/DataTableFeatures.ts';
 import { Select } from '../../../../../../components/Select.tsx';
 
-import { useOrganizations } from '../../../../hooks/orgsnization-hook.ts';
+import { useOrganizations } from '../../../../hooks/organization-hook.ts';
 import type { OrganizationResponse } from '../../../../../../models/organization.model.ts';
 import { Order } from '../../../../../../models/enums/order.ts';
 import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';

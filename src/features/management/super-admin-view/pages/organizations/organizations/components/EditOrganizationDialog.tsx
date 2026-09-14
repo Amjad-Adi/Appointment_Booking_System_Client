@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { TextField } from '../../../../../../../components/TextField.tsx';
 import { EditDialog, type EditDialogField } from '../../../../../../../components/EditDialog.tsx';
 
-import { useUpdateOrganization } from '../../../../../hooks/orgsnization-hook.ts';
+import { useUpdateOrganization } from '../../../../../hooks/organization-hook.ts';
 import { updateOrganizationByAdminSchema } from '../../../../../../../zod-schemas/organization.schema.ts';
 
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';

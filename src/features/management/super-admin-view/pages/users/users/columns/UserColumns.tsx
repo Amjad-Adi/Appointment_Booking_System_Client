@@ -12,6 +12,8 @@ import { MoreHorizontalIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
 import { ActivationStatusRender } from '../../../../../components/ActivationStatusRender.tsx';
+import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
+import type { Role } from '../../../../../../../models/enums/roles.ts';
 export const USER_TABLE_COLUMN = {
     NAME: 'name',
     EMAIL: 'email',
@@ -55,6 +57,10 @@ export function getUserColumns(
             accessorKey: USER_TABLE_COLUMN.ROLE,
             header: USER_TABLE_HEADER.ROLE,
             enableSorting: false,
+            cell: ({ row }) => {
+                const role = row.original.role as Role;
+                return roleRecord[role];
+            },
         },
         {
             accessorKey: USER_TABLE_COLUMN.CREATED_AT,

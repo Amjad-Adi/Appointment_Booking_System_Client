@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, LockKeyhole, UserRound } from 'lucide-react';
+import { ArrowLeft, Check, LanguagesIcon, LockKeyhole, UserRound } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -14,9 +14,11 @@ import { Toast } from '../../../../../../utlis/toast.ts';
 
 import { updateUserSchema } from '../../../../../../zod-schemas/user.schema.ts';
 
-import { useUpdateUser } from '../../../../hooks/users-hook.ts';
+import { useUpdateCurrentUser, useUpdateUser } from '../../../../hooks/users-hook.ts';
 
 import { UserProfileHeader } from '../../../../components/UserProfileHeader.tsx';
+import { languageRecord } from '../../../../../../models/enums-mapping/language.ts';
+import { Language } from '../../../../../../models/enums/language.ts';
 
 type EditProfileForm = {
     firstName?: string;
@@ -37,15 +39,15 @@ const error = 'Failed to update profile';
 
 export function EditProfile({ user }: EditProfileProps) {
     const navigate = useNavigate();
-    const updateUserMutation = useUpdateUser();
+    const useUpdateCurrentUserMutation = useUpdateCurrentUser();
 
     const defaultValues: EditProfileForm = {
         firstName: user.firstName,
         lastName: user.lastName,
         profilePicturePath: user.profilePicturePath,
         language: user.language,
-        password: '',
-        confirmPassword: '',
+        password: undefined,
+        confirmPassword: undefined,
     };
 
     const {
@@ -90,20 +92,17 @@ export function EditProfile({ user }: EditProfileProps) {
         }
 
         if (Object.keys(changedValues).length === 0) {
-            navigate('/admin/profile');
+            navigate('/profile');
             return;
         }
 
         try {
             await toast.promise(
-                updateUserMutation.mutateAsync({
-                    uuid: user.uuid,
-                    ...changedValues,
-                }),
+                useUpdateCurrentUserMutation.mutateAsync({ ...changedValues }),
                 new Toast(loading, success, error),
             );
 
-            navigate('/admin/profile');
+            navigate('/profile');
         } catch {
             // Stay on the edit page if the update fails.
         }
@@ -182,24 +181,21 @@ export function EditProfile({ user }: EditProfileProps) {
                     <div className="mt-5 flex flex-col gap-4">
                         <div className="flex min-w-0 items-center gap-3">
                             <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
-                                <UserRound className="size-4" />
+                                <LanguagesIcon className="size-4" />
                             </div>
 
-                            <div className="min-w-0 flex-1">
-                                <p className="text-[9px] font-medium tracking-wide text-[#9999aa] uppercase">
-                                    Language
-                                </p>
-
-                                <Select
-                                    id="language"
-                                    hasError={!!errors.language}
-                                    {...register('language')}
-                                    className="mt-1 h-8 w-full px-2.5 text-[11px]"
-                                >
-                                    <option value="en">English</option>
-                                    <option value="ar">Arabic</option>
-                                </Select>
-                            </div>
+                            <Select
+                                id="language"
+                                hasError={!!errors.language}
+                                {...register('language')}
+                                className="mt-1 h-8 w-full px-2.5 text-[11px]"
+                                label="Language"
+                            >
+                                <option value={Language.ENGLISH}>{languageRecord[Language.ENGLISH]}</option>
+                                <option value={Language.ARABIC}>{languageRecord[Language.ARABIC]}</option>
+                                <option value={Language.FRANCIS}>{languageRecord[Language.FRANCIS]}</option>
+                                <option value={Language.DEUTSCH}>{languageRecord[Language.DEUTSCH]}</option>
+                            </Select>
                         </div>
                     </div>
                 </section>
@@ -221,7 +217,9 @@ export function EditProfile({ user }: EditProfileProps) {
                         label="New Password"
                         hasError={!!errors.password}
                         errorMessage={errors.password?.message}
-                        {...register('password')}
+                        {...register('password', {
+                            setValueAs: (val) => (val === '' ? undefined : val),
+                        })}
                     />
 
                     <TextField
@@ -230,7 +228,9 @@ export function EditProfile({ user }: EditProfileProps) {
                         label="Confirm Password"
                         hasError={!!errors.confirmPassword}
                         errorMessage={errors.confirmPassword?.message}
-                        {...register('confirmPassword')}
+                        {...register('confirmPassword', {
+                            setValueAs: (val) => (val === '' ? undefined : val),
+                        })}
                     />
                 </div>
             </section>

@@ -1,8 +1,9 @@
 import { Building2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
-import { useOrganization } from '../../../../../hooks/orgsnization-hook.ts';
+import { useOrganization } from '../../../../../hooks/organization-hook.ts';
 import { ActivationStatusRender } from '../../../../../components/ActivationStatusRender.tsx';
+import { useCurrentUser } from '../../../../../hooks/users-hook.ts';
 
 interface UserOrganizationCardProps {
     organizationUuid: string;
@@ -10,7 +11,7 @@ interface UserOrganizationCardProps {
 
 export function UserOrganizationCard({ organizationUuid }: UserOrganizationCardProps) {
     const navigate = useNavigate();
-
+    const {data:user, isLoading:userLoading,isError:userError}=useCurrentUser()
     const { data: organization, isLoading, isError } = useOrganization(organizationUuid);
 
     if (isLoading) {
@@ -28,7 +29,7 @@ export function UserOrganizationCard({ organizationUuid }: UserOrganizationCardP
             <OrganizationCardContainer>
                 <CardHeader />
 
-                <div className="mt-5 text-[11px] text-[#c94a5c]">Failed to load organization.</div>
+                <div className="mt-5 text-[11px] text-[#c94a5c]">{user?.firstName} {user?.lastName} doesn't belong to an organization.</div>
             </OrganizationCardContainer>
         );
     }

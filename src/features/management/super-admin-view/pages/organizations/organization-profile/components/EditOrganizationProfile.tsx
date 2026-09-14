@@ -16,7 +16,7 @@ import { Toast } from '../../../../../../../utlis/toast.ts';
 
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
 
-import { useUpdateOrganization } from '../../../../../hooks/orgsnization-hook.ts';
+import { useUpdateOrganization } from '../../../../../hooks/organization-hook.ts';
 
 import { OrganizationProfileHeader } from './OrganizationProfileHeader.tsx';
 import { OrganizationAboutCard } from './OrganizationAboutCard.tsx';
@@ -127,17 +127,12 @@ export function EditOrganizationProfile({ organization }: EditOrganizationProfil
                         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
                             <ShieldCheck className="size-4" />
                         </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[9px] font-medium tracking-wide text-[#9999aa] uppercase">
-                                Status
-                            </p>
-
                             <Select
                                 id="status"
                                 hasError={false}
                                 {...register('status')}
                                 className="mt-1 h-8 w-full px-2.5 text-[11px]"
+                                label={"Status"}
                             >
                                 {Object.values(ActivationStatus).map((status) => (
                                     <option key={status} value={status}>
@@ -145,7 +140,6 @@ export function EditOrganizationProfile({ organization }: EditOrganizationProfil
                                     </option>
                                 ))}
                             </Select>
-                        </div>
                     </div>
 
                     <AccountItem

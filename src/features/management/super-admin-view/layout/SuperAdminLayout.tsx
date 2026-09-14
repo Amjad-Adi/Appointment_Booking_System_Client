@@ -5,13 +5,15 @@ import icon from '../../../../assets/images/icons/icon.png';
 import { useCurrentUser, useLogout } from '../../hooks/users-hook.ts';
 import toast from 'react-hot-toast';
 import { Toast } from '../../../../utlis/toast.ts';
+import { Role } from '../../../../models/enums/roles.ts';
+import { roleRecord } from '../../../../models/enums-mapping/roles.ts';
 
 export function SuperAdminLayout() {
     const { data, isLoading, isError } = useCurrentUser();
     return (
         <ManagementLayout
             sidebar={{
-                title: 'Super Admin',
+                title: roleRecord[Role.SUPER_ADMIN],
                 subtitle: 'Management',
                 groups: adminSidebarGroups,
                 profile: {

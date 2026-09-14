@@ -5,6 +5,7 @@ import { api } from '../../../services/axios.ts';
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
 import type {
     CreateUser,
+    CreateUserByAdmin,
     LoginForm,
     QueryUser,
     RegisterUser,
@@ -12,8 +13,16 @@ import type {
     UpdateUserByAdmin,
     UserResponse,
 } from '../../../models/user.model.ts';
-import { CURRENT_USER, ORGANIZATION, ORGANIZATION_TABLE, USER, USER_TABLE } from '../../../utlis/query-keys.ts';
+import {
+    CURRENT_USER,
+    ORGANIZATION,
+    ORGANIZATION_TABLE,
+    USER,
+    USER_TABLE,
+} from '../../../utlis/query-keys.ts';
 import type { OrganizationResponse } from '../../../models/organization.model.ts';
+import { Role } from '../../../models/enums/roles.ts';
+import type { DataResponses } from '../../../models/query.model.ts';
 
 export function useUsers(query: QueryUser) {
     return useQuery({
@@ -36,12 +45,27 @@ export function useLogin() {
             const response = await api.post('/api/auth/login', loginForm);
             return response.data;
         },
-        onSuccess: async () => {
+        onSuccess: async (user:UserResponse) => {
             await queryClient.invalidateQueries({
                 queryKey: [CURRENT_USER],
             });
-            navigate('/admin/users');
-        },
+            switch (user.role) {
+                case Role.SUPER_ADMIN:
+                    navigate('/admin');
+                    break;
+                case Role.CUSTOMER:
+                    navigate('/user');
+                    break;
+                case Role.OWNER:
+                case Role.MANAGER:
+                case Role.CRM:
+                case Role.WORKER:
+                    navigate('/user');
+                    break;
+                default:
+                    navigate('/login');
+            }
+            },
         onError: (error) => {
             console.log(error);
         },
@@ -66,15 +90,39 @@ export function useUpdateUser() {
             const response = await api.patch(`/api/users/${uuid}`, userData);
             return response.data;
         },
-        onSuccess: async (users:UserResponse) => {
+        onSuccess: async (user: UserResponse) => {
             await Promise.all([
                 queryClient.invalidateQueries({
                     queryKey: [USER_TABLE],
                 }),
                 queryClient.invalidateQueries({
-                    queryKey: [USER, users.uuid],
+                    queryKey: [USER, user.uuid],
                 }),
-            ]);},
+            ]);
+        },
+        onError: (error) => {
+            console.log(error);
+        },
+    });
+}
+
+export function useUpdateCurrentUser() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (user: UpdateUser) => {
+            const response = await api.patch(`/api/users/me`, user);
+            return response.data;
+        },
+        onSuccess: async (user: UserResponse) => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: [CURRENT_USER],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: [USER, user.uuid],
+                }),
+            ]);
+        },
         onError: (error) => {
             console.log(error);
         },
@@ -118,6 +166,22 @@ export function useLogout() {
         onSuccess: async () => {
             queryClient.removeQueries({ queryKey: [CURRENT_USER] });
             navigate('/login');
+        },
+        onError: (error) => {
+            console.log(error);
+        },
+    });
+}
+
+export function useCreateUserByAdmin() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (userForm: CreateUserByAdmin) => {
+            const response = await api.post('api/users/', userForm);
+            return response.data;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: [USER_TABLE]})
         },
         onError: (error) => {
             console.log(error);

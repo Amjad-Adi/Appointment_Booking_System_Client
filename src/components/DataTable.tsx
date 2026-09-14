@@ -23,6 +23,7 @@ import {
 
 import { Button } from './Button.tsx';
 import { Input } from './Input.tsx';
+import { TextField } from './TextField.tsx';
 
 interface DataTableProps<TData extends RowData> {
     tableKey: string;
@@ -35,6 +36,7 @@ interface DataTableProps<TData extends RowData> {
     search: string;
     onSearchChange: (value: string) => void;
     filters?: ReactNode;
+    actions?: ReactNode;
     rowCount: number;
     rowCountLabel: string;
 }
@@ -50,6 +52,7 @@ export function DataTable<TData extends RowData>({
     search,
     onSearchChange,
     filters,
+    actions,
     rowCount,
     rowCountLabel,
 }: DataTableProps<TData>) {
@@ -81,19 +84,23 @@ export function DataTable<TData extends RowData>({
     return (
         <div className="w-full max-w-full min-w-0">
             <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-[#dedee8] bg-[#f5f5f8]">
-                <div className="flex min-w-0 flex-col gap-2 bg-[#dedee8] p-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 flex-col gap-2 bg-[#dedee8] p-2 sm:flex-row sm:justify-between">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-[4%]">
-                        <Input
+                        <TextField
                             type="search"
                             placeholder="Search..."
                             id="search"
                             value={search}
                             onChange={(event) => handleSearchChange(event.target.value)}
                             className="!h-8 w-full min-w-0 !text-[11px] sm:w-56 sm:max-w-xs sm:flex-1"
+                            label="Search"
+                            isLabelDisabled={true}
                         />
 
                         {filters}
                     </div>
+
+                    {actions && <div className="flex shrink-0 justify-end">{actions}</div>}
                 </div>
 
                 <div className="w-full min-w-0">

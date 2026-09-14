@@ -13,7 +13,6 @@ import {
 import { TextField } from './TextField.tsx';
 import { Select } from './Select.tsx';
 import { Button } from './Button.tsx';
-import { Label } from './Label.tsx';
 
 export interface EditDialogSelectOption<TValue extends string> {
     value: TValue;
@@ -23,27 +22,28 @@ export interface EditDialogSelectOption<TValue extends string> {
 export interface EditDialogField<TFieldValues extends FieldValues> {
     name: Path<TFieldValues>;
     label: string;
-    type: 'text' | 'email' | 'select';
+    type: 'text' | 'email' | 'number' | 'select';
     options?: readonly EditDialogSelectOption<string>[];
     placeholder?: string;
+    showPlaceholder?: boolean;
 }
 
-interface EditDialogProps<TFieldValues extends FieldValues> {
+interface EditDialogProps<TInput extends FieldValues, TOutput = TInput> {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     title: string;
     description?: string;
-    resolver: Resolver<TFieldValues>;
-    defaultValues: DefaultValues<TFieldValues>;
-    fields: readonly EditDialogField<TFieldValues>[];
+    resolver: Resolver<TInput, any, TOutput>;
+    defaultValues: DefaultValues<TInput>;
+    fields: readonly EditDialogField<TInput>[];
     readOnlyContent?: ReactNode;
     submitLabel?: string;
     cancelLabel?: string;
     errorMessage?: string;
-    onSubmit: (changedValues: Partial<TFieldValues>) => Promise<void>;
+    onSubmit: (changedValues: Partial<TOutput>) => Promise<void>;
 }
 
-export function EditDialog<TFieldValues extends FieldValues>({
+export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
     open,
     onOpenChange,
     title,
@@ -56,23 +56,18 @@ export function EditDialog<TFieldValues extends FieldValues>({
     cancelLabel = 'Cancel',
     errorMessage,
     onSubmit,
-}: EditDialogProps<TFieldValues>) {
+}: EditDialogProps<TInput, TOutput>) {
     const {
         register,
         handleSubmit,
         reset,
         control,
         formState: { errors, isSubmitting },
-    } = useForm<TFieldValues>({
+    } = useForm<TInput, any, TOutput>({
         resolver,
         defaultValues,
     });
 
-    /*
-     * useWatch is intentionally used here instead of watch().
-     * The dialog needs to rerender whenever one of its editable
-     * fields changes so that hasChanges is recalculated.
-     */
     const watchedValues = useWatch({
         control,
     });
@@ -89,15 +84,17 @@ export function EditDialog<TFieldValues extends FieldValues>({
         }
     }, [open, defaultValues, reset]);
 
-    const handleFormSubmit = async (data: TFieldValues) => {
-        const changedValues: Partial<TFieldValues> = {};
+    const handleFormSubmit = async (data: TOutput) => {
+        const changedValues: Partial<TOutput> = {};
 
         for (const field of fields) {
-            const fieldName = field.name;
+            const fieldName = field.name as unknown as keyof TOutput;
 
-            if (data[fieldName] !== defaultValues[fieldName]) {
+            const currentValue = data[fieldName];
+            const defaultValue = defaultValues[field.name];
+            if ((currentValue as unknown) !== (defaultValue as unknown)) {
                 Object.assign(changedValues, {
-                    [fieldName]: data[fieldName],
+                    [fieldName]: currentValue,
                 });
             }
         }
@@ -110,7 +107,7 @@ export function EditDialog<TFieldValues extends FieldValues>({
         await onSubmit(changedValues);
     };
 
-    const handleInvalidSubmit = (validationErrors: FieldErrors<TFieldValues>) => {
+    const handleInvalidSubmit = (validationErrors: FieldErrors<TInput>) => {
         console.error('Edit dialog validation failed:', validationErrors);
     };
 
@@ -161,32 +158,31 @@ export function EditDialog<TFieldValues extends FieldValues>({
 
                             if (field.type === 'select') {
                                 return (
-                                    <div key={String(fieldName)} className="w-full">
-                                        <Label htmlFor={String(fieldName)}>{field.label}</Label>
-
-                                        <Select
-                                            id={String(fieldName)}
-                                            hasError={Boolean(fieldError)}
-                                            {...register(fieldName)}
-                                            className="h-8 px-2.5 text-[11px] sm:h-8 sm:px-2.5 sm:text-[11px] md:h-8 md:text-[11px]"
-                                        >
+                                    <Select
+                                        key={String(fieldName)}
+                                        id={String(fieldName)}
+                                        label={field.label}
+                                        hasError={Boolean(fieldError)}
+                                        errorMessage={
+                                            fieldError?.message
+                                                ? String(fieldError.message)
+                                                : undefined
+                                        }
+                                        {...register(fieldName)}
+                                        className="h-8 px-2.5 text-[11px] sm:h-8 sm:px-2.5 sm:text-[11px] md:h-8 md:text-[11px]"
+                                    >
+                                        {field.showPlaceholder !== false && (
                                             <option value="">
                                                 {field.placeholder ?? `Select ${field.label}`}
                                             </option>
-
-                                            {field.options?.map((option) => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </Select>
-
-                                        {fieldError?.message && (
-                                            <p className="pt-1 text-[10px] leading-4 text-[#c94a5c]">
-                                                {String(fieldError.message)}
-                                            </p>
                                         )}
-                                    </div>
+
+                                        {field.options?.map((option) => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </Select>
                                 );
                             }
 
@@ -197,6 +193,9 @@ export function EditDialog<TFieldValues extends FieldValues>({
                                     label={field.label}
                                     type={field.type}
                                     hasError={Boolean(fieldError)}
+                                    errorMessage={
+                                        fieldError?.message ? String(fieldError.message) : undefined
+                                    }
                                     {...register(fieldName)}
                                 />
                             );
@@ -227,9 +226,9 @@ export function EditDialog<TFieldValues extends FieldValues>({
                             <Button
                                 type="submit"
                                 disabled={isSubmitting || !hasChanges}
-                                className="h-8 w-full px-3 text-[11px] font-semibold sm:h-8 sm:w-auto sm:px-3 sm:text-[11px] md:h-8 md:w-auto md:px-3 md:text-[11px]"
+                                className="h-8 w-full px-3 text-[11px] font-semibold sm:h-8 sm:w-auto sm:px-3 md:h-8 md:w-auto md:px-3 md:text-[11px]"
                             >
-                                {isSubmitting ? 'Saving...' : submitLabel}
+                                {submitLabel}
                             </Button>
                         </div>
                     </div>

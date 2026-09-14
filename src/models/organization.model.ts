@@ -6,6 +6,7 @@ import {
     updateOrganizationSchema,
     updateOrganizationByAdminSchema,
     queryOrganizationSchema,
+    createOrganizationByAdminSchema,
 } from '../zod-schemas/organization.schema.js';
 import { createLocationSchema } from '../zod-schemas/location.schema.js';
 import type { LocationResponse } from './location.model.js';
@@ -60,3 +61,4 @@ export type UpdateOrganization = z.infer<typeof updateOrganizationSchema> & {
 export type UpdateOrganizationByAdminForm = z.infer<typeof updateOrganizationByAdminSchema>;
 export type UpdateOrganizationByAdmin = UpdateOrganizationByAdminForm & { uuid: string };
 export type QueryOrganization = z.infer<typeof queryOrganizationSchema>;
+export type CreateOrganizationByAdmin = z.infer<typeof createOrganizationByAdminSchema>;
