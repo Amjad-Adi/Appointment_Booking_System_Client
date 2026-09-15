@@ -3,7 +3,9 @@ import type { DefaultValues, FieldErrors, FieldValues, Path, Resolver } from 're
 
 import { TextField } from './TextField.tsx';
 import { Select } from './Select.tsx';
+import { SearchableSelect } from './SearchableSelect.tsx';
 import { Button } from './Button.tsx';
+import { useEffect } from 'react';
 
 export interface CreateDialogSelectOption<TValue extends string> {
     value: TValue;
@@ -20,10 +22,20 @@ export interface CreateDialogMultiSelectOption<
 export interface CreateDialogField<TFieldValues extends FieldValues> {
     name: Path<TFieldValues>;
     label: string;
-    type: 'text' | 'email' | 'password' | 'number' | 'select' | 'multi-select';
+    type:
+        | 'text'
+        | 'email'
+        | 'password'
+        | 'number'
+        | 'datetime-local'
+        | 'select'
+        | 'searchable-select'
+        | 'multi-select';
     options?: readonly CreateDialogSelectOption<string>[];
     multiSelectOptions?: readonly CreateDialogMultiSelectOption<string>[];
     placeholder?: string;
+    searchPlaceholder?: string;
+    onSearchChange?: (search: string) => void;
 }
 
 interface CreateDialogProps<TInput extends FieldValues, TOutput = TInput> {
@@ -70,6 +82,12 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
         defaultValues,
     });
 
+    useEffect(() => {
+        if (open) {
+            reset(defaultValues);
+        }
+    }, [open, defaultValues, reset]);
+
     const handleFormSubmit = async (data: TOutput) => {
         await onSubmit(data);
     };
@@ -79,7 +97,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
     };
 
     const handleCancel = () => {
-        reset();
+        reset(defaultValues);
         onOpenChange(false);
     };
 
@@ -118,6 +136,28 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                             const fieldError = errors[fieldName];
                             const serverFieldError = fieldErrors?.[fieldName];
 
+                            const errorMessage = fieldError?.message
+                                ? String(fieldError.message)
+                                : serverFieldError;
+
+                            if (field.type === 'searchable-select') {
+                                return (
+                                    <SearchableSelect
+                                        key={String(fieldName)}
+                                        id={String(fieldName)}
+                                        label={field.label}
+                                        options={field.options ?? []}
+                                        placeholder={field.placeholder ?? `Select ${field.label}`}
+                                        searchPlaceholder={field.searchPlaceholder ?? 'Search...'}
+                                        hasError={Boolean(fieldError) || Boolean(serverFieldError)}
+                                        errorMessage={errorMessage}
+                                        onSearchChange={field.onSearchChange}
+                                        {...register(fieldName)}
+                                        className="h-8 px-2.5 text-[11px]"
+                                    />
+                                );
+                            }
+
                             if (field.type === 'select') {
                                 return (
                                     <Select
@@ -125,11 +165,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                         id={String(fieldName)}
                                         label={field.label}
                                         hasError={Boolean(fieldError) || Boolean(serverFieldError)}
-                                        errorMessage={
-                                            fieldError?.message
-                                                ? String(fieldError.message)
-                                                : serverFieldError
-                                        }
+                                        errorMessage={errorMessage}
                                         {...register(fieldName)}
                                         className="h-8 px-2.5 text-[11px] sm:h-8 sm:px-2.5 sm:text-[11px] md:h-8 md:text-[11px]"
                                     >
@@ -257,9 +293,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                                     <div className="mt-1.5 flex min-h-4 items-center justify-between">
                                                         {fieldError || serverFieldError ? (
                                                             <p className="text-[10px] leading-4 text-[#c94a5c]">
-                                                                {fieldError?.message
-                                                                    ? String(fieldError.message)
-                                                                    : serverFieldError}
+                                                                {errorMessage}
                                                             </p>
                                                         ) : (
                                                             <p className="text-[9px] text-[#777789]">
@@ -285,11 +319,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                     label={field.label}
                                     type={field.type}
                                     hasError={Boolean(fieldError) || Boolean(serverFieldError)}
-                                    errorMessage={
-                                        fieldError?.message
-                                            ? String(fieldError.message)
-                                            : serverFieldError
-                                    }
+                                    errorMessage={errorMessage}
                                     {...register(fieldName)}
                                 />
                             );

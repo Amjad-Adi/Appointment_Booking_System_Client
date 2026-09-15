@@ -1,14 +1,22 @@
-import { Role } from './enums/roles.js';
-import { z } from 'zod';
-import { ActivationStatus } from './enums/activation-status.js';
-import { updateWorkingHoursSchema } from '../zod-schemas/working-hours.schema.js';
-import { DayOfWeek } from './enums/day-of-week.js';
+import type { z } from 'zod';
+
+import {
+    queryWorkingHoursSchema,
+    updateWorkingHoursSchema,
+} from '../zod-schemas/working-hours.schema.ts';
+
 export interface WorkingHours {
     uuid: string;
-    dayOfWeek: DayOfWeek;
+    organizationUuid: string;
+    dayOfWeek: number;
     startTime: string | null;
     endTime: string | null;
+    createdAtUTC: string;
+    updatedAtUTC: string;
 }
 
-export type CreateWorkingHours = { dayOfWeek: DayOfWeek; organizationId: number };
-export type UpdateWorkingHours = z.infer<typeof updateWorkingHoursSchema> & { uuid: string };
+export type QueryWorkingHours = z.infer<typeof queryWorkingHoursSchema>;
+
+export type UpdateWorkingHours = z.infer<typeof updateWorkingHoursSchema> & {
+    uuid: string;
+};
