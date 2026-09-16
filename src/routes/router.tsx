@@ -174,7 +174,7 @@ export const router = createBrowserRouter([
             {
                 element: (
                     <RoleBasedRouter permission={HAS_LOGIN}>
-                        <AppointmentPage />
+                        <OrganizationLayout />
                     </RoleBasedRouter>
                 ),
                 children: [
@@ -188,7 +188,7 @@ export const router = createBrowserRouter([
                                 index: true,
                                 element: (
                                     <RoleBasedRouter permission={USER_DASHBOARD_PAGE}>
-                                        <AppointmentPage />
+                                        <div>hi</div>
                                     </RoleBasedRouter>
                                 ),
                             },

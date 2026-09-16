@@ -9,13 +9,15 @@ import type {
 import { ORGANIZATION_SPECIAL_DAY, ORGANIZATION_SPECIAL_DAYS } from '../../../utlis/query-keys.ts';
 
 import { api } from '../../../services/axios.ts';
+import type { QueryResponse } from '../../../models/Query/query.model.ts';
+import type { WorkingHours } from '../../../models/working-hours.model.ts';
 
 export function useOrganizationSpecialDays(organizationUuid: string | undefined) {
     return useQuery({
         queryKey: [ORGANIZATION_SPECIAL_DAYS, organizationUuid],
 
-        queryFn: async (): Promise<SpecialDay[]> => {
-            const response = await api.get<SpecialDay[]>(
+        queryFn: async (): Promise<QueryResponse<SpecialDay>> => {
+            const response = await api.get<QueryResponse<SpecialDay>>(
                 `/api/organizations/${organizationUuid}/special-days`,
             );
 

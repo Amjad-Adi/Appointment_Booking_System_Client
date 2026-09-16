@@ -76,7 +76,7 @@ export function AppointmentPage() {
     } = useOrganizationSpecialDays(organizationUuid);
 
     const activeSpecialDay = useMemo(() => {
-        return specialDays?.find(
+        return specialDays?.data.find(
             (specialDay) =>
                 specialDay.dayDate === date && specialDay.status === ActivationStatus.ACTIVE,
         );
@@ -88,7 +88,7 @@ export function AppointmentPage() {
         }
 
         return buildWorkerSchedules({
-            workingHours: workingHours ?? [],
+            workingHours: workingHours?.data ?? [],
             appointments: appointmentData?.data ?? [],
             timeBlocks: timeBlockData?.data ?? [],
             date: selectedDate,

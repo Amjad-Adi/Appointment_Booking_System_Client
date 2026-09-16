@@ -12,6 +12,7 @@ import {
 } from '../../../utlis/query-keys.ts';
 
 import { api } from '../../../services/axios.ts';
+import type { QueryResponse } from '../../../models/Query/query.model.ts';
 
 export function useOrganizationWorkingHours(
     organizationUuid: string | undefined,
@@ -20,8 +21,8 @@ export function useOrganizationWorkingHours(
     return useQuery({
         queryKey: [ORGANIZATION_WORKING_HOURS, organizationUuid, query],
 
-        queryFn: async (): Promise<WorkingHours[]> => {
-            const response = await api.get<WorkingHours[]>(
+        queryFn: async (): Promise<QueryResponse<WorkingHours>> => {
+            const response = await api.get<QueryResponse<WorkingHours>>(
                 `/api/organizations/${organizationUuid}/working-hours`,
                 {
                     params: query,

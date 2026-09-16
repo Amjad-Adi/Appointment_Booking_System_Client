@@ -3,6 +3,7 @@ import type { WorkingHours } from '../../../../models/working-hours.model.ts';
 import type { TimeBlockResponse } from '../../../../models/time-block.ts';
 import type { WorkerSchedule } from '../../../../models/appointment-schedule.model.ts';
 
+import { DayOfWeek } from '../../../../models/enums/day-of-week.ts';
 import { buildWorkerSchedule } from './appointment-schedule.ts';
 
 interface BuildWorkerSchedulesParams {
@@ -12,22 +13,16 @@ interface BuildWorkerSchedulesParams {
     date: Date;
 }
 
-function normalize(value: string) {
-    return value.trim().toLowerCase();
-}
-
-function getDayOfWeekName(date: Date) {
-    return new Intl.DateTimeFormat('en-US', {
-        weekday: 'long',
-    }).format(date);
-}
-
 function getWorkingInterval(workingHours: WorkingHours[], date: Date) {
-    const dayName = normalize(getDayOfWeekName(date));
+    const dayOfWeek = new Intl.DateTimeFormat('en-US', {
+        weekday: 'long',
+    })
+        .format(date)
+        .toUpperCase() as DayOfWeek;
 
-    const dayWorkingHours = workingHours.find(
-        (item) => normalize(String(item.dayOfWeek)) === dayName,
-    );
+
+    const dayWorkingHours = workingHours.find((item) => item.dayOfWeek === dayOfWeek);
+
 
     if (!dayWorkingHours?.startTime || !dayWorkingHours.endTime) {
         return null;
@@ -52,7 +47,6 @@ function getWorkingInterval(workingHours: WorkingHours[], date: Date) {
         endAt,
     };
 }
-
 export function buildWorkerSchedules({
     workingHours,
     appointments,
@@ -105,6 +99,20 @@ export function buildWorkerSchedules({
             });
         }
     }
+
+    console.log('BUILD SCHEDULE DEBUG', {
+        date,
+        dayOfWeek: new Intl.DateTimeFormat('en-US', {
+            weekday: 'long',
+        })
+            .format(date)
+            .toUpperCase(),
+        workingInterval,
+        workingHours,
+        appointments,
+        timeBlocks,
+        workerMap: Array.from(workerMap.entries()),
+    });
 
     return Array.from(workerMap.entries())
         .map(([workerUuid, worker]) =>
