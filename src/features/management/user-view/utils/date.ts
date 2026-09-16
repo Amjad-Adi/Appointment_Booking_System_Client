@@ -5,3 +5,6 @@ export function formatDateForApi(date: Date): string {
 
     return `${year}-${month}-${day}`;
 }
+export function localDateTimeToISO(value: string) {
+    return new Date(value).toISOString();
+}

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 
 import { Role } from '../../../../../models/enums/roles.ts';
-import { useRoom } from '../../../hooks/room-hook.ts';
+import { useOrganizationRoom } from '../../../hooks/room-hook.ts';
 import { useCurrentUser } from '../../../hooks/users-hook.ts';
 
 import { RoomProfile } from './components/RoomProfile.tsx';
@@ -10,7 +10,11 @@ export function RoomProfilePage() {
     const { roomUuid } = useParams<{ roomUuid: string }>();
 
     const { data: currentUser } = useCurrentUser();
-    const { data: room, isLoading, isError } = useRoom(roomUuid ?? '');
+    const {
+        data: room,
+        isLoading,
+        isError,
+    } = useOrganizationRoom(currentUser?.organizationUuid, roomUuid);
 
     const canManageRooms =
         (currentUser?.role === Role.MANAGER || currentUser?.role === Role.OWNER) &&

@@ -16,7 +16,7 @@ import { RoomOccupancyStatus } from '../../../../../../models/enums/room-occupan
 
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deounce.ts';
 
-import { useRooms } from '../../../../hooks/room-hook.ts';
+import { useOrganizationRooms } from '../../../../hooks/room-hook.ts';
 import { useCurrentUser } from '../../../../hooks/users-hook.ts';
 
 import { getRoomColumns } from '../columns/RoomColumns.tsx';
@@ -83,7 +83,7 @@ export function RoomsTable({ organizationUuid }: RoomsTableProps) {
         : undefined;
 
     const order = sort ? (sort.desc ? Order.DESC : Order.ASC) : undefined;
-    const { data, isLoading, isError } = useRooms({
+    const { data, isLoading, isError } = useOrganizationRooms(organizationUuid, {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         sortBy,

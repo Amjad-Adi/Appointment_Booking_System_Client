@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
     createAppointmentSchema,
+    createOrganizationAppointmentSchema,
     queryAppointmentSchema,
     updateAppointmentSchemaByOrganization,
     updateAppointmentSchemaByUser,
@@ -9,11 +10,9 @@ import {
     confirmAppointmentSchema,
     rejectAppointmentSchemaBy,
     payAppointmentSchema,
-    createOrganizationAppointmentSchema,
 } from '../zod-schemas/appointment.schema.ts';
 
 import { AppointmentStatus } from './enums/appointment-status.ts';
-import { AppointmentTimeType } from './enums/appointment-time-type.ts';
 import { PaymentMethod } from './enums/payment-method.ts';
 import { PaymentStatus } from './enums/payment-status.ts';
 
@@ -46,6 +45,7 @@ export interface Appointment {
     actualEndAtUTC: string | null;
 
     appointmentStatus: AppointmentStatus;
+
     rejectionReason: string | null;
 
     paymentMethod: PaymentMethod | null;
@@ -65,33 +65,65 @@ export interface AppointmentResponse extends Appointment, DataResponses {
     approvalUserName: string | null;
 }
 
+/*
+ * Customer/User creates an appointment.
+ *
+ * This is exactly the API request body.
+ */
 export type CreateAppointment = z.infer<typeof createAppointmentSchema>;
 
+/*
+ * Organization creates an appointment.
+ *
+ * This is exactly the API request body.
+ */
+export type CreateOrganizationAppointment = z.infer<typeof createOrganizationAppointmentSchema>;
+
+/*
+ * User updates their appointment.
+ */
 export type UpdateAppointmentByUser = z.infer<typeof updateAppointmentSchemaByUser> & {
     uuid: string;
 };
 
+/*
+ * Organization updates its appointment.
+ */
 export type UpdateAppointmentByOrganization = z.infer<
     typeof updateAppointmentSchemaByOrganization
 > & {
     uuid: string;
 };
 
+/*
+ * Organization confirms an appointment.
+ */
 export type ConfirmAppointment = z.infer<typeof confirmAppointmentSchema> & {
     uuid: string;
 };
 
+/*
+ * Reject appointment.
+ */
 export type RejectAppointment = z.infer<typeof rejectAppointmentSchemaBy> & {
     uuid: string;
 };
 
+/*
+ * Update appointment status.
+ */
 export type UpdateAppointmentStatus = z.infer<typeof updateAppointmentSchemaStatus> & {
     uuid: string;
 };
 
+/*
+ * Pay appointment.
+ */
 export type PayAppointment = z.infer<typeof payAppointmentSchema> & {
     uuid: string;
 };
 
+/*
+ * Appointment query.
+ */
 export type QueryAppointment = z.infer<typeof queryAppointmentSchema>;
-export type CreateOrganizationAppointment = z.infer<typeof createOrganizationAppointmentSchema>;

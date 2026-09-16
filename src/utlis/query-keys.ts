@@ -26,3 +26,8 @@ export const ORGANIZATION_TIME_BLOCK = 'organization-time-block';
 export const ORGANIZATION_SPECIAL_DAYS = 'organization-special-days';
 
 export const ORGANIZATION_SPECIAL_DAY = 'organization-special-day';
+export const ORGANIZATION_SERVICE_TABLE = 'ORGANIZATION_SERVICE_TABLE';
+export const ORGANIZATION_SERVICE = 'ORGANIZATION_SERVICE';
+export const ORGANIZATION_ROOM = 'ORGANIZATION_ROOM';
+export const ORGANIZATION_ROOMS = 'ORGANIZATION_ROOMS';
+export const ORGANIZATION_SCHEDULING = 'ORGANIZATION_SCHEDULING';

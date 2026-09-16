@@ -24,10 +24,6 @@ import {
 
 import { api } from '../../../services/axios.ts';
 
-/*
- * Customer / current user's appointments
- */
-
 export function useAppointments(query: QueryAppointment) {
     return useQuery({
         queryKey: [APPOINTMENTS, query],
@@ -204,10 +200,6 @@ export function usePayAppointment() {
         },
     });
 }
-
-/*
- * Organization appointments
- */
 
 export function useOrganizationAppointments(
     organizationUuid: string | undefined,

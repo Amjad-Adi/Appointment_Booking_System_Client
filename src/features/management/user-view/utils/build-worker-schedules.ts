@@ -20,9 +20,7 @@ function getWorkingInterval(workingHours: WorkingHours[], date: Date) {
         .format(date)
         .toUpperCase() as DayOfWeek;
 
-
     const dayWorkingHours = workingHours.find((item) => item.dayOfWeek === dayOfWeek);
-
 
     if (!dayWorkingHours?.startTime || !dayWorkingHours.endTime) {
         return null;
@@ -99,21 +97,6 @@ export function buildWorkerSchedules({
             });
         }
     }
-
-    console.log('BUILD SCHEDULE DEBUG', {
-        date,
-        dayOfWeek: new Intl.DateTimeFormat('en-US', {
-            weekday: 'long',
-        })
-            .format(date)
-            .toUpperCase(),
-        workingInterval,
-        workingHours,
-        appointments,
-        timeBlocks,
-        workerMap: Array.from(workerMap.entries()),
-    });
-
     return Array.from(workerMap.entries())
         .map(([workerUuid, worker]) =>
             buildWorkerSchedule({

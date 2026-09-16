@@ -60,7 +60,7 @@ export function EmptyAppointmentSlot({
                     <Button
                         type="button"
                         onClick={onAdd}
-                        className="flex h-7 shrink-0 items-center gap-1 px-2.5 text-[10px]"
+                        className="flex h-7 w-fit shrink-0 items-center justify-center gap-1 px-2 text-[10px]"
                     >
                         <Plus className="size-3" strokeWidth={2} />
                         Add Appointment
