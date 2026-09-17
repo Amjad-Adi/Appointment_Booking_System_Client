@@ -4,17 +4,19 @@ import { AppointmentTimeType } from '../models/enums/appointment-time-type.ts';
 
 const uuidSchema = z.uuid('Invalid UUID');
 
-// scheduling.schema.ts
-const fromAtUTCSchema = z.string().datetime({ offset: true }).or(
-    z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
-);
+const fromAtUTCSchema = z
+    .string()
+    .datetime({ offset: true })
+    .or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/));
 
 export const schedulingSchema = z
     .object({
         userUuid: uuidSchema,
         serviceUuid: uuidSchema,
         timeType: z.enum(AppointmentTimeType),
+
         workerUuid: uuidSchema.optional(),
+
         fromAtUTC: fromAtUTCSchema.optional(),
     })
     .strict()
@@ -32,8 +34,7 @@ export const schedulingSchema = z
                 ctx.addIssue({
                     code: 'custom',
                     path: ['fromAtUTC'],
-                    message:
-                        'Start time is not allowed when a worker is selected.',
+                    message: 'Start time is not allowed when a worker is selected.',
                 });
             }
 
@@ -45,8 +46,7 @@ export const schedulingSchema = z
                 ctx.addIssue({
                     code: 'custom',
                     path: ['workerUuid'],
-                    message:
-                        'Worker is not allowed for nearest availability.',
+                    message: 'Worker is not allowed for nearest availability.',
                 });
             }
 
@@ -54,8 +54,7 @@ export const schedulingSchema = z
                 ctx.addIssue({
                     code: 'custom',
                     path: ['fromAtUTC'],
-                    message:
-                        'Start time is required for nearest availability.',
+                    message: 'Start time is required for nearest availability.',
                 });
             }
         }

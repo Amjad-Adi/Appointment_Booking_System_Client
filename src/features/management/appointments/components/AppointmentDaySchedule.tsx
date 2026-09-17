@@ -1,4 +1,5 @@
 import type { AppointmentResponse } from '../../../../models/appointment.model.ts';
+
 import type {
     AppointmentScheduleSegment,
     WorkerSchedule,
@@ -8,37 +9,36 @@ import { AppointmentCard } from './AppointmentCard.tsx';
 import { EmptyAppointmentSlot } from './EmptyAppointmentSlot.tsx';
 import { TimeBlockCard } from './TimeBlockCard.tsx';
 
+import { formatDateInTimeZone } from '../../user-view/utils/timezone.ts';
+
 interface AppointmentDayScheduleProps {
     date: Date;
     workerSchedules: WorkerSchedule[];
+    organizationTimeZone: string;
     canCreate?: boolean;
     onAddAppointment?: (date: Date, startAt: Date, workerUuid: string) => void;
-    onAppointmentClick?: (appointment: AppointmentResponse) => void;
-}
-
-function formatDate(date: Date) {
-    return date.toLocaleDateString([], {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-    });
+    onViewAppointment?: (appointment: AppointmentResponse) => void;
+    onEditAppointment?: (appointment: AppointmentResponse) => void;
 }
 
 function renderSegment(
     segment: AppointmentScheduleSegment,
     workerUuid: string,
     date: Date,
+    organizationTimeZone: string,
     canCreate: boolean,
     onAddAppointment?: (date: Date, startAt: Date, workerUuid: string) => void,
-    onAppointmentClick?: (appointment: AppointmentResponse) => void,
+    onViewAppointment?: (appointment: AppointmentResponse) => void,
+    onEditAppointment?: (appointment: AppointmentResponse) => void,
 ) {
     if (segment.type === 'appointment') {
         return (
             <AppointmentCard
                 key={`appointment-${segment.appointment.uuid}`}
                 appointment={segment.appointment}
-                onClick={onAppointmentClick}
+                organizationTimeZone={organizationTimeZone}
+                onView={onViewAppointment}
+                onEdit={onEditAppointment}
             />
         );
     }
@@ -48,6 +48,7 @@ function renderSegment(
             <TimeBlockCard
                 key={`time-block-${segment.timeBlock.uuid}`}
                 timeBlock={segment.timeBlock}
+                organizationTimeZone={organizationTimeZone}
             />
         );
     }
@@ -57,8 +58,11 @@ function renderSegment(
             key={`empty-${segment.startAt.getTime()}-${segment.endAt.getTime()}`}
             startAt={segment.startAt}
             endAt={segment.endAt}
+            organizationTimeZone={organizationTimeZone}
             canCreate={canCreate}
-            onAdd={() => onAddAppointment?.(date, segment.startAt, workerUuid)}
+            onAdd={() => {
+                onAddAppointment?.(date, segment.startAt, workerUuid);
+            }}
         />
     );
 }
@@ -66,16 +70,20 @@ function renderSegment(
 export function AppointmentDaySchedule({
     date,
     workerSchedules,
+    organizationTimeZone,
     canCreate = false,
     onAddAppointment,
-    onAppointmentClick,
+    onViewAppointment,
+    onEditAppointment,
 }: AppointmentDayScheduleProps) {
     return (
         <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-4">
             <div className="mb-4">
                 <h2 className="text-base font-semibold text-[#343447]">Daily Schedule</h2>
 
-                <p className="mt-0.5 text-[11px] text-[#777789]">{formatDate(date)}</p>
+                <p className="mt-0.5 text-[11px] text-[#777789]">
+                    {formatDateInTimeZone(date, organizationTimeZone)}
+                </p>
             </div>
 
             {workerSchedules.length === 0 ? (
@@ -107,9 +115,11 @@ export function AppointmentDaySchedule({
                                         segment,
                                         workerSchedule.workerUuid,
                                         date,
+                                        organizationTimeZone,
                                         canCreate,
                                         onAddAppointment,
-                                        onAppointmentClick,
+                                        onViewAppointment,
+                                        onEditAppointment,
                                     ),
                                 )}
                             </div>

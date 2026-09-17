@@ -1,15 +1,17 @@
 import { z } from 'zod';
-import { ActivationStatus } from './enums/activation-status.js';
-import { InvitationStatus } from './enums/invitation-status.js';
-import { createServiceSchema, updateServiceSchema } from '../zod-schemas/service.schema.js';
+
+import { InvitationStatus } from './enums/invitation-status.ts';
+
 import {
     createInvitationSchema,
+    queryInvitationSchema,
     updateInvitationSchema,
-} from '../zod-schemas/invitations.schema.js';
+} from '../zod-schemas/invitations.schema.ts';
+
 export interface Invitation {
     uuid: string;
     createdAtUTC: Date;
-    expiredAtUTC: Date;
+    expiresAtUTC: Date;
     invitationStatus: InvitationStatus;
 }
 
@@ -28,12 +30,8 @@ export interface InvitationResponse extends Invitation {
     recipientProfilePicturePath: string;
 }
 
-export type CreateInvitation = z.infer<typeof createInvitationSchema> & {
-    organizationId: number;
-    senderId: number;
-};
-export type UpdateInvitation = z.infer<typeof updateInvitationSchema> & {
-    uuid: string;
-    organizationUuid: string;
-    userUuid: string;
-};
+export type CreateInvitation = z.infer<typeof createInvitationSchema>;
+
+export type UpdateInvitation = z.infer<typeof updateInvitationSchema>;
+
+export type QueryInvitation = z.infer<typeof queryInvitationSchema>;

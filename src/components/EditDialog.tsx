@@ -23,7 +23,7 @@ export interface EditDialogSelectOption<TValue extends string> {
 export interface EditDialogField<TFieldValues extends FieldValues> {
     name: Path<TFieldValues>;
     label: string;
-    type: 'text' | 'email' | 'number' | 'select' | 'searchable-select';
+    type: 'text' | 'email' | 'number' | 'color' | 'select' | 'searchable-select';
     options?: readonly EditDialogSelectOption<string>[];
     placeholder?: string;
     searchPlaceholder?: string;
@@ -126,12 +126,12 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
 
     return (
         <div
-            className="fixed inset-0 z-2 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 backdrop-blur-[2px] sm:py-6"
+            className="fixed inset-0 z-200 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 backdrop-blur-[2px] sm:py-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-dialog-title"
         >
-            <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#d3d3df] bg-[#f5f5f8] shadow-2xl">
+            <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#d3d3df] bg-[#f5f5f8] shadow-2xl sm:max-h-[calc(100vh-3rem)]">
                 <div className="shrink-0 border-b border-[#d3d3df] px-5 py-4 sm:px-6">
                     <h2
                         id="edit-dialog-title"
@@ -147,7 +147,7 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
 
                 <form
                     onSubmit={handleSubmit(handleFormSubmit, handleInvalidSubmit)}
-                    className="flex min-h-0 flex-col overflow-y-auto px-5 py-4 sm:px-6 sm:py-5"
+                    className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6 sm:py-5"
                 >
                     <div className="flex flex-col gap-3 sm:gap-4">
                         {readOnlyContent}

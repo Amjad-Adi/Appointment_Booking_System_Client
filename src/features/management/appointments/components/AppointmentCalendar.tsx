@@ -3,9 +3,14 @@ import { Calendar } from '../../../../../@/components/ui/Calender.tsx';
 interface AppointmentCalendarProps {
     selectedDate: Date;
     onDateChange: (date: Date) => void;
+    organizationTimeZone: string;
 }
 
-export function AppointmentCalendar({ selectedDate, onDateChange }: AppointmentCalendarProps) {
+export function AppointmentCalendar({
+    selectedDate,
+    onDateChange,
+    organizationTimeZone,
+}: AppointmentCalendarProps) {
     return (
         <Calendar
             mode="single"
@@ -15,7 +20,7 @@ export function AppointmentCalendar({ selectedDate, onDateChange }: AppointmentC
                     onDateChange(date);
                 }
             }}
-            timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}
+            timeZone={organizationTimeZone}
             className="w-full"
         />
     );

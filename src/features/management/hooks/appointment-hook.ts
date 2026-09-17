@@ -43,7 +43,7 @@ export function useAppointments(query: QueryAppointment) {
     });
 }
 
-export function useAppointment(appointmentUuid: string) {
+export function useAppointment(appointmentUuid: string, enabled = true) {
     return useQuery({
         queryKey: [APPOINTMENT, appointmentUuid],
 
@@ -55,7 +55,7 @@ export function useAppointment(appointmentUuid: string) {
             return response.data;
         },
 
-        enabled: !!appointmentUuid,
+        enabled: enabled && !!appointmentUuid,
     });
 }
 
@@ -105,6 +105,10 @@ export function useUpdateAppointmentByUser() {
             await queryClient.invalidateQueries({
                 queryKey: [APPOINTMENT, appointment.uuid],
             });
+
+            await queryClient.invalidateQueries({
+                queryKey: [ORGANIZATION_APPOINTMENTS],
+            });
         },
     });
 }
@@ -137,6 +141,10 @@ export function useConfirmAppointment() {
             await queryClient.invalidateQueries({
                 queryKey: [ORGANIZATION_APPOINTMENTS],
             });
+
+            await queryClient.invalidateQueries({
+                queryKey: [ORGANIZATION_APPOINTMENT],
+            });
         },
     });
 }
@@ -164,6 +172,10 @@ export function useCancelAppointment() {
 
             await queryClient.invalidateQueries({
                 queryKey: [ORGANIZATION_APPOINTMENTS],
+            });
+
+            await queryClient.invalidateQueries({
+                queryKey: [ORGANIZATION_APPOINTMENT],
             });
         },
     });
@@ -197,6 +209,10 @@ export function usePayAppointment() {
             await queryClient.invalidateQueries({
                 queryKey: [ORGANIZATION_APPOINTMENTS],
             });
+
+            await queryClient.invalidateQueries({
+                queryKey: [ORGANIZATION_APPOINTMENT],
+            });
         },
     });
 }
@@ -220,6 +236,7 @@ export function useOrganizationAppointments(
         },
 
         enabled: !!organizationUuid,
+
         placeholderData: keepPreviousData,
     });
 }
@@ -227,11 +244,16 @@ export function useOrganizationAppointments(
 export function useOrganizationAppointment(
     organizationUuid: string | undefined,
     appointmentUuid: string,
+    enabled = true,
 ) {
     return useQuery({
         queryKey: [ORGANIZATION_APPOINTMENT, organizationUuid, appointmentUuid],
 
         queryFn: async (): Promise<AppointmentResponse> => {
+            if (!organizationUuid) {
+                throw new Error('Organization UUID is required');
+            }
+
             const response = await api.get<AppointmentResponse>(
                 `/api/organizations/${organizationUuid}/appointments/${appointmentUuid}`,
             );
@@ -239,7 +261,7 @@ export function useOrganizationAppointment(
             return response.data;
         },
 
-        enabled: !!organizationUuid && !!appointmentUuid,
+        enabled: enabled && !!organizationUuid && !!appointmentUuid,
     });
 }
 
@@ -269,6 +291,7 @@ export function useCreateOrganizationAppointment(organizationUuid: string | unde
         },
     });
 }
+
 export function useUpdateOrganizationAppointment(organizationUuid: string | undefined) {
     const queryClient = useQueryClient();
 
@@ -277,6 +300,10 @@ export function useUpdateOrganizationAppointment(organizationUuid: string | unde
             uuid,
             ...appointment
         }: UpdateAppointmentByOrganization): Promise<AppointmentResponse> => {
+            if (!organizationUuid) {
+                throw new Error('Organization UUID is required');
+            }
+
             const response = await api.patch<AppointmentResponse>(
                 `/api/organizations/${organizationUuid}/appointments/${uuid}`,
                 appointment,
@@ -293,6 +320,10 @@ export function useUpdateOrganizationAppointment(organizationUuid: string | unde
             await queryClient.invalidateQueries({
                 queryKey: [ORGANIZATION_APPOINTMENT, organizationUuid, appointment.uuid],
             });
+
+            await queryClient.invalidateQueries({
+                queryKey: [APPOINTMENT, appointment.uuid],
+            });
         },
     });
 }
@@ -302,6 +333,10 @@ export function useApproveAppointment(organizationUuid: string | undefined) {
 
     return useMutation({
         mutationFn: async (appointmentUuid: string): Promise<AppointmentResponse> => {
+            if (!organizationUuid) {
+                throw new Error('Organization UUID is required');
+            }
+
             const response = await api.patch<AppointmentResponse>(
                 `/api/organizations/${organizationUuid}/appointments/${appointmentUuid}/approve`,
             );
@@ -319,6 +354,10 @@ export function useApproveAppointment(organizationUuid: string | undefined) {
             });
 
             await queryClient.invalidateQueries({
+                queryKey: [APPOINTMENT, appointment.uuid],
+            });
+
+            await queryClient.invalidateQueries({
                 queryKey: [APPOINTMENTS],
             });
         },
@@ -333,6 +372,10 @@ export function useRejectAppointment(organizationUuid: string | undefined) {
             uuid,
             ...appointment
         }: RejectAppointment): Promise<AppointmentResponse> => {
+            if (!organizationUuid) {
+                throw new Error('Organization UUID is required');
+            }
+
             const response = await api.patch<AppointmentResponse>(
                 `/api/organizations/${organizationUuid}/appointments/${uuid}/reject`,
                 appointment,
@@ -351,6 +394,10 @@ export function useRejectAppointment(organizationUuid: string | undefined) {
             });
 
             await queryClient.invalidateQueries({
+                queryKey: [APPOINTMENT, appointment.uuid],
+            });
+
+            await queryClient.invalidateQueries({
                 queryKey: [APPOINTMENTS],
             });
         },
@@ -365,6 +412,10 @@ export function useUpdateAppointmentStatus(organizationUuid: string | undefined)
             uuid,
             ...appointment
         }: UpdateAppointmentStatus): Promise<AppointmentResponse> => {
+            if (!organizationUuid) {
+                throw new Error('Organization UUID is required');
+            }
+
             const response = await api.patch<AppointmentResponse>(
                 `/api/organizations/${organizationUuid}/appointments/${uuid}/status`,
                 appointment,
@@ -380,6 +431,10 @@ export function useUpdateAppointmentStatus(organizationUuid: string | undefined)
 
             await queryClient.invalidateQueries({
                 queryKey: [ORGANIZATION_APPOINTMENT, organizationUuid, appointment.uuid],
+            });
+
+            await queryClient.invalidateQueries({
+                queryKey: [APPOINTMENT, appointment.uuid],
             });
 
             await queryClient.invalidateQueries({

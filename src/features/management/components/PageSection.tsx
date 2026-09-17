@@ -5,10 +5,9 @@ interface PageSectionProps {
     description?: string[];
     children: ReactNode;
 }
-
 export function PageSection({ title, description = [], children }: PageSectionProps) {
     return (
-        <section className="mt-3 mb-5 w-full min-w-0">
+        <section className="mt-3 mb-5 flex w-full min-w-0 flex-col">
             <div className="mb-3 px-1 text-left">
                 <h2 className="text-[15px] font-semibold tracking-tight text-[#343447]">{title}</h2>
 

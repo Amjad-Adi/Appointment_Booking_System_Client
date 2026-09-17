@@ -27,18 +27,16 @@ const appointmentNameSchema = z
 const scheduledStartSchema = z
     .string()
     .min(1, 'Start time is required')
+    .refine((value) => !Number.isNaN(new Date(value).getTime()), 'Invalid start time')
     .transform((value) => new Date(value).toISOString());
+
+const fromAtUTCSchema = z
+    .string()
+    .datetime({ offset: true })
+    .or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, 'Invalid start time'));
 
 /*
  * Customer/User creates an appointment.
- *
- * The customer explicitly provides:
- * - appointment name
- * - service
- * - time type
- * - worker when using WORKER scheduling
- * - room when using WORKER scheduling
- * - scheduled start time
  */
 export const createAppointmentSchema = z
     .object({
@@ -78,6 +76,8 @@ export const createAppointmentSchema = z
                     message: 'Room UUID is required',
                 });
             }
+
+            return;
         }
 
         if (data.timeType === AppointmentTimeType.NEAREST) {
@@ -102,44 +102,73 @@ export const createAppointmentSchema = z
 /*
  * Organization creates an appointment.
  *
- * The organization explicitly provides:
- * - appointment name
- * - customer
- * - service
- * - worker
- * - scheduled start time
+ * This is the FINAL API payload.
  *
- * The room is NOT provided by the organization.
- *
- * The backend resolves the room assigned to the selected worker
- * and revalidates that the room is available for the requested interval.
- *
- * timeType is also NOT part of the final organization-create payload.
- * It is only used by the scheduling flow to determine how the worker
- * and available time are selected.
+ * timeType and fromAtUTC are not included because they are
+ * scheduling-flow fields, not appointment-creation fields.
  */
 export const createOrganizationAppointmentSchema = z
     .object({
-        name: appointmentNameSchema,
+        name: z.string().min(1),
 
         userUuid: uuidSchema,
 
         serviceUuid: uuidSchema,
 
-        workerUuid: z
-            .string()
-            .transform((value) => value || undefined)
-            .optional(),
-        scheduledStartAtUTC: scheduledStartSchema,
+        timeType: z.enum(AppointmentTimeType),
 
-        organizationNote: z.string().trim().max(4096).nullable().optional(),
+        workerUuid: uuidSchema.optional(),
 
-        organizationColour: colourSchema.optional(),
+        roomUuid: uuidSchema.optional(),
 
-        paymentMethod: z.enum(PaymentMethod).nullable().optional(),
+        scheduledStartTimeUTC: z.string().datetime({ offset: true }),
+
+        userNote: z.string().optional(),
+
+        userColour: z.string().optional(),
+
+        paymentMethod: z.enum(PaymentMethod),
     })
-    .strict();
+    .strict()
+    .superRefine((data, ctx) => {
+        if (data.timeType === AppointmentTimeType.WORKER) {
+            if (!data.workerUuid) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['workerUuid'],
+                    message: 'Worker is required.',
+                });
+            }
 
+            if (!data.roomUuid) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['roomUuid'],
+                    message: 'Room is required.',
+                });
+            }
+
+            return;
+        }
+
+        if (data.timeType === AppointmentTimeType.NEAREST) {
+            if (data.workerUuid !== undefined) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['workerUuid'],
+                    message: 'Worker is not allowed for nearest availability.',
+                });
+            }
+
+            if (data.roomUuid !== undefined) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['roomUuid'],
+                    message: 'Room is not allowed for nearest availability.',
+                });
+            }
+        }
+    });
 /*
  * User updates their appointment.
  */
@@ -278,27 +307,9 @@ export const queryAppointmentSchema = querySchema
     })
     .strict();
 
-/*
- * Organization appointment form schema.
- *
- * This is the FRONTEND form schema.
- *
- * It intentionally differs from createOrganizationAppointmentSchema
- * because the scheduling UI needs timeType to determine how to find
- * an available appointment.
- *
- * For NEAREST:
- * - workerUuid can initially be empty
- * - scheduling returns a worker
- * - the selected worker is then placed into the form
- *
- * For WORKER:
- * - workerUuid is required
- *
- * This schema is not the final API payload schema.*/
 export const createAppointmentFormSchema = z
     .object({
-        name: appointmentNameSchema,
+        name: z.string().trim().min(1, 'Appointment name is required.'),
 
         userUuid: uuidSchema,
 
@@ -306,58 +317,67 @@ export const createAppointmentFormSchema = z
 
         timeType: z.enum(AppointmentTimeType),
 
+        /*
+         * This is allowed to be empty in NEAREST mode because
+         * the worker is selected from the scheduling result.
+         */
         workerUuid: z.union([uuidSchema, z.literal('')]).optional(),
 
         /*
-         * Search starting point.
-         *
-         * Required by the UI for NEAREST.
-         *
-         * For WORKER this comes from the calendar
-         * selection and is not manually edited.
+         * Room is part of the scheduling result, but is NOT sent
+         * to the organization appointment creation API.
          */
+        roomUuid: z.union([uuidSchema, z.literal('')]).optional(),
+
         fromAtUTC: z.string().optional(),
 
-        /*
-         * Actual appointment time returned by
-         * the scheduling endpoint.
-         */
-        scheduledStartAtUTC: scheduledStartSchema,
+        scheduledStartAtUTC: z.string().min(1, 'Appointment time is required.'),
 
-        organizationNote: z.string().trim().max(4096).nullable().optional(),
+        organizationNote: z.string().optional(),
 
-        organizationColour: colourSchema.optional(),
+        organizationColour: z.string().optional(),
 
-        paymentMethod: z.enum(PaymentMethod).nullable().optional(),
+        paymentMethod: z.enum(PaymentMethod),
     })
-    .strict()
     .superRefine((data, ctx) => {
-        const workerUuid = data.workerUuid === '' ? undefined : data.workerUuid;
-
         if (data.timeType === AppointmentTimeType.WORKER) {
-            if (!workerUuid) {
+            if (!data.workerUuid) {
                 ctx.addIssue({
                     code: 'custom',
                     path: ['workerUuid'],
-                    message: 'Worker is required when using specific worker availability.',
+                    message: 'Worker is required.',
                 });
             }
+
+            if (data.fromAtUTC) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['fromAtUTC'],
+                    message: 'Start availability time is not allowed for a specific worker.',
+                });
+            }
+
+            return;
         }
 
         if (data.timeType === AppointmentTimeType.NEAREST) {
+            /*
+             * The scheduling request cannot contain workerUuid.
+             * The selected worker is obtained from the availability result.
+             */
+            if (data.workerUuid) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['workerUuid'],
+                    message: 'Worker must not be selected for nearest availability.',
+                });
+            }
+
             if (!data.fromAtUTC) {
                 ctx.addIssue({
                     code: 'custom',
                     path: ['fromAtUTC'],
-                    message: 'Start time is required when using nearest availability.',
-                });
-            }
-
-            if (workerUuid) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['workerUuid'],
-                    message: 'Worker must not be selected when using nearest availability.',
+                    message: 'Start time is required for nearest availability.',
                 });
             }
         }

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
+
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import toast from 'react-hot-toast';
 
 import { CreateDialog, type CreateDialogField } from '../../../../components/CreateDialog.tsx';
 
@@ -21,14 +23,17 @@ import { PaymentMethod } from '../../../../models/enums/payment-method.ts';
 import { AppointmentTimeType } from '../../../../models/enums/appointment-time-type.ts';
 
 import { PAGE_SIZE } from '../../../../components/DataTableFeatures.ts';
+
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../hooks/deounce.ts';
 
 import { AppointmentAvailability } from './AppointmentAvailability.tsx';
+import { OrganizationTimeInfo } from './OrganizationTimeInfo.tsx';
 
-import toast from 'react-hot-toast';
+import { organizationDateToLocalDateTime } from '../../user-view/utils/timezone.ts';
 
 interface CreateAppointmentDialogProps {
     organizationUuid?: string;
+    organizationTimeZone: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     selectedDate?: Date;
@@ -36,23 +41,41 @@ interface CreateAppointmentDialogProps {
     selectedWorkerUuid?: string;
 }
 
-function getDefaultStart(selectedDate?: Date, selectedTime?: Date): string {
-    return (selectedTime ?? selectedDate ?? new Date()).toISOString();
+function getDefaultStart(
+    selectedDate: Date | undefined,
+    selectedTime: Date | undefined,
+    timeZone: string,
+): string {
+    const startAt = selectedTime ?? selectedDate ?? new Date();
+
+    return organizationDateToLocalDateTime(startAt, timeZone);
 }
 
 export function CreateAppointmentDialog({
     organizationUuid,
+    organizationTimeZone,
     open,
     onOpenChange,
     selectedDate,
     selectedTime,
-    selectedWorkerUuid,
+    selectedWorkerUuid: initialSelectedWorkerUuid,
 }: CreateAppointmentDialogProps) {
     const createMutation = useCreateOrganizationAppointment(organizationUuid);
 
     const [customerSearch, setCustomerSearch] = useState('');
     const [serviceSearch, setServiceSearch] = useState('');
     const [workerSearch, setWorkerSearch] = useState('');
+
+    /*
+     * This is deliberately separate from form.workerUuid.
+     *
+     * In NEAREST mode the scheduling request must not contain workerUuid,
+     * but the worker from the selected availability option is still
+     * required when creating the actual appointment.
+     */
+    const [selectedAppointmentWorkerUuid, setSelectedAppointmentWorkerUuid] = useState<
+        string | undefined
+    >(initialSelectedWorkerUuid);
 
     const debouncedCustomerSearch = useDebounce(customerSearch, GENERAL_DEBOUNCE_DELAY);
 
@@ -126,44 +149,58 @@ export function CreateAppointmentDialog({
         [workersData],
     );
 
-    /*
-     * Important:
-     * Keep this stable between renders.
-     *
-     * The previous implementation calculated new Date().toISOString()
-     * during every render, which could cause defaultValues to change
-     * continuously and reset the form.
-     */
     const defaultStart = useMemo(
-        () => getDefaultStart(selectedDate, selectedTime),
-        [selectedDate, selectedTime],
+        () => getDefaultStart(selectedDate, selectedTime, organizationTimeZone),
+        [selectedDate, selectedTime, organizationTimeZone],
     );
 
-    const defaultValues = useMemo<CreateAppointmentFormInput>(
-        () => ({
+    const defaultValues = useMemo<CreateAppointmentFormInput>(() => {
+        const initialTimeType = initialSelectedWorkerUuid
+            ? AppointmentTimeType.WORKER
+            : AppointmentTimeType.NEAREST;
+
+        return {
             name: '',
             userUuid: '',
             serviceUuid: '',
 
-            timeType: selectedWorkerUuid ? AppointmentTimeType.WORKER : AppointmentTimeType.NEAREST,
+            timeType: initialTimeType,
 
-            workerUuid: selectedWorkerUuid ?? '',
+            /*
+             * This is only populated for WORKER mode.
+             *
+             * NEAREST mode keeps this empty because workerUuid is
+             * forbidden in the scheduling request.
+             */
+            workerUuid:
+                initialTimeType === AppointmentTimeType.WORKER
+                    ? (initialSelectedWorkerUuid ?? '')
+                    : '',
 
-            fromAtUTC: defaultStart,
-            scheduledStartAtUTC: defaultStart,
+            roomUuid: '',
+
+            fromAtUTC: initialTimeType === AppointmentTimeType.NEAREST ? defaultStart : '',
+
+            scheduledStartAtUTC: '',
 
             organizationNote: '',
             organizationColour: '#2563EB',
-            paymentMethod: PaymentMethod.CASH,
-        }),
-        [defaultStart, selectedWorkerUuid],
-    );
 
-    const fields = useMemo<readonly CreateDialogField<CreateAppointmentFormInput>[]>(
+            paymentMethod: PaymentMethod.CASH,
+        };
+    }, [defaultStart, initialSelectedWorkerUuid]);
+
+    const fields = useMemo<
+        readonly CreateDialogField<CreateAppointmentFormInput, CreateAppointmentFormOutput>[]
+    >(
         () => [
-            /*
-             * 1. AVAILABILITY FIRST
-             */
+            {
+                name: 'name',
+                label: 'Appointment Name',
+                type: 'text',
+                placeholder: 'Enter appointment name',
+            },
+
             {
                 name: 'timeType',
                 label: 'Appointment Availability',
@@ -181,9 +218,6 @@ export function CreateAppointmentDialog({
                 placeholder: 'Select availability',
             },
 
-            /*
-             * 2. CUSTOMER
-             */
             {
                 name: 'userUuid',
                 label: 'Customer',
@@ -194,9 +228,6 @@ export function CreateAppointmentDialog({
                 onSearchChange: setCustomerSearch,
             },
 
-            /*
-             * 3. SERVICE
-             */
             {
                 name: 'serviceUuid',
                 label: 'Service',
@@ -207,26 +238,15 @@ export function CreateAppointmentDialog({
                 onSearchChange: setServiceSearch,
             },
 
-            /*
-             * 4A. NEAREST AVAILABLE
-             *
-             * Only visible when nearest availability is selected.
-             */
             {
                 name: 'fromAtUTC',
                 label: 'Find Availability From',
                 type: 'datetime-local',
                 visible: (form) => form.watch('timeType') === AppointmentTimeType.NEAREST,
                 description:
-                    'Choose the date and time from which available appointments should be found.',
+                    'Choose the organization-local date and time from which available appointments should be found.',
             },
 
-            /*
-             * 4B. SPECIFIC WORKER
-             *
-             * Completely removed from the UI when nearest availability
-             * is selected.
-             */
             {
                 name: 'workerUuid',
                 label: 'Worker',
@@ -238,26 +258,30 @@ export function CreateAppointmentDialog({
                 onSearchChange: setWorkerSearch,
             },
 
-            /*
-             * 5. AVAILABLE TIMES
-             *
-             * One result presentation only.
-             */
             {
                 name: 'scheduledStartAtUTC',
                 label: 'Available Appointment Times',
                 type: 'custom',
+
+                visible: (form) => {
+                    const userUuid = form.watch('userUuid');
+                    const serviceUuid = form.watch('serviceUuid');
+                    const timeType = form.watch('timeType');
+
+                    return Boolean(userUuid && serviceUuid && timeType);
+                },
+
                 render: (form) => (
                     <AppointmentAvailability
                         organizationUuid={organizationUuid}
+                        organizationTimeZone={organizationTimeZone}
                         form={form}
+                        initialWorkerUuid={initialSelectedWorkerUuid}
+                        onAppointmentWorkerChange={setSelectedAppointmentWorkerUuid}
                     />
                 ),
             },
 
-            /*
-             * 6. NOTE
-             */
             {
                 name: 'organizationNote',
                 label: 'Organization Note',
@@ -265,9 +289,6 @@ export function CreateAppointmentDialog({
                 placeholder: 'Optional note',
             },
 
-            /*
-             * 7. PAYMENT
-             */
             {
                 name: 'paymentMethod',
                 label: 'Payment Method',
@@ -287,9 +308,8 @@ export function CreateAppointmentDialog({
             servicesLoading,
             workersLoading,
             organizationUuid,
-            selectedDate,
-            selectedTime,
-            selectedWorkerUuid,
+            organizationTimeZone,
+            initialSelectedWorkerUuid,
         ],
     );
 
@@ -299,26 +319,45 @@ export function CreateAppointmentDialog({
             return;
         }
 
-        if (values.timeType === AppointmentTimeType.WORKER && !values.workerUuid) {
-            toast.error('Please select a worker.');
+        const appointmentWorkerUuid =
+            values.timeType === AppointmentTimeType.WORKER
+                ? values.workerUuid
+                : selectedAppointmentWorkerUuid;
+
+        if (!appointmentWorkerUuid) {
+            toast.error('Please select an available appointment time.');
             return;
         }
 
+        /*
+         * timeType is a scheduling-only field.
+         *
+         * fromAtUTC is a scheduling-only field.
+         *
+         * roomUuid is also not sent here because the current appointment
+         * creation schema/API does not accept it.
+         *
+         * The selected availability already determines the worker and
+         * scheduled start time for the appointment.
+         */
         const appointment = {
             name: values.name,
             userUuid: values.userUuid,
             serviceUuid: values.serviceUuid,
-            workerUuid: values.workerUuid,
+            workerUuid: appointmentWorkerUuid,
             scheduledStartAtUTC: values.scheduledStartAtUTC,
-            organizationNote: values.organizationNote,
-            organizationColour: values.organizationColour,
+            organizationNote: values.organizationNote || undefined,
+            organizationColour: values.organizationColour || undefined,
             paymentMethod: values.paymentMethod,
         };
 
         const result = createOrganizationAppointmentSchema.safeParse(appointment);
 
         if (!result.success) {
+            console.error('Create appointment validation failed:', result.error.flatten());
+
             toast.error('Please check the appointment details.');
+
             return;
         }
 
@@ -340,6 +379,7 @@ export function CreateAppointmentDialog({
             resolver={zodResolver(createAppointmentFormSchema)}
             defaultValues={defaultValues}
             fields={fields}
+            topContent={<OrganizationTimeInfo timeZone={organizationTimeZone} />}
             submitLabel="Create Appointment"
             errorMessage={
                 createMutation.isError

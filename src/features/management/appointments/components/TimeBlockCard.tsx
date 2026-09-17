@@ -2,18 +2,18 @@ import { CalendarClock, Info } from 'lucide-react';
 
 import type { TimeBlockResponse } from '../../../../models/time-block.ts';
 
+import { formatTimeInTimeZone } from '../../user-view/utils/timezone.ts';
+
 interface TimeBlockCardProps {
     timeBlock: TimeBlockResponse;
+    organizationTimeZone: string;
 }
 
-function formatTime(value: string) {
-    return new Date(value).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
+export function TimeBlockCard({ timeBlock, organizationTimeZone }: TimeBlockCardProps) {
+    const startTime = formatTimeInTimeZone(timeBlock.startAtUTC, organizationTimeZone);
 
-export function TimeBlockCard({ timeBlock }: TimeBlockCardProps) {
+    const endTime = formatTimeInTimeZone(timeBlock.endAtUTC, organizationTimeZone);
+
     return (
         <article className="overflow-hidden rounded-xl border border-[#d3d3df] bg-[#ededf2]">
             <div className="flex min-w-0 items-start gap-3 p-3">
@@ -31,9 +31,7 @@ export function TimeBlockCard({ timeBlock }: TimeBlockCardProps) {
                     </div>
 
                     <p className="mt-0.5 text-[10px] text-[#777789]">
-                        {formatTime(timeBlock.startAtUTC)}
-                        {' – '}
-                        {formatTime(timeBlock.endAtUTC)}
+                        {startTime} – {endTime}
                     </p>
 
                     {timeBlock.reason ? (

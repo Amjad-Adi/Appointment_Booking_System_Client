@@ -26,7 +26,7 @@ function Calendar({
         <DayPicker
             showOutsideDays={showOutsideDays}
             className={cn(
-                'group/calendar bg-background p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
+                'group/calendar bg-[#EDEDF2] p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
                 String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
                 String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
                 className,
@@ -167,7 +167,6 @@ function Calendar({
         />
     );
 }
-
 function CalendarDayButton({
     className,
     day,
@@ -176,12 +175,10 @@ function CalendarDayButton({
     ...props
 }: React.ComponentProps<typeof DayButton> & { locale?: Partial<Locale> }) {
     const defaultClassNames = getDefaultClassNames();
-
     const ref = React.useRef<HTMLButtonElement>(null);
     React.useEffect(() => {
         if (modifiers.focused) ref.current?.focus();
     }, [modifiers.focused]);
-
     return (
         <Button
             variant="ghost"
@@ -197,7 +194,7 @@ function CalendarDayButton({
             data-range-end={modifiers.range_end}
             data-range-middle={modifiers.range_middle}
             className={cn(
-                'group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground data-[range-middle=true]:bg-muted data-[range-middle=true]:text-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground dark:hover:text-foreground relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) [&>span]:text-xs [&>span]:opacity-70',
+                'group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 dark:hover:text-foreground relative isolate z-10 flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 border-0 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[2px] data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:bg-[#D3D3DF] data-[range-end=true]:text-[#343447] data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-[#D3D3DF] data-[range-middle=true]:text-[#343447] data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:bg-[#D3D3DF] data-[range-start=true]:text-[#343447] data-[selected-single=true]:bg-[#D3D3DF] data-[selected-single=true]:text-[#343447] [&>span]:text-xs [&>span]:opacity-70',
                 defaultClassNames.day,
                 className,
             )}
@@ -205,5 +202,4 @@ function CalendarDayButton({
         />
     );
 }
-
 export { Calendar, CalendarDayButton };

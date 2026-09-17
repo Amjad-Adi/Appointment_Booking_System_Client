@@ -2,18 +2,14 @@ import { Plus } from 'lucide-react';
 
 import { Button } from '../../../../components/Button.tsx';
 
+import { formatTimeInTimeZone } from '../../user-view/utils/timezone.ts';
+
 interface EmptyAppointmentSlotProps {
     startAt: Date;
     endAt: Date;
+    organizationTimeZone: string;
     canCreate?: boolean;
     onAdd?: () => void;
-}
-
-function formatTime(value: Date) {
-    return value.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
 }
 
 function formatDuration(startAt: Date, endAt: Date) {
@@ -40,15 +36,20 @@ function formatDuration(startAt: Date, endAt: Date) {
 export function EmptyAppointmentSlot({
     startAt,
     endAt,
+    organizationTimeZone,
     canCreate = false,
     onAdd,
 }: EmptyAppointmentSlotProps) {
+    const startTime = formatTimeInTimeZone(startAt, organizationTimeZone);
+
+    const endTime = formatTimeInTimeZone(endAt, organizationTimeZone);
+
     return (
         <article className="rounded-xl border border-dashed border-[#d3d3df] bg-[#f5f5f8] p-3">
             <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                     <p className="text-[11px] font-medium text-[#343447]">
-                        {formatTime(startAt)} – {formatTime(endAt)}
+                        {startTime} – {endTime}
                     </p>
 
                     <p className="mt-0.5 text-[10px] text-[#777789]">

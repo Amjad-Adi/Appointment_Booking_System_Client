@@ -19,7 +19,6 @@ interface EditAppointmentDialogProps {
 }
 
 type EditAppointmentForm = z.input<typeof updateAppointmentSchemaByOrganization>;
-
 type EditAppointmentFormOutput = z.output<typeof updateAppointmentSchemaByOrganization>;
 
 export function EditAppointmentDialog({
@@ -33,7 +32,7 @@ export function EditAppointmentDialog({
     const defaultValues = useMemo<EditAppointmentForm>(
         () => ({
             organizationNote: appointment.organizationNote,
-            organizationColour: appointment.organizationColour,
+            organizationColour: appointment.organizationColour || '#2563EB',
         }),
         [appointment],
     );
@@ -44,11 +43,12 @@ export function EditAppointmentDialog({
                 name: 'organizationNote',
                 label: 'Organization Note',
                 type: 'text',
+                placeholder: 'Optional note',
             },
             {
                 name: 'organizationColour',
                 label: 'Organization Colour',
-                type: 'text',
+                type: 'color',
             },
         ],
         [],

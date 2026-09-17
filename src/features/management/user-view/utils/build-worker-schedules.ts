@@ -6,18 +6,24 @@ import type { WorkerSchedule } from '../../../../models/appointment-schedule.mod
 import { DayOfWeek } from '../../../../models/enums/day-of-week.ts';
 import { buildWorkerSchedule } from './appointment-schedule.ts';
 
+import { formatDateForApi, localDateTimeToISO } from './date.ts';
+
 interface BuildWorkerSchedulesParams {
     workingHours: WorkingHours[];
     appointments: AppointmentResponse[];
     timeBlocks: TimeBlockResponse[];
     date: Date;
+    timeZone: string;
 }
 
-function getWorkingInterval(workingHours: WorkingHours[], date: Date) {
+function getWorkingInterval(workingHours: WorkingHours[], date: Date, timeZone: string) {
+    const dateString = formatDateForApi(date, timeZone);
+
     const dayOfWeek = new Intl.DateTimeFormat('en-US', {
         weekday: 'long',
+        timeZone,
     })
-        .format(date)
+        .format(new Date(`${dateString}T12:00:00Z`))
         .toUpperCase() as DayOfWeek;
 
     const dayWorkingHours = workingHours.find((item) => item.dayOfWeek === dayOfWeek);
@@ -26,15 +32,18 @@ function getWorkingInterval(workingHours: WorkingHours[], date: Date) {
         return null;
     }
 
-    const [startHour, startMinute] = dayWorkingHours.startTime.split(':').map(Number);
+    const startAtUTC = localDateTimeToISO(
+        `${dateString}T${dayWorkingHours.startTime.slice(0, 5)}`,
+        timeZone,
+    );
 
-    const [endHour, endMinute] = dayWorkingHours.endTime.split(':').map(Number);
+    const endAtUTC = localDateTimeToISO(
+        `${dateString}T${dayWorkingHours.endTime.slice(0, 5)}`,
+        timeZone,
+    );
 
-    const startAt = new Date(date);
-    startAt.setHours(startHour, startMinute, 0, 0);
-
-    const endAt = new Date(date);
-    endAt.setHours(endHour, endMinute, 0, 0);
+    const startAt = new Date(startAtUTC);
+    const endAt = new Date(endAtUTC);
 
     if (startAt >= endAt) {
         return null;
@@ -45,13 +54,15 @@ function getWorkingInterval(workingHours: WorkingHours[], date: Date) {
         endAt,
     };
 }
+
 export function buildWorkerSchedules({
     workingHours,
     appointments,
     timeBlocks,
     date,
+    timeZone,
 }: BuildWorkerSchedulesParams): WorkerSchedule[] {
-    const workingInterval = getWorkingInterval(workingHours, date);
+    const workingInterval = getWorkingInterval(workingHours, date, timeZone);
 
     if (!workingInterval) {
         return [];
@@ -97,6 +108,7 @@ export function buildWorkerSchedules({
             });
         }
     }
+
     return Array.from(workerMap.entries())
         .map(([workerUuid, worker]) =>
             buildWorkerSchedule({

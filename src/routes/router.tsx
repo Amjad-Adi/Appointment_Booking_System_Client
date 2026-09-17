@@ -48,6 +48,7 @@ import {
     USER_SETTINGS_PAGE,
 } from '../permissions/permissions.ts';
 import { OrganizationLayout } from '../features/management/organizations/layout/OrganizationLayout.tsx';
+import { InvitationPage } from '../features/management/user-view/pages/invitaitons/InvitationPage.tsx';
 
 export const router = createBrowserRouter([
     {
@@ -273,11 +274,24 @@ export const router = createBrowserRouter([
                             // ------------------------------
                             {
                                 path: 'invitations',
-                                element: (
-                                    <RoleBasedRouter permission={USER_INVITATIONS_PAGE}>
-                                        <div>Organization Invitations</div>
-                                    </RoleBasedRouter>
-                                ),
+                                children: [
+                                    {
+                                        index: true,
+                                        element: (
+                                            <RoleBasedRouter permission={USER_INVITATIONS_PAGE}>
+                                                <InvitationPage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                    {
+                                        path: ':appointmentUuid',
+                                        element: (
+                                            <RoleBasedRouter permission={USER_APPOINTMENTS_PAGE}>
+                                                <AppointmentProfilePage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                ],
                             },
 
                             // ------------------------------
