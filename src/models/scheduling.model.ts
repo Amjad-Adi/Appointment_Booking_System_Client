@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { schedulingSchema } from '../zod-schemas/scheduling.schema.ts';
+import { schedulingSchema } from '../zod-schemas/scheduling.schema.ts';
 
 export interface SchedulingOption {
     organization: {
@@ -30,8 +30,19 @@ export interface SchedulingOption {
     scheduledEndAtUTC: string;
 }
 
-export interface SchedulingResponse {
+export interface SchedulingWorkerGroup {
+    worker: {
+        uuid: string;
+        firstName: string;
+        lastName: string;
+        profilePicturePath: string;
+    };
+
     options: SchedulingOption[];
 }
 
-export type SchedulingRequest = z.infer<typeof schedulingSchema>;
+export interface SchedulingResponse {
+    workers: SchedulingWorkerGroup[];
+}
+
+export type SchedulingRequest = z.infer<typeof schedulingSchema>

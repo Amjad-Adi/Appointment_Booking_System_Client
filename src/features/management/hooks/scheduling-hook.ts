@@ -3,9 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { SchedulingRequest, SchedulingResponse } from '../../../models/scheduling.model.ts';
 
 import { AppointmentTimeType } from '../../../models/enums/appointment-time-type.ts';
-
 import { ORGANIZATION_SCHEDULING } from '../../../utlis/query-keys.ts';
-
 import { api } from '../../../services/axios.ts';
 
 function datetimeLocalToUTC(value: string): string {
@@ -13,29 +11,36 @@ function datetimeLocalToUTC(value: string): string {
 }
 
 function buildSchedulingPayload(request: SchedulingRequest) {
-    const payload = {
-        userUuid: request.userUuid,
-        serviceUuid: request.serviceUuid,
-        timeType: request.timeType,
-    };
-
     if (request.timeType === AppointmentTimeType.WORKER) {
         return {
-            ...payload,
+            userUuid: request.userUuid,
+            serviceUuid: request.serviceUuid,
+            timeType: request.timeType,
             workerUuid: request.workerUuid,
         };
     }
 
     return {
-        ...payload,
-        ...(request.fromAtUTC ? { fromAtUTC: datetimeLocalToUTC(request.fromAtUTC) } : {}),
+        userUuid: request.userUuid,
+        serviceUuid: request.serviceUuid,
+        timeType: request.timeType,
+        fromAtUTC: request.fromAtUTC,
     };
 }
-
 export function useOrganizationScheduling(
     organizationUuid: string | undefined,
     request: SchedulingRequest | undefined,
 ) {
+    const isRequestReady =
+        !!organizationUuid &&
+        !!request?.userUuid &&
+        !!request?.serviceUuid &&
+        (request.timeType === AppointmentTimeType.WORKER
+            ? !!request.workerUuid
+            : request.timeType === AppointmentTimeType.NEAREST
+              ? !!request.fromAtUTC
+              : false);
+
     return useQuery({
         queryKey: [ORGANIZATION_SCHEDULING, organizationUuid, request],
 
@@ -57,13 +62,6 @@ export function useOrganizationScheduling(
 
             return response.data;
         },
-
-        enabled:
-            !!organizationUuid &&
-            !!request?.userUuid &&
-            !!request?.serviceUuid &&
-            (request.timeType === AppointmentTimeType.NEAREST || !!request.workerUuid),
-
-        refetchOnWindowFocus: false,
+        enabled: isRequestReady,
     });
 }

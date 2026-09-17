@@ -28,24 +28,21 @@ export interface CreateDialogMultiSelectOption<
     description?: string;
     imagePath?: string;
 }
+export type CreateDialogVisible<TInput extends FieldValues, TOutput = TInput> =
+    boolean | ((form: UseFormReturn<TInput, any, TOutput>) => boolean);
 
-export type CreateDialogVisible<TFieldValues extends FieldValues> =
-    | boolean
-    | ((form: UseFormReturn<TFieldValues>) => boolean);
+export type CreateDialogDisabled<TInput extends FieldValues, TOutput = TInput> =
+    boolean | ((form: UseFormReturn<TInput, any, TOutput>) => boolean);
 
-export type CreateDialogDisabled<TFieldValues extends FieldValues> =
-    | boolean
-    | ((form: UseFormReturn<TFieldValues>) => boolean);
-
-export interface CreateDialogCustomField<TFieldValues extends FieldValues> {
-    name: Path<TFieldValues>;
+export interface CreateDialogCustomField<TInput extends FieldValues, TOutput = TInput> {
+    name: Path<TInput>;
     label: string;
     type: 'custom';
-    render: (form: UseFormReturn<TFieldValues>) => ReactNode;
+    render: (form: UseFormReturn<TInput, any, TOutput>) => ReactNode;
 }
 
-export interface CreateDialogField<TFieldValues extends FieldValues> {
-    name: Path<TFieldValues>;
+export interface CreateDialogField<TInput extends FieldValues, TOutput = TInput> {
+    name: Path<TInput>;
 
     label: string;
 
@@ -72,26 +69,12 @@ export interface CreateDialogField<TFieldValues extends FieldValues> {
 
     onSearchChange?: (search: string) => void;
 
-    /**
-     * Controls whether the field is rendered.
-     *
-     * When false, the field is completely removed from the UI.
-     *
-     * The function receives the current form instance, so it can
-     * react to watched form values.
-     */
-    visible?: CreateDialogVisible<TFieldValues>;
+    visible?: CreateDialogVisible<TInput, TOutput>;
 
-    /**
-     * Controls whether the field is interactive.
-     *
-     * When true, the field remains visible but is disabled.
-     */
-    disabled?: CreateDialogDisabled<TFieldValues>;
+    disabled?: CreateDialogDisabled<TInput, TOutput>;
 
-    render?: (form: UseFormReturn<TFieldValues>) => ReactNode;
+    render?: (form: UseFormReturn<TInput, any, TOutput>) => ReactNode;
 }
-
 interface CreateDialogProps<TInput extends FieldValues, TOutput = TInput> {
     open: boolean;
 
@@ -105,7 +88,7 @@ interface CreateDialogProps<TInput extends FieldValues, TOutput = TInput> {
 
     defaultValues?: DefaultValues<TInput>;
 
-    fields: readonly CreateDialogField<TInput>[];
+    fields: readonly CreateDialogField<TInput, TOutput>[];
 
     submitLabel?: string;
 

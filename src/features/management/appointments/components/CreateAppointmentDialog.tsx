@@ -250,9 +250,6 @@ export function CreateAppointmentDialog({
                 render: (form) => (
                     <AppointmentAvailability
                         organizationUuid={organizationUuid}
-                        selectedDate={selectedDate}
-                        selectedTime={selectedTime}
-                        selectedWorkerUuid={selectedWorkerUuid}
                         form={form}
                     />
                 ),
