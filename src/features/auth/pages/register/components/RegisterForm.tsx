@@ -16,17 +16,22 @@ import type { CreateUser, RegisterUser } from '../../../../../models/user.model.
 import { Language } from '../../../../../models/enums/language.ts';
 import { languageRecord } from '../../../../../models/enums-mapping/language.ts';
 import { roleRecord } from '../../../../../models/enums-mapping/roles.ts';
-
+import { z } from 'zod';
+type RegisterUserForm = z.input<typeof registerUserSchema>;
+type RegisterUserFormOutput = z.output<typeof registerUserSchema>;
 export function RegisterForm() {
-    const { register, handleSubmit, formState, control } = useForm<RegisterUser, any, RegisterUser>(
-        {
-            resolver: zodResolver(registerUserSchema),
-            defaultValues: {
-                role: Role.CUSTOMER,
-                language: Language.ENGLISH,
-            },
+    const { register, handleSubmit, formState, control } = useForm<
+        RegisterUserForm,
+        any,
+        RegisterUserFormOutput
+    >({
+        resolver: zodResolver(registerUserSchema),
+        defaultValues: {
+            role: Role.CUSTOMER,
+            language: Language.ENGLISH,
+            profilePicturePath: 'DEFAULT_PICTURE_PATH',
         },
-    );
+    });
 
     const registerMutation = useRegisterUser();
 

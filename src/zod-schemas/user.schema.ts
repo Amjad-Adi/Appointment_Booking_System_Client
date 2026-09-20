@@ -46,9 +46,10 @@ const createUserFields = {
     profilePicturePath: z
         .string()
         .trim()
-        .nonempty({ error: 'Profile picture path cannot be empty' })
-        .optional(),
-
+        .min(1, {
+            error: 'Profile picture path cannot be empty',
+        })
+        .default('DEFAULT_PICTURE_PATH'),
     language: z.string().trim().length(2, {
         error: 'Language must be a 2-character code',
     }),
