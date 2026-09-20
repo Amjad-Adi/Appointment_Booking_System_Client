@@ -41,7 +41,7 @@ import {
     CREATE_USER,
     UPDATE_USER_AS_ADMIN,
     UPDATE_ORGANIZATION_AS_ADMIN,
-    CREATE_SERVICE_CATEGORY,
+    CREATE_SERVICE_CATEGORY, ORGANIZATION_MANAGEMENT_PAGE,
 } from './permissions.js';
 
 import { Role } from '../models/enums/roles.js';
@@ -56,7 +56,6 @@ const customerPermissions: string[] = [
     USER_DASHBOARD_PAGE,
     USER_SERVICES_PAGE,
     USER_APPOINTMENTS_PAGE,
-    USER_INVITATIONS_PAGE,
     USER_FAVOURITES_PAGE,
     USER_REVIEWS_PAGE,
     USER_PROFILE_PAGE,
@@ -91,7 +90,6 @@ const customerPermissions: string[] = [
 
 const workerPermissions: string[] = [
     HAS_LOGIN,
-
     USER_DASHBOARD_PAGE,
     USER_SERVICES_PAGE,
     USER_APPOINTMENTS_PAGE,
@@ -106,7 +104,8 @@ const workerPermissions: string[] = [
 
 const crmPermissions: string[] = [
     HAS_LOGIN,
-
+    ORGANIZATION_MANAGEMENT_PAGE,
+    USER_INVITATIONS_PAGE,
     USER_DASHBOARD_PAGE,
     USER_SERVICES_PAGE,
     USER_APPOINTMENTS_PAGE,
@@ -121,13 +120,14 @@ const crmPermissions: string[] = [
 
 const managerPermissions: string[] = [
     HAS_LOGIN,
-
+    ORGANIZATION_MANAGEMENT_PAGE,
     USER_DASHBOARD_PAGE,
     USER_SERVICES_PAGE,
     USER_APPOINTMENTS_PAGE,
     USER_ROOMS_PAGE,
     USER_PROFILE_PAGE,
     USER_SETTINGS_PAGE,
+    USER_INVITATIONS_PAGE,
 
     // Organization invitations
     ORGANIZATION_INVITATION_PAGE,
@@ -150,7 +150,7 @@ const managerPermissions: string[] = [
 
 const ownerPermissions: string[] = [
     ...managerPermissions,
-
+    USER_INVITATIONS_PAGE,
     // Organization
     CREATE_ORGANIZATION,
     UPDATE_ORGANIZATION,

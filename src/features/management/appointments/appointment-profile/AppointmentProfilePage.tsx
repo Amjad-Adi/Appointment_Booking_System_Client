@@ -32,7 +32,7 @@ export function AppointmentProfilePage() {
     );
 
     if (!appointmentUuid) {
-        return <div>Appointment not found</div>;
+        return (<div>Appointment not found</div>);
     }
 
     const appointment = isOrganizationRelated ? organizationAppointment : userAppointment;

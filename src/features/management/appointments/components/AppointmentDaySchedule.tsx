@@ -1,4 +1,7 @@
-import type { AppointmentResponse } from '../../../../models/appointment.model.ts';
+import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+
+import type { OrganizationAppointmentResponse } from '../../../../models/appointment.model.ts';
 
 import type {
     AppointmentScheduleSegment,
@@ -15,10 +18,16 @@ interface AppointmentDayScheduleProps {
     date: Date;
     workerSchedules: WorkerSchedule[];
     organizationTimeZone: string;
+
     canCreate?: boolean;
     onAddAppointment?: (date: Date, startAt: Date, workerUuid: string) => void;
-    onViewAppointment?: (appointment: AppointmentResponse) => void;
-    onEditAppointment?: (appointment: AppointmentResponse) => void;
+
+    canCreateTimeBlock?: boolean;
+    onAddTimeBlock?: (date: Date, startAt: Date, endAt: Date, workerUuid: string) => void;
+
+    onViewAppointment?: (appointment: OrganizationAppointmentResponse) => void;
+
+    onEditAppointment?: (appointment: OrganizationAppointmentResponse) => void;
 }
 
 function renderSegment(
@@ -27,9 +36,11 @@ function renderSegment(
     date: Date,
     organizationTimeZone: string,
     canCreate: boolean,
+    canCreateTimeBlock: boolean,
     onAddAppointment?: (date: Date, startAt: Date, workerUuid: string) => void,
-    onViewAppointment?: (appointment: AppointmentResponse) => void,
-    onEditAppointment?: (appointment: AppointmentResponse) => void,
+    onAddTimeBlock?: (date: Date, startAt: Date, endAt: Date, workerUuid: string) => void,
+    onViewAppointment?: (appointment: OrganizationAppointmentResponse) => void,
+    onEditAppointment?: (appointment: OrganizationAppointmentResponse) => void,
 ) {
     if (segment.type === 'appointment') {
         return (
@@ -63,6 +74,10 @@ function renderSegment(
             onAdd={() => {
                 onAddAppointment?.(date, segment.startAt, workerUuid);
             }}
+            canCreateTimeBlock={canCreateTimeBlock}
+            onAddTimeBlock={() => {
+                onAddTimeBlock?.(date, segment.startAt, segment.endAt, workerUuid);
+            }}
         />
     );
 }
@@ -73,12 +88,30 @@ export function AppointmentDaySchedule({
     organizationTimeZone,
     canCreate = false,
     onAddAppointment,
+    canCreateTimeBlock = false,
+    onAddTimeBlock,
     onViewAppointment,
     onEditAppointment,
 }: AppointmentDayScheduleProps) {
+    const [collapsedWorkers, setCollapsedWorkers] = useState<Set<string>>(new Set());
+
+    const toggleWorker = (workerUuid: string) => {
+        setCollapsedWorkers((current) => {
+            const next = new Set(current);
+
+            if (next.has(workerUuid)) {
+                next.delete(workerUuid);
+            } else {
+                next.add(workerUuid);
+            }
+
+            return next;
+        });
+    };
+
     return (
-        <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-4">
-            <div className="mb-4">
+        <section className="flex max-h-[calc(100vh-8rem)] min-h-0 min-w-0 flex-col rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-4">
+            <div className="mb-4 shrink-0">
                 <h2 className="text-base font-semibold text-[#343447]">Daily Schedule</h2>
 
                 <p className="mt-0.5 text-[11px] text-[#777789]">
@@ -91,40 +124,80 @@ export function AppointmentDaySchedule({
                     <p className="text-sm font-medium text-[#343447]">No worker schedule</p>
 
                     <p className="mt-1 text-[11px] text-[#777789]">
-                        There are no workers with appointments or time blocks for this date.
+                        There are no workers available for this date.
                     </p>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {workerSchedules.map((workerSchedule) => (
-                        <section
-                            key={workerSchedule.workerUuid}
-                            className="overflow-hidden rounded-xl border border-[#d3d3df] bg-white"
-                        >
-                            <div className="border-b border-[#d3d3df] bg-[#ededf2] px-4 py-3">
-                                <h3 className="text-sm font-semibold text-[#343447]">
-                                    {workerSchedule.workerName}
-                                </h3>
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                    <div className="divide-y divide-[#d3d3df]">
+                        {workerSchedules.map((workerSchedule) => {
+                            const isCollapsed = collapsedWorkers.has(workerSchedule.workerUuid);
 
-                                <p className="mt-0.5 text-[10px] text-[#777789]">Worker schedule</p>
-                            </div>
+                            return (
+                                <section
+                                    key={workerSchedule.workerUuid}
+                                    className="py-3 first:pt-0 last:pb-0"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleWorker(workerSchedule.workerUuid)}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[#e2e2ec]"
+                                        aria-expanded={!isCollapsed}
+                                    >
+                                        <ChevronDown
+                                            className={[
+                                                'size-4 shrink-0 text-[#777789] transition-transform duration-200',
+                                                isCollapsed ? 'rotate-0' : 'rotate-180',
+                                            ].join(' ')}
+                                        />
 
-                            <div className="space-y-2 p-3">
-                                {workerSchedule.segments.map((segment) =>
-                                    renderSegment(
-                                        segment,
-                                        workerSchedule.workerUuid,
-                                        date,
-                                        organizationTimeZone,
-                                        canCreate,
-                                        onAddAppointment,
-                                        onViewAppointment,
-                                        onEditAppointment,
-                                    ),
-                                )}
-                            </div>
-                        </section>
-                    ))}
+                                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#777789]" />
+
+                                        <span className="min-w-0 truncate text-xs font-semibold text-[#343447]">
+                                            {workerSchedule.workerName}
+                                        </span>
+                                    </button>
+
+                                    <div
+                                        className={[
+                                            'grid transition-all duration-200 ease-in-out',
+                                            isCollapsed
+                                                ? 'grid-rows-[0fr] opacity-0'
+                                                : 'grid-rows-[1fr] opacity-100',
+                                        ].join(' ')}
+                                    >
+                                        <div className="min-h-0 overflow-hidden">
+                                            <div
+                                                className={[
+                                                    'mt-2 overflow-hidden rounded-xl border border-[#d3d3df] bg-white transition-transform duration-200',
+                                                    isCollapsed
+                                                        ? '-translate-y-1'
+                                                        : 'translate-y-0',
+                                                ].join(' ')}
+                                            >
+                                                <div className="space-y-2 p-3">
+                                                    {workerSchedule.segments.map((segment) =>
+                                                        renderSegment(
+                                                            segment,
+                                                            workerSchedule.workerUuid,
+                                                            date,
+                                                            organizationTimeZone,
+                                                            canCreate,
+                                                            canCreateTimeBlock,
+                                                            onAddAppointment,
+                                                            onAddTimeBlock,
+                                                            onViewAppointment,
+                                                            onEditAppointment,
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </section>

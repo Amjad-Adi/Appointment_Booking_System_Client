@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { InvitationStatus } from './enums/invitation-status.ts';
+import type { InvitationStatus } from './enums/invitation-status.ts';
+import type { Role } from './enums/roles.ts';
 
 import {
     createInvitationSchema,
@@ -10,9 +11,12 @@ import {
 
 export interface Invitation {
     uuid: string;
-    createdAtUTC: Date;
-    expiresAtUTC: Date;
-    invitationStatus: InvitationStatus;
+    recipientEmail: string;
+    role: Role;
+    createdAtUTC: string;
+    expiresAtUTC: string;
+    acceptedAtUTC: string | null;
+    status: InvitationStatus;
 }
 
 export interface InvitationResponse extends Invitation {
@@ -20,14 +24,11 @@ export interface InvitationResponse extends Invitation {
     senderFirstName: string;
     senderLastName: string;
     senderEmail: string;
-    senderProfilePicturePath: string;
+    senderProfilePicturePath: string | null;
+
     organizationUuid: string;
     organizationName: string;
-    recipientUuid: string;
-    recipientFirstName: string;
-    recipientLastName: string;
-    recipientEmail: string;
-    recipientProfilePicturePath: string;
+    organizationProfilePicturePath: string | null;
 }
 
 export type CreateInvitation = z.infer<typeof createInvitationSchema>;

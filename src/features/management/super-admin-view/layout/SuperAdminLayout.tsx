@@ -7,20 +7,20 @@ import toast from 'react-hot-toast';
 import { Toast } from '../../../../utlis/toast.ts';
 import { Role } from '../../../../models/enums/roles.ts';
 import { roleRecord } from '../../../../models/enums-mapping/roles.ts';
-import { organizationSidebarGroups } from '../../organizations/utils/sidebar.ts';
+import { getOrganizationSidebarGroups } from '../../organizations/utils/sidebar.ts';
 
 export function SuperAdminLayout() {
-    const { data, isLoading, isError } = useCurrentUser();
+    const { data:currentUser, isLoading, isError } = useCurrentUser();
     return (
         <ManagementLayout
             sidebar={{
                 title: roleRecord[Role.OWNER],
                 subtitle: 'Management',
-                groups: organizationSidebarGroups,
+                groups: getOrganizationSidebarGroups(currentUser?.organizationUuid as string),
                 profile: {
-                    name: `${data?.firstName} ${data?.lastName}`,
-                    email: `${data?.email}`,
-                    url: `users/${data?.uuid}`,
+                    name: `${currentUser?.firstName} ${currentUser?.lastName}`,
+                    email: `${currentUser?.email}`,
+                    url: `users/${currentUser?.uuid}`,
                 },
             }}
         />

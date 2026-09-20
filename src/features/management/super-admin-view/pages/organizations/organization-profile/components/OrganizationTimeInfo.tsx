@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Clock3, Globe2 } from 'lucide-react';
 
-import { formatDateTimeInTimeZone, getTimeZoneName } from '../../user-view/utils/timezone.ts';
+import {
+    formatDateTimeInTimeZone,
+    getTimeZoneName,
+} from '../../../../../user-view/utils/timezone.ts';
 
 interface OrganizationTimeInfoProps {
     timeZone: string;
@@ -28,13 +31,12 @@ export function OrganizationTimeInfo({ timeZone }: OrganizationTimeInfoProps) {
                 </div>
 
                 <div className="min-w-0">
-                    <p className="truncate text-[10px] font-semibold text-[#343447]">
+                    <p className="truncate text-left text-[10px] font-semibold text-[#343447]">
                         Organization Time
                     </p>
 
-                    <p className="truncate text-[9px] text-[#777789]">
+                    <p className="truncate text-left text-[9px] text-[#777789]">
                         {timeZone}
-                        {' · '}
                         {getTimeZoneName(timeZone)}
                     </p>
                 </div>

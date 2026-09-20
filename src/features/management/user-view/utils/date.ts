@@ -27,6 +27,42 @@ export function formatDateForApi(date: Date, timeZone?: string): string {
     return `${year}-${month}-${day}`;
 }
 
+export function formatDateTimeForInput(date: Date, timeZone?: string): string {
+    if (!timeZone) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+    }).formatToParts(date);
+
+    const getPart = (type: string) => parts.find((part) => part.type === type)?.value;
+
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
+    const hour = getPart('hour');
+    const minute = getPart('minute');
+
+    if (!year || !month || !day || !hour || !minute) {
+        throw new Error(`Unable to format datetime in timezone "${timeZone}".`);
+    }
+
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
 export function localDateTimeToISO(value: string, timeZone?: string): string {
     if (!timeZone) {
         return new Date(value).toISOString();

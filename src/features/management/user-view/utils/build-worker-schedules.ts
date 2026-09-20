@@ -1,7 +1,11 @@
-import type { AppointmentResponse } from '../../../../models/appointment.model.ts';
+import type {
+    OrganizationAppointment,
+    OrganizationAppointmentResponse,
+} from '../../../../models/appointment.model.ts';
 import type { WorkingHours } from '../../../../models/working-hours.model.ts';
-import type { TimeBlockResponse } from '../../../../models/time-block.ts';
+import type { TimeBlockResponse } from '../../../../models/time-block.model.ts';
 import type { WorkerSchedule } from '../../../../models/appointment-schedule.model.ts';
+import type { UserResponse } from '../../../../models/user.model.ts';
 
 import { DayOfWeek } from '../../../../models/enums/day-of-week.ts';
 import { buildWorkerSchedule } from './appointment-schedule.ts';
@@ -9,8 +13,9 @@ import { buildWorkerSchedule } from './appointment-schedule.ts';
 import { formatDateForApi, localDateTimeToISO } from './date.ts';
 
 interface BuildWorkerSchedulesParams {
+    workers: UserResponse[];
     workingHours: WorkingHours[];
-    appointments: AppointmentResponse[];
+    appointments: OrganizationAppointmentResponse[];
     timeBlocks: TimeBlockResponse[];
     date: Date;
     timeZone: string;
@@ -56,6 +61,7 @@ function getWorkingInterval(workingHours: WorkingHours[], date: Date, timeZone: 
 }
 
 export function buildWorkerSchedules({
+    workers,
     workingHours,
     appointments,
     timeBlocks,
@@ -68,55 +74,37 @@ export function buildWorkerSchedules({
         return [];
     }
 
-    const workerMap = new Map<
-        string,
-        {
-            workerName: string;
-            appointments: AppointmentResponse[];
-            timeBlocks: TimeBlockResponse[];
-        }
-    >();
+    const appointmentMap = new Map<string, OrganizationAppointmentResponse[]>();
+    const timeBlockMap = new Map<string, TimeBlockResponse[]>();
 
     for (const appointment of appointments) {
-        const existing = workerMap.get(appointment.workerUuid);
+        const existing = appointmentMap.get(appointment.workerUuid);
 
         if (existing) {
-            existing.appointments.push(appointment);
+            existing.push(appointment);
         } else {
-            workerMap.set(appointment.workerUuid, {
-                workerName: appointment.workerName,
-                appointments: [appointment],
-                timeBlocks: [],
-            });
+            appointmentMap.set(appointment.workerUuid, [appointment]);
         }
     }
 
     for (const timeBlock of timeBlocks) {
-        const existing = workerMap.get(timeBlock.requestUserUuid);
-
-        const workerName = [timeBlock.requestUserFirstName, timeBlock.requestUserLastName]
-            .filter(Boolean)
-            .join(' ');
+        const existing = timeBlockMap.get(timeBlock.requestUserUuid);
 
         if (existing) {
-            existing.timeBlocks.push(timeBlock);
+            existing.push(timeBlock);
         } else {
-            workerMap.set(timeBlock.requestUserUuid, {
-                workerName,
-                appointments: [],
-                timeBlocks: [timeBlock],
-            });
+            timeBlockMap.set(timeBlock.requestUserUuid, [timeBlock]);
         }
     }
 
-    return Array.from(workerMap.entries())
-        .map(([workerUuid, worker]) =>
+    return workers
+        .map((worker) =>
             buildWorkerSchedule({
-                workerUuid,
-                workerName: worker.workerName,
+                workerUuid: worker.uuid,
+                workerName: `${worker.firstName} ${worker.lastName}`.trim(),
                 workingIntervals: [workingInterval],
-                appointments: worker.appointments,
-                timeBlocks: worker.timeBlocks,
+                appointments: appointmentMap.get(worker.uuid) ?? [],
+                timeBlocks: timeBlockMap.get(worker.uuid) ?? [],
             }),
         )
         .sort((a, b) => a.workerName.localeCompare(b.workerName));

@@ -6,6 +6,7 @@ const latitudeMaxRange = 90;
 export const createLocationSchema = z
     .object({
         name: z.string().trim().nonempty().max(1024),
+        timezone: z.string().trim().min(1).max(64),
         locationOnMap: z.tuple([
             z.number().min(longitudeMinRange).max(longitudeMaxRange),
             z.number().min(latitudeMinRange).max(latitudeMaxRange),

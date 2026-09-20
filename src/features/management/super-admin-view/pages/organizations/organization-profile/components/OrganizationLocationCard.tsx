@@ -19,7 +19,7 @@ export function OrganizationLocationCard({ location }: OrganizationLocationCardP
         );
     }
 
-    const [longitude, latitude] = location.locationOnMap;
+    const [longitude = null, latitude = null] = location.locationOnMap ?? [null, null];
 
     const hasCoordinates = longitude !== null && latitude !== null;
 

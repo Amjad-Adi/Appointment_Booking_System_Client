@@ -51,6 +51,7 @@ export interface CreateDialogField<TInput extends FieldValues, TOutput = TInput>
         | 'email'
         | 'password'
         | 'number'
+        | 'date'
         | 'color'
         | 'datetime-local'
         | 'select'
@@ -217,33 +218,45 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
 
                             if (field.type === 'searchable-select') {
                                 return (
-                                    <div key={String(fieldName)} className="flex flex-col">
-                                        <SearchableSelect
-                                            id={String(fieldName)}
-                                            label={field.label}
-                                            options={field.options ?? []}
-                                            placeholder={
-                                                field.placeholder ?? `Select ${field.label}`
-                                            }
-                                            searchPlaceholder={
-                                                field.searchPlaceholder ?? 'Search...'
-                                            }
-                                            hasError={
-                                                Boolean(fieldError) || Boolean(serverFieldError)
-                                            }
-                                            errorMessage={validationErrorMessage}
-                                            onSearchChange={field.onSearchChange}
-                                            disabled={isDisabled}
-                                            {...register(fieldName)}
-                                            className="h-8 px-2.5 text-[11px]"
-                                        />
+                                    <Controller
+                                        key={String(fieldName)}
+                                        name={fieldName}
+                                        control={control}
+                                        render={({ field: controllerField }) => (
+                                            <div className="flex flex-col">
+                                                <SearchableSelect
+                                                    id={String(fieldName)}
+                                                    name={controllerField.name}
+                                                    label={field.label}
+                                                    options={field.options ?? []}
+                                                    value={controllerField.value ?? ''}
+                                                    placeholder={
+                                                        field.placeholder ?? `Select ${field.label}`
+                                                    }
+                                                    searchPlaceholder={
+                                                        field.searchPlaceholder ?? 'Search...'
+                                                    }
+                                                    hasError={
+                                                        Boolean(fieldError) ||
+                                                        Boolean(serverFieldError)
+                                                    }
+                                                    errorMessage={validationErrorMessage}
+                                                    onSearchChange={field.onSearchChange}
+                                                    disabled={isDisabled}
+                                                    onChange={controllerField.onChange}
+                                                    onBlur={controllerField.onBlur}
+                                                    ref={controllerField.ref}
+                                                    className="h-8 px-2.5 text-[11px]"
+                                                />
 
-                                        {field.description && (
-                                            <p className="mt-1 text-[9px] leading-4 text-[#777789]">
-                                                {field.description}
-                                            </p>
+                                                {field.description && (
+                                                    <p className="mt-1 text-[9px] leading-4 text-[#777789]">
+                                                        {field.description}
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
-                                    </div>
+                                    />
                                 );
                             }
 

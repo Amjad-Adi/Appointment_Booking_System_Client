@@ -9,6 +9,7 @@ import type {
     QueryOrganization,
     UpdateOrganizationByAdminForm,
     UpdateOrganizationByAdmin,
+    CreateOrganization,
 } from '../../../models/organization.model.ts';
 
 import { ORGANIZATION, ORGANIZATION_TABLE } from '../../../utlis/query-keys.ts';
@@ -71,9 +72,8 @@ export function useCreateOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (organization: CreateOrganizationByAdmin) => {
+        mutationFn: async (organization: CreateOrganizationByAdmin | CreateOrganization) => {
             const response = await api.post('/api/organizations', organization);
-
             return response.data;
         },
         onSuccess: async () => {

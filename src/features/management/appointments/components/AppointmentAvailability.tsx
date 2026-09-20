@@ -1,5 +1,5 @@
 import { ChevronDown, UserCircle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 
 import { AppointmentTimeType } from '../../../../models/enums/appointment-time-type.ts';
@@ -26,26 +26,14 @@ interface AppointmentAvailabilityProps {
     organizationUuid?: string;
     organizationTimeZone: string;
     form: UseFormReturn<CreateAppointmentFormInput>;
-
-    /**
-     * Worker from which the Add Appointment action was opened.
-     *
-     * This worker will initially be expanded and preferred when
-     * automatically selecting the first available option.
-     */
     initialWorkerUuid?: string;
-
-    /**
-     * Worker selected by the availability result for the actual
-     * appointment.
-     *
-     * This is deliberately separate from form.workerUuid because
-     * NEAREST scheduling must not send workerUuid to the scheduling API.
-     */
     onAppointmentWorkerChange?: (workerUuid: string | undefined) => void;
 }
 
-function isSameOption(first: SchedulingOption | undefined, second: SchedulingOption | undefined) {
+function isSameOption(
+    first: SchedulingOption | undefined,
+    second: SchedulingOption | undefined,
+): boolean {
     if (!first || !second) {
         return false;
     }
@@ -162,7 +150,7 @@ function WorkerAvailabilityGroup({
                                                     option.scheduledStartAtUTC,
                                                     organizationTimeZone,
                                                 )}
-                                                {' – '}
+                                                {' - '}
                                                 {formatTimeInTimeZone(
                                                     option.scheduledEndAtUTC,
                                                     organizationTimeZone,
@@ -232,14 +220,30 @@ export function AppointmentAvailability({
         name: 'scheduledStartAtUTC',
     });
 
+    const previousTimeType = useRef<AppointmentTimeType | undefined>(timeType);
+
+    /*
+     * This state controls ONLY which worker group is visually expanded.
+     *
+     * It does not mean that the worker is selected for the appointment.
+     */
     const [expandedWorkerUuid, setExpandedWorkerUuid] = useState<string | undefined>(
         initialWorkerUuid,
     );
 
+    /*
+     * The worker passed by the calendar is only the initial expanded worker.
+     *
+     * It must not override later user selections.
+     */
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setExpandedWorkerUuid(initialWorkerUuid);
     }, [initialWorkerUuid]);
 
+    /*
+     * Ensure the form always has a valid default time type.
+     */
     useEffect(() => {
         if (timeType) {
             return;
@@ -251,12 +255,34 @@ export function AppointmentAvailability({
         });
     }, [timeType, form]);
 
+    /*
+     * When entering WORKER mode, initialize the form worker
+     * from the worker that opened the dialog if necessary.
+     *
+     * This applies only to WORKER mode.
+     */
     useEffect(() => {
-        if (timeType !== AppointmentTimeType.NEAREST) {
-            return;
+        const changedToWorker =
+            previousTimeType.current !== AppointmentTimeType.WORKER &&
+            timeType === AppointmentTimeType.WORKER;
+
+        if (changedToWorker && initialWorkerUuid) {
+            form.setValue('workerUuid', initialWorkerUuid, {
+                shouldDirty: true,
+                shouldValidate: true,
+            });
+
+            onAppointmentWorkerChange?.(initialWorkerUuid);
         }
 
-        if (fromAtUTC) {
+        previousTimeType.current = timeType;
+    }, [timeType, initialWorkerUuid, form, onAppointmentWorkerChange]);
+
+    /*
+     * NEAREST mode requires a starting point.
+     */
+    useEffect(() => {
+        if (timeType !== AppointmentTimeType.NEAREST || fromAtUTC) {
             return;
         }
 
@@ -267,8 +293,18 @@ export function AppointmentAvailability({
     }, [timeType, organizationTimeZone, fromAtUTC, form]);
 
     /*
-     * Reset availability whenever the customer, service, or
-     * availability mode changes.
+     * Reset the selected availability whenever the scheduling inputs change.
+     *
+     * A previous selected time must never remain valid after changing
+     * the customer, service, or availability mode.
+     *
+     * In NEAREST mode:
+     * - workerUuid is NOT used
+     * - the worker is selected only when an actual availability option
+     *   is clicked
+     *
+     * Therefore entering NEAREST mode clears the appointment-worker
+     * selection in the parent.
      */
     useEffect(() => {
         form.setValue('scheduledStartAtUTC', '', {
@@ -276,21 +312,12 @@ export function AppointmentAvailability({
             shouldValidate: false,
         });
 
-        /*
-         * NEAREST mode must not keep workerUuid in the scheduling form.
-         * The selected worker is stored separately by the parent.
-         */
+        form.setValue('roomUuid', '', {
+            shouldDirty: false,
+            shouldValidate: false,
+        });
+
         if (timeType === AppointmentTimeType.NEAREST) {
-            form.setValue('workerUuid', '', {
-                shouldDirty: false,
-                shouldValidate: false,
-            });
-
-            form.setValue('roomUuid', '', {
-                shouldDirty: false,
-                shouldValidate: false,
-            });
-
             onAppointmentWorkerChange?.(undefined);
 
             return;
@@ -302,24 +329,37 @@ export function AppointmentAvailability({
                 shouldValidate: false,
             });
 
-            form.setValue('roomUuid', '', {
-                shouldDirty: false,
-                shouldValidate: false,
-            });
-
             /*
-             * In WORKER mode the selected worker comes directly from
-             * form.workerUuid.
+             * When switching to WORKER mode:
+             *
+             * - use the currently selected worker if there is one
+             * - otherwise use the worker from the schedule card
              */
-            onAppointmentWorkerChange?.(workerUuid || undefined);
+            const selectedWorkerUuid = workerUuid || initialWorkerUuid;
+
+            if (!workerUuid && initialWorkerUuid) {
+                form.setValue('workerUuid', initialWorkerUuid, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                });
+            }
+
+            onAppointmentWorkerChange?.(selectedWorkerUuid || undefined);
         }
-    }, [userUuid, serviceUuid, timeType, form, onAppointmentWorkerChange]);
+    }, [
+        userUuid,
+        serviceUuid,
+        timeType,
+        workerUuid,
+        initialWorkerUuid,
+        form,
+        onAppointmentWorkerChange,
+    ]);
 
     /*
-     * In WORKER mode the scheduling search starts from now.
+     * WORKER mode starts searching from the current instant.
      *
-     * workerUuid is intentionally included so changing the selected
-     * worker creates a fresh search timestamp.
+     * Recompute when the scheduling inputs change.
      */
     const workerModeStart = useMemo(
         () => new Date().toISOString(),
@@ -347,9 +387,10 @@ export function AppointmentAvailability({
     }, [timeType, fromAtUTC, organizationTimeZone, workerModeStart]);
 
     /*
-     * A worker is sent to the scheduling API only in WORKER mode.
+     * Only WORKER mode sends workerUuid to the scheduling API.
      *
-     * In NEAREST mode the scheduling service searches across workers.
+     * NEAREST mode deliberately sends no workerUuid so that the
+     * scheduling API returns all available workers.
      */
     const schedulingWorkerUuid =
         timeType === AppointmentTimeType.WORKER && workerUuid ? workerUuid : undefined;
@@ -397,15 +438,22 @@ export function AppointmentAvailability({
 
     const options = useMemo(() => workerGroups.flatMap((group) => group.options), [workerGroups]);
 
+    /*
+     * Find the currently selected availability option.
+     *
+     * In WORKER mode:
+     * search only within the selected worker's group.
+     *
+     * In NEAREST mode:
+     * workerUuid is deliberately not stored in the form, so the
+     * selected availability is identified by the scheduled start
+     * time across all returned workers.
+     */
     const selectedOption = useMemo(() => {
         if (!scheduledStartAtUTC) {
             return undefined;
         }
 
-        /*
-         * WORKER mode must find the selected option inside the
-         * selected worker's group only.
-         */
         if (timeType === AppointmentTimeType.WORKER && workerUuid) {
             const workerGroup = workerGroups.find((group) => group.worker.uuid === workerUuid);
 
@@ -414,65 +462,18 @@ export function AppointmentAvailability({
             );
         }
 
-        /*
-         * NEAREST mode has no workerUuid in the form.
-         *
-         * The selected option is identified by its scheduled
-         * start time.
-         */
         return options.find((option) => option.scheduledStartAtUTC === scheduledStartAtUTC);
     }, [timeType, workerUuid, scheduledStartAtUTC, workerGroups, options]);
 
     /*
-     * Automatically select the first available option in NEAREST mode.
+     * Selecting an option is the ONLY thing that selects a worker
+     * in NEAREST mode.
      *
-     * The worker is NOT written to form.workerUuid.
-     * It is sent to the parent as the worker that should own
-     * the actual appointment.
+     * The initial worker is NOT automatically selected.
+     *
+     * The initial worker is only expanded visually.
      */
-    useEffect(() => {
-        if (
-            timeType !== AppointmentTimeType.NEAREST ||
-            options.length === 0 ||
-            scheduledStartAtUTC
-        ) {
-            return;
-        }
-
-        const initialWorkerGroup = initialWorkerUuid
-            ? workerGroups.find((group) => group.worker.uuid === initialWorkerUuid)
-            : undefined;
-
-        const selectedGroup = initialWorkerGroup ?? workerGroups[0];
-
-        const firstOption = selectedGroup?.options[0];
-
-        if (!selectedGroup || !firstOption) {
-            return;
-        }
-
-        form.setValue('scheduledStartAtUTC', firstOption.scheduledStartAtUTC, {
-            shouldDirty: false,
-            shouldValidate: true,
-        });
-
-        onAppointmentWorkerChange?.(selectedGroup.worker.uuid);
-
-        setExpandedWorkerUuid(selectedGroup.worker.uuid);
-    }, [
-        timeType,
-        options,
-        workerGroups,
-        scheduledStartAtUTC,
-        initialWorkerUuid,
-        form,
-        onAppointmentWorkerChange,
-    ]);
-
     const handleSelect = (option: SchedulingOption, selectedWorkerUuid: string) => {
-        /*
-         * In WORKER mode the worker and room are part of the form.
-         */
         if (timeType === AppointmentTimeType.WORKER) {
             form.setValue('workerUuid', selectedWorkerUuid, {
                 shouldDirty: true,
@@ -484,17 +485,18 @@ export function AppointmentAvailability({
                 shouldValidate: false,
             });
 
-            onAppointmentWorkerChange?.(selectedWorkerUuid);
+            form.clearErrors('workerUuid');
+            form.clearErrors('roomUuid');
         }
 
-        /*
-         * In NEAREST mode workerUuid and roomUuid stay out of the
-         * scheduling form.
-         *
-         * The worker is instead retained by the parent for the
-         * eventual appointment creation request.
-         */
         if (timeType === AppointmentTimeType.NEAREST) {
+            /*
+             * Do NOT write workerUuid to the form.
+             *
+             * The selected worker is stored by the parent because
+             * workerUuid is intentionally absent from the NEAREST
+             * scheduling form state.
+             */
             onAppointmentWorkerChange?.(selectedWorkerUuid);
         }
 
@@ -503,14 +505,14 @@ export function AppointmentAvailability({
             shouldValidate: false,
         });
 
+        /*
+         * Selecting an option opens that worker's group.
+         *
+         * This is purely UI state.
+         */
         setExpandedWorkerUuid(selectedWorkerUuid);
 
         form.clearErrors('scheduledStartAtUTC');
-
-        if (timeType === AppointmentTimeType.WORKER) {
-            form.clearErrors('workerUuid');
-            form.clearErrors('roomUuid');
-        }
 
         void form.trigger(
             timeType === AppointmentTimeType.WORKER
@@ -519,6 +521,17 @@ export function AppointmentAvailability({
         );
     };
 
+    /*
+     * Expansion is completely independent from selection.
+     *
+     * The user can:
+     * - collapse the initial worker
+     * - expand another worker
+     * - collapse that worker
+     * - expand a different worker
+     *
+     * No appointment worker is selected by doing this.
+     */
     const handleToggleWorker = (selectedWorkerUuid: string) => {
         setExpandedWorkerUuid((current) =>
             current === selectedWorkerUuid ? undefined : selectedWorkerUuid,
@@ -559,7 +572,7 @@ export function AppointmentAvailability({
         return (
             <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
                 <p className="text-[10px] text-[#777789]">
-                    Select a start time to find available appointments.
+                    Select a start time to find available times.
                 </p>
             </div>
         );

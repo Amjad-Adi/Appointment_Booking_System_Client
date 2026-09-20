@@ -23,7 +23,17 @@ export interface EditDialogSelectOption<TValue extends string> {
 export interface EditDialogField<TFieldValues extends FieldValues> {
     name: Path<TFieldValues>;
     label: string;
-    type: 'text' | 'email' | 'number' | 'color' | 'select' | 'searchable-select';
+    type:
+        | 'text'
+        | 'email'
+        | 'number'
+        | 'color'
+        | 'select'
+        | 'searchable-select'
+        | 'time'
+        | 'checkbox'
+        |'datetime-local';
+
     options?: readonly EditDialogSelectOption<string>[];
     placeholder?: string;
     searchPlaceholder?: string;
@@ -103,11 +113,6 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
             }
         }
 
-        if (Object.keys(changedValues).length === 0) {
-            onOpenChange(false);
-            return;
-        }
-
         await onSubmit(changedValues);
     };
 
@@ -141,7 +146,9 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                     </h2>
 
                     {description && (
-                        <p className="mt-0.5 text-[11px] leading-4 text-[#777789]">{description}</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-[#777789]">
+                            {description}
+                        </p>
                     )}
                 </div>
 
@@ -160,6 +167,34 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                                 ? String(fieldError.message)
                                 : undefined;
 
+                            if (field.type === 'checkbox') {
+                                return (
+                                    <label
+                                        key={String(fieldName)}
+                                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#d3d3df] bg-white px-3 py-2.5"
+                                    >
+                                        <input
+                                            id={String(fieldName)}
+                                            type="checkbox"
+                                            {...register(fieldName)}
+                                            className="size-3.5 shrink-0 accent-[#343447]"
+                                        />
+
+                                        <span className="min-w-0">
+                                            <span className="block text-[11px] font-medium text-[#343447]">
+                                                {field.label}
+                                            </span>
+
+                                            {field.placeholder && (
+                                                <span className="mt-0.5 block text-[10px] leading-4 text-[#777789]">
+                                                    {field.placeholder}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </label>
+                                );
+                            }
+
                             if (field.type === 'searchable-select') {
                                 return (
                                     <SearchableSelect
@@ -167,8 +202,13 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                                         id={String(fieldName)}
                                         label={field.label}
                                         options={field.options ?? []}
-                                        placeholder={field.placeholder ?? `Select ${field.label}`}
-                                        searchPlaceholder={field.searchPlaceholder ?? 'Search...'}
+                                        placeholder={
+                                            field.placeholder ??
+                                            `Select ${field.label}`
+                                        }
+                                        searchPlaceholder={
+                                            field.searchPlaceholder ?? 'Search...'
+                                        }
                                         hasError={Boolean(fieldError)}
                                         errorMessage={fieldErrorMessage}
                                         onSearchChange={field.onSearchChange}
@@ -191,12 +231,16 @@ export function EditDialog<TInput extends FieldValues, TOutput = TInput>({
                                     >
                                         {field.showPlaceholder !== false && (
                                             <option value="">
-                                                {field.placeholder ?? `Select ${field.label}`}
+                                                {field.placeholder ??
+                                                    `Select ${field.label}`}
                                             </option>
                                         )}
 
                                         {field.options?.map((option) => (
-                                            <option key={option.value} value={option.value}>
+                                            <option
+                                                key={option.value}
+                                                value={option.value}
+                                            >
                                                 {option.label}
                                             </option>
                                         ))}

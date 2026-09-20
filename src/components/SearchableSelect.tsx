@@ -155,7 +155,9 @@ export const SearchableSelect = forwardRef<HTMLSelectElement, SearchableSelectPr
 
             onBlur?.(event);
         };
-
+        console.log('SearchableSelect value:', value);
+        console.log('selectedValue:', selectedValue);
+        console.log('selectedOption:', selectedOption);
         return (
             <div ref={containerRef} className={twMerge('relative w-full', wrapperClassName)}>
                 {!isLabelDisabled && <Label htmlFor={id}>{label}</Label>}

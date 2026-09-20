@@ -1,17 +1,17 @@
-import type { AppointmentResponse } from '../../../../models/appointment.model.ts';
+import type { OrganizationAppointmentResponse } from '../../../../models/appointment.model.ts';
 import type {
     AppointmentScheduleSegment,
     WorkingInterval,
     WorkerSchedule,
 } from '../../../../models/appointment-schedule.model.ts';
-import type { TimeBlockResponse } from '../../../../models/time-block.ts';
+import type { TimeBlockResponse } from '../../../../models/time-block.model.ts';
 import { TimeBlockStatus } from '../../../../models/enums/time-block-status.ts';
 
 interface WorkerScheduleInput {
     workerUuid: string;
     workerName: string;
     workingIntervals: WorkingInterval[];
-    appointments: AppointmentResponse[];
+    appointments: OrganizationAppointmentResponse[];
     timeBlocks: TimeBlockResponse[];
 }
 
@@ -32,7 +32,7 @@ function getTimeBlockIntervals(timeBlocks: TimeBlockResponse[]) {
 
 function buildWorkingIntervalSchedule(
     workingInterval: WorkingInterval,
-    appointments: AppointmentResponse[],
+    appointments: OrganizationAppointmentResponse[],
     timeBlocks: TimeBlockResponse[],
 ): AppointmentScheduleSegment[] {
     const intervalAppointments = appointments

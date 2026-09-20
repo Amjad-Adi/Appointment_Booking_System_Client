@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 
 import { ManagementPage } from '../components/ManagementPage.tsx';
 
-import { useCurrentUser } from '../hooks/users-hook.ts';
+import { useCurrentUser, useUsers } from '../hooks/users-hook.ts';
 import { useOrganization } from '../hooks/organization-hook.ts';
 import { useOrganizationAppointments } from '../hooks/appointment-hook.ts';
 import { useOrganizationWorkingHours } from '../hooks/working-hours-hook.ts';
@@ -12,15 +12,19 @@ import { useOrganizationSpecialDays } from '../hooks/special-days-hook.ts';
 
 import { Role } from '../../../models/enums/roles.ts';
 import { ActivationStatus } from '../../../models/enums/activation-status.ts';
-import type { AppointmentResponse } from '../../../models/appointment.model.ts';
+import type { OrganizationAppointmentResponse } from '../../../models/appointment.model.ts';
 
 import { AppointmentCalendar } from './components/AppointmentCalendar.tsx';
 import { AppointmentDaySchedule } from './components/AppointmentDaySchedule.tsx';
 import { CreateAppointmentDialog } from './components/CreateAppointmentDialog.tsx';
 import { EditAppointmentDialog } from './components/EditAppointmentDialog.tsx';
+import { CreateSpecialDayDialog } from './components/CreateSpecialDayDialog.tsx';
+import { CreateTimeBlockDialog } from './components/CreateTimeBlockDialog.tsx';
 
 import { buildWorkerSchedules } from '../user-view/utils/build-worker-schedules.ts';
 import { formatDateForApi } from '../user-view/utils/date.ts';
+
+import { formatDateInTimeZone } from '../user-view/utils/timezone.ts';
 
 export function AppointmentPage() {
     const navigate = useNavigate();
@@ -33,6 +37,8 @@ export function AppointmentPage() {
 
     const [selectedDate, setSelectedDate] = useState(new Date());
 
+    const [calendarMonth, setCalendarMonth] = useState(new Date());
+
     const [createAppointmentOpen, setCreateAppointmentOpen] = useState(false);
 
     const [appointmentWorkerUuid, setAppointmentWorkerUuid] = useState<string | undefined>();
@@ -44,8 +50,16 @@ export function AppointmentPage() {
     const [editAppointmentOpen, setEditAppointmentOpen] = useState(false);
 
     const [selectedAppointment, setSelectedAppointment] = useState<
-        AppointmentResponse | undefined
+        OrganizationAppointmentResponse | undefined
     >();
+
+    const [createSpecialDayOpen, setCreateSpecialDayOpen] = useState(false);
+
+    const [createTimeBlockOpen, setCreateTimeBlockOpen] = useState(false);
+
+    const [timeBlockStartAt, setTimeBlockStartAt] = useState<Date | undefined>();
+
+    const [timeBlockEndAt, setTimeBlockEndAt] = useState<Date | undefined>();
 
     const organizationUuid = currentUser?.organizationUuid;
 
@@ -57,14 +71,31 @@ export function AppointmentPage() {
 
     const organizationTimeZone = organization?.location.timezone ?? 'UTC';
 
-    /*
-     * Always calculate the API date in the organization's timezone.
-     */
     const date = formatDateForApi(selectedDate, organizationTimeZone);
+
+    const todayDate = formatDateForApi(new Date(), organizationTimeZone);
 
     const canManageAppointments =
         Boolean(organizationUuid) &&
         (currentUser?.role === Role.MANAGER || currentUser?.role === Role.OWNER);
+
+    const canCreateTimeBlock = Boolean(organizationUuid) && currentUser?.role === Role.WORKER;
+
+    const canCreateSpecialDay = canManageAppointments && date >= todayDate;
+
+    const calendarRange = useMemo(() => {
+        const year = calendarMonth.getFullYear();
+        const month = calendarMonth.getMonth();
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+
+        return {
+            fromDate: formatDateForApi(firstDayOfMonth, organizationTimeZone),
+
+            toDate: formatDateForApi(lastDayOfMonth, organizationTimeZone),
+        };
+    }, [calendarMonth, organizationTimeZone]);
 
     const {
         data: appointmentData,
@@ -77,6 +108,40 @@ export function AppointmentPage() {
             appointmentDate: date,
         },
     });
+
+    const {
+        data: calendarAppointmentData,
+        isLoading: calendarAppointmentsLoading,
+        isError: calendarAppointmentsError,
+    } = useOrganizationAppointments(organizationUuid, {
+        page: 1,
+        limit: 1000,
+        filter: {
+            fromDate: calendarRange.fromDate,
+            toDate: calendarRange.toDate,
+        },
+    });
+
+    const appointmentDates = useMemo(() => {
+        const dates = new Map<string, Date>();
+
+        for (const appointment of calendarAppointmentData?.data ?? []) {
+            const appointmentStart = new Date(appointment.scheduledStartAtUTC);
+
+            const dateKey = new Intl.DateTimeFormat('en-CA', {
+                timeZone: organizationTimeZone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+            }).format(appointmentStart);
+
+            if (!dates.has(dateKey)) {
+                dates.set(dateKey, appointmentStart);
+            }
+        }
+
+        return Array.from(dates.values());
+    }, [calendarAppointmentData, organizationTimeZone]);
 
     const {
         data: workingHours,
@@ -95,7 +160,6 @@ export function AppointmentPage() {
         page: 1,
         limit: 100,
         sortBy: 'startAtUTC',
-        sortOrder: 'asc',
         filter: {
             fromDate: date,
             toDate: date,
@@ -108,6 +172,20 @@ export function AppointmentPage() {
         isError: specialDaysError,
     } = useOrganizationSpecialDays(organizationUuid);
 
+    const {
+        data: usersData,
+        isLoading: usersLoading,
+        isError: usersError,
+    } = useUsers({
+        page: 1,
+        limit: 100,
+        filter: {
+            organizationUuid,
+            role: Role.WORKER,
+            status: ActivationStatus.ACTIVE,
+        },
+    });
+
     const activeSpecialDay = useMemo(
         () =>
             specialDays?.data.find(
@@ -118,15 +196,12 @@ export function AppointmentPage() {
     );
 
     const workerSchedules = useMemo(() => {
-        /*
-         * A special day completely replaces the normal worker
-         * schedule for that date.
-         */
         if (activeSpecialDay) {
             return [];
         }
 
         return buildWorkerSchedules({
+            workers: usersData?.data ?? [],
             workingHours: workingHours?.data ?? [],
             appointments: appointmentData?.data ?? [],
             timeBlocks: timeBlockData?.data ?? [],
@@ -135,6 +210,7 @@ export function AppointmentPage() {
         });
     }, [
         activeSpecialDay,
+        usersData,
         workingHours,
         appointmentData,
         timeBlockData,
@@ -142,11 +218,11 @@ export function AppointmentPage() {
         organizationTimeZone,
     ]);
 
-    const handleAppointmentView = (appointment: AppointmentResponse) => {
+    const handleAppointmentView = (appointment: OrganizationAppointmentResponse) => {
         navigate(`/organization/appointments/${appointment.uuid}`);
     };
 
-    const handleAppointmentEdit = (appointment: AppointmentResponse) => {
+    const handleAppointmentEdit = (appointment: OrganizationAppointmentResponse) => {
         setSelectedAppointment(appointment);
         setEditAppointmentOpen(true);
     };
@@ -156,6 +232,12 @@ export function AppointmentPage() {
         setAppointmentTime(startAt);
         setAppointmentWorkerUuid(workerUuid);
         setCreateAppointmentOpen(true);
+    };
+
+    const handleAddTimeBlock = (_date: Date, startAt: Date, endAt: Date, _workerUuid: string) => {
+        setTimeBlockStartAt(startAt);
+        setTimeBlockEndAt(endAt);
+        setCreateTimeBlockOpen(true);
     };
 
     const handleCreateOpenChange = (open: boolean) => {
@@ -168,6 +250,19 @@ export function AppointmentPage() {
         }
     };
 
+    const handleTimeBlockOpenChange = (open: boolean) => {
+        setCreateTimeBlockOpen(open);
+
+        if (!open) {
+            setTimeBlockStartAt(undefined);
+            setTimeBlockEndAt(undefined);
+        }
+    };
+
+    const handleSpecialDayOpenChange = (open: boolean) => {
+        setCreateSpecialDayOpen(open);
+    };
+
     const handleEditOpenChange = (open: boolean) => {
         setEditAppointmentOpen(open);
 
@@ -176,21 +271,44 @@ export function AppointmentPage() {
         }
     };
 
+    const handleCalendarMonthChange = (month: Date) => {
+        setCalendarMonth(month);
+    };
+
+    const handleCalendarDateChange = (date: Date) => {
+        setSelectedDate(date);
+
+        setCalendarMonth((currentMonth) => {
+            if (
+                currentMonth.getFullYear() === date.getFullYear() &&
+                currentMonth.getMonth() === date.getMonth()
+            ) {
+                return currentMonth;
+            }
+
+            return date;
+        });
+    };
+
     const isLoading =
         currentUserLoading ||
         organizationLoading ||
         appointmentsLoading ||
+        calendarAppointmentsLoading ||
         workingHoursLoading ||
         timeBlocksLoading ||
-        specialDaysLoading;
+        specialDaysLoading ||
+        usersLoading;
 
     const isError =
         currentUserError ||
         organizationError ||
         appointmentsError ||
+        calendarAppointmentsError ||
         workingHoursError ||
         timeBlocksError ||
-        specialDaysError;
+        specialDaysError ||
+        usersError;
 
     if (isLoading) {
         return <div>Loading appointments...</div>;
@@ -213,27 +331,43 @@ export function AppointmentPage() {
                 <section className="min-w-0 self-start rounded-xl border border-[#d3d3df] bg-[#EDEDF2] p-2 shadow-sm lg:sticky lg:top-4">
                     <AppointmentCalendar
                         selectedDate={selectedDate}
-                        onDateChange={setSelectedDate}
+                        onDateChange={handleCalendarDateChange}
                         organizationTimeZone={organizationTimeZone}
+                        appointmentDates={appointmentDates}
+                        onMonthChange={handleCalendarMonthChange}
                     />
                 </section>
 
                 <div className="min-w-0">
                     {activeSpecialDay ? (
-                        <section className="rounded-xl border border-[#d3d3df] bg-white p-6">
-                            <h2 className="text-sm font-semibold text-[#343447]">
-                                {activeSpecialDay.name}
-                            </h2>
+                        <section className="flex max-h-[calc(100vh-8rem)] min-h-0 min-w-0 flex-col rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-4">
+                            <div className="mb-4 shrink-0 text-center">
+                                <h2 className="text-base font-semibold text-[#343447]">
+                                    Daily Schedule
+                                </h2>
 
-                            {activeSpecialDay.description ? (
-                                <p className="mt-1 text-[11px] text-[#777789]">
-                                    {activeSpecialDay.description}
+                                <p className="mt-0.5 text-[11px] text-[#777789]">
+                                    {formatDateInTimeZone(selectedDate, organizationTimeZone)}
                                 </p>
-                            ) : null}
+                            </div>
 
-                            <p className="mt-3 text-[11px] text-[#777789]">
-                                The organization is unavailable on this day.
-                            </p>
+                            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                                <div className="rounded-xl border border-dashed border-[#d3d3df] bg-white p-6 text-center">
+                                    <p className="text-sm font-medium text-[#343447]">
+                                        {activeSpecialDay.name}
+                                    </p>
+
+                                    <p className="mt-1 text-[11px] text-[#777789]">
+                                        Special day · Schedule unavailable
+                                    </p>
+
+                                    {activeSpecialDay.description ? (
+                                        <p className="mx-auto mt-3 max-w-lg text-[11px] leading-5 text-[#777789]">
+                                            {activeSpecialDay.description}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            </div>
                         </section>
                     ) : (
                         <AppointmentDaySchedule
@@ -242,6 +376,8 @@ export function AppointmentPage() {
                             organizationTimeZone={organizationTimeZone}
                             canCreate={canManageAppointments}
                             onAddAppointment={handleAddAppointment}
+                            canCreateTimeBlock={canCreateTimeBlock}
+                            onAddTimeBlock={handleAddTimeBlock}
                             onViewAppointment={handleAppointmentView}
                             onEditAppointment={
                                 canManageAppointments ? handleAppointmentEdit : undefined
@@ -268,6 +404,26 @@ export function AppointmentPage() {
                         appointment={selectedAppointment}
                         open={editAppointmentOpen}
                         onOpenChange={handleEditOpenChange}
+                    />
+                ) : null}
+
+                {canManageAppointments ? (
+                    <CreateSpecialDayDialog
+                        organizationUuid={organizationUuid}
+                        open={createSpecialDayOpen}
+                        onOpenChange={handleSpecialDayOpenChange}
+                        dayDate={date}
+                    />
+                ) : null}
+
+                {canCreateTimeBlock ? (
+                    <CreateTimeBlockDialog
+                        organizationUuid={organizationUuid}
+                        organizationTimeZone={organizationTimeZone}
+                        open={createTimeBlockOpen}
+                        onOpenChange={handleTimeBlockOpenChange}
+                        startAt={timeBlockStartAt}
+                        endAt={timeBlockEndAt}
                     />
                 ) : null}
             </div>

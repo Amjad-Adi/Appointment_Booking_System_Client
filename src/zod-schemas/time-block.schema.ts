@@ -1,10 +1,17 @@
 import { z } from 'zod';
 
 import { TimeBlockStatus } from '../models/enums/time-block-status.js';
+import { querySchema } from './query.schema.ts';
+const COLUMN_ORGANIZATION_ID = 'organization_id';
+const SORT_BY_START_AT_UTC = 'startAtUTC';
+const SORT_BY_END_AT_UTC = 'endAtUTC';
+const SORT_BY_REQUESTED_AT_UTC = 'requestedAtUTC';
+const SORT_BY_RESPONDED_AT_UTC = 'respondedAtUTC';
+const SORT_BY_REQUEST_STATUS = 'requestStatus';
 
 export const createTimeBlockSchema = z
     .object({
-        reason: z.string().trim().nonempty().max(4096),
+        reason: z.string().trim().nonempty('Reason is required').max(4096),
 
         startAtUTC: z.iso.datetime({
             offset: true,
@@ -33,7 +40,8 @@ export const updateTimeBlockSchema = z
 
 export const timeBlockFilterSchema = z
     .object({
-        organizationUuid: z.uuid().optional(),
+        organizationUuid: z.uuid('Invalid organization UUID').optional(),
+
         requestStatus: z.enum(TimeBlockStatus).optional(),
 
         requestUserUuid: z.uuid('Invalid request user UUID').optional(),
@@ -59,20 +67,17 @@ export const timeBlockFilterSchema = z
         }
     });
 
-export const queryTimeBlockSchema = z
-    .object({
-        page: z.coerce.number().int().positive().default(1),
 
-        limit: z.coerce.number().int().positive().max(100).default(20),
-
+export const queryTimeBlockSchema = querySchema
+    .extend({
         search: z.string().trim().max(256).optional(),
-
         filter: timeBlockFilterSchema.optional(),
-
-        sortBy: z
-            .enum(['startAtUTC', 'endAtUTC', 'requestedAtUTC', 'respondedAtUTC', 'requestStatus'])
-            .default('requestedAtUTC'),
-
-        sortOrder: z.enum(['asc', 'desc']).default('desc'),
+        sortBy: z.enum([
+            SORT_BY_START_AT_UTC,
+            SORT_BY_END_AT_UTC,
+            SORT_BY_REQUESTED_AT_UTC,
+            SORT_BY_RESPONDED_AT_UTC,
+            SORT_BY_REQUEST_STATUS,
+        ]),
     })
     .strict();

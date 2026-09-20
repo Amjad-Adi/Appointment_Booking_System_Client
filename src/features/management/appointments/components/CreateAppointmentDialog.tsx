@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+
 import toast from 'react-hot-toast';
 
 import { CreateDialog, type CreateDialogField } from '../../../../components/CreateDialog.tsx';
 
 import { useCreateOrganizationAppointment } from '../../hooks/appointment-hook.ts';
+
 import { useUsers } from '../../hooks/users-hook.ts';
+
 import { useOrganizationServices } from '../../hooks/services-hook.ts';
 
 import {
@@ -18,8 +20,11 @@ import {
 } from '../../../../zod-schemas/appointment.schema.ts';
 
 import { Role } from '../../../../models/enums/roles.ts';
+
 import { ActivationStatus } from '../../../../models/enums/activation-status.ts';
+
 import { PaymentMethod } from '../../../../models/enums/payment-method.ts';
+
 import { AppointmentTimeType } from '../../../../models/enums/appointment-time-type.ts';
 
 import { PAGE_SIZE } from '../../../../components/DataTableFeatures.ts';
@@ -27,17 +32,24 @@ import { PAGE_SIZE } from '../../../../components/DataTableFeatures.ts';
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../hooks/deounce.ts';
 
 import { AppointmentAvailability } from './AppointmentAvailability.tsx';
-import { OrganizationTimeInfo } from './OrganizationTimeInfo.tsx';
+
+import { OrganizationTimeInfo } from '../../super-admin-view/pages/organizations/organization-profile/components/OrganizationTimeInfo.tsx';
 
 import { organizationDateToLocalDateTime } from '../../user-view/utils/timezone.ts';
 
 interface CreateAppointmentDialogProps {
     organizationUuid?: string;
+
     organizationTimeZone: string;
+
     open: boolean;
+
     onOpenChange: (open: boolean) => void;
+
     selectedDate?: Date;
+
     selectedTime?: Date;
+
     selectedWorkerUuid?: string;
 }
 
@@ -63,15 +75,19 @@ export function CreateAppointmentDialog({
     const createMutation = useCreateOrganizationAppointment(organizationUuid);
 
     const [customerSearch, setCustomerSearch] = useState('');
+
     const [serviceSearch, setServiceSearch] = useState('');
+
     const [workerSearch, setWorkerSearch] = useState('');
 
     /*
-     * This is deliberately separate from form.workerUuid.
+     * This is the worker that will actually receive the
+     * appointment.
      *
-     * In NEAREST mode the scheduling request must not contain workerUuid,
-     * but the worker from the selected availability option is still
-     * required when creating the actual appointment.
+     * In NEAREST mode it is set only after the user selects
+     * an availability option.
+     *
+     * In WORKER mode it follows the worker selected in the form.
      */
     const [selectedAppointmentWorkerUuid, setSelectedAppointmentWorkerUuid] = useState<
         string | undefined
@@ -83,12 +99,27 @@ export function CreateAppointmentDialog({
 
     const debouncedWorkerSearch = useDebounce(workerSearch, GENERAL_DEBOUNCE_DELAY);
 
+    /*
+     * The worker from the calendar is only the initial
+     * worker preference.
+     *
+     * AppointmentAvailability uses it to initially expand
+     * that worker's group.
+     */
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedAppointmentWorkerUuid(initialSelectedWorkerUuid);
+    }, [initialSelectedWorkerUuid]);
+
     const { data: customersData, isLoading: customersLoading } = useUsers({
         page: 1,
         limit: PAGE_SIZE,
+
         search: debouncedCustomerSearch || undefined,
+
         filter: {
             role: Role.CUSTOMER,
+
             status: ActivationStatus.ACTIVE,
         },
     });
@@ -98,9 +129,12 @@ export function CreateAppointmentDialog({
         {
             page: 1,
             limit: PAGE_SIZE,
+
             search: debouncedServiceSearch || undefined,
+
             filter: {
                 organizationUuid,
+
                 status: ActivationStatus.ACTIVE,
             },
         },
@@ -109,10 +143,14 @@ export function CreateAppointmentDialog({
     const { data: workersData, isLoading: workersLoading } = useUsers({
         page: 1,
         limit: PAGE_SIZE,
+
         search: debouncedWorkerSearch || undefined,
+
         filter: {
             role: Role.WORKER,
+
             status: ActivationStatus.ACTIVE,
+
             organizationUuid,
         },
     });
@@ -121,6 +159,7 @@ export function CreateAppointmentDialog({
         () =>
             (customersData?.data ?? []).map((user) => ({
                 value: user.uuid,
+
                 label: `${user.firstName} ${user.lastName} — ${user.email}`,
             })),
         [customersData],
@@ -130,22 +169,19 @@ export function CreateAppointmentDialog({
         () =>
             (servicesData?.data ?? []).map((service) => ({
                 value: service.uuid,
+
                 label: `${service.name} — ${service.durationInMinutes} min`,
             })),
         [servicesData],
     );
 
     const workerOptions = useMemo(
-        () => [
-            {
-                value: '',
-                label: 'Unselected',
-            },
-            ...(workersData?.data ?? []).map((user) => ({
+        () =>
+            (workersData?.data ?? []).map((user) => ({
                 value: user.uuid,
+
                 label: `${user.firstName} ${user.lastName}`,
             })),
-        ],
         [workersData],
     );
 
@@ -154,118 +190,153 @@ export function CreateAppointmentDialog({
         [selectedDate, selectedTime, organizationTimeZone],
     );
 
-    const defaultValues = useMemo<CreateAppointmentFormInput>(() => {
-        const initialTimeType = initialSelectedWorkerUuid
-            ? AppointmentTimeType.WORKER
-            : AppointmentTimeType.NEAREST;
+    const defaultValues = useMemo<CreateAppointmentFormInput>(
+        () => ({
+            organizationTitle: '',
 
-        return {
-            name: '',
             userUuid: '',
+
             serviceUuid: '',
 
-            timeType: initialTimeType,
+            timeType: AppointmentTimeType.NEAREST,
 
             /*
-             * This is only populated for WORKER mode.
+             * This value is used when switching to
+             * WORKER mode.
              *
-             * NEAREST mode keeps this empty because workerUuid is
-             * forbidden in the scheduling request.
+             * NEAREST mode does not use it for
+             * scheduling or worker selection.
              */
-            workerUuid:
-                initialTimeType === AppointmentTimeType.WORKER
-                    ? (initialSelectedWorkerUuid ?? '')
-                    : '',
+            workerUuid: initialSelectedWorkerUuid ?? '',
 
             roomUuid: '',
 
-            fromAtUTC: initialTimeType === AppointmentTimeType.NEAREST ? defaultStart : '',
+            fromAtUTC: defaultStart,
 
             scheduledStartAtUTC: '',
 
             organizationNote: '',
+
             organizationColour: '#2563EB',
 
             paymentMethod: PaymentMethod.CASH,
-        };
-    }, [defaultStart, initialSelectedWorkerUuid]);
+        }),
+        [defaultStart, initialSelectedWorkerUuid],
+    );
 
     const fields = useMemo<
         readonly CreateDialogField<CreateAppointmentFormInput, CreateAppointmentFormOutput>[]
     >(
         () => [
             {
-                name: 'name',
-                label: 'Appointment Name',
+                name: 'organizationTitle',
+
+                label: 'Appointment Title',
+
                 type: 'text',
-                placeholder: 'Enter appointment name',
+
+                placeholder: 'Enter appointment title',
             },
 
             {
                 name: 'timeType',
+
                 label: 'Appointment Availability',
+
                 type: 'select',
+
                 options: [
                     {
                         value: AppointmentTimeType.NEAREST,
+
                         label: 'Nearest available',
                     },
+
                     {
                         value: AppointmentTimeType.WORKER,
+
                         label: 'Specific worker',
                     },
                 ],
+
                 placeholder: 'Select availability',
             },
 
             {
                 name: 'userUuid',
+
                 label: 'Customer',
+
                 type: 'searchable-select',
+
                 options: customerOptions,
+
                 placeholder: customersLoading ? 'Loading customers...' : 'Select a customer',
+
                 searchPlaceholder: 'Search customers...',
+
                 onSearchChange: setCustomerSearch,
             },
 
             {
                 name: 'serviceUuid',
+
                 label: 'Service',
+
                 type: 'searchable-select',
+
                 options: serviceOptions,
+
                 placeholder: servicesLoading ? 'Loading services...' : 'Select a service',
+
                 searchPlaceholder: 'Search services...',
+
                 onSearchChange: setServiceSearch,
             },
 
             {
                 name: 'fromAtUTC',
+
                 label: 'Find Availability From',
+
                 type: 'datetime-local',
+
                 visible: (form) => form.watch('timeType') === AppointmentTimeType.NEAREST,
+
                 description:
                     'Choose the organization-local date and time from which available appointments should be found.',
             },
 
             {
                 name: 'workerUuid',
+
                 label: 'Worker',
+
                 type: 'searchable-select',
+
                 options: workerOptions,
+
                 visible: (form) => form.watch('timeType') === AppointmentTimeType.WORKER,
+
                 placeholder: workersLoading ? 'Loading workers...' : 'Select a worker',
+
                 searchPlaceholder: 'Search workers...',
+
                 onSearchChange: setWorkerSearch,
             },
 
             {
                 name: 'scheduledStartAtUTC',
+
                 label: 'Available Appointment Times',
+
                 type: 'custom',
 
                 visible: (form) => {
                     const userUuid = form.watch('userUuid');
+
                     const serviceUuid = form.watch('serviceUuid');
+
                     const timeType = form.watch('timeType');
 
                     return Boolean(userUuid && serviceUuid && timeType);
@@ -284,19 +355,35 @@ export function CreateAppointmentDialog({
 
             {
                 name: 'organizationNote',
+
                 label: 'Organization Note',
+
                 type: 'text',
+
                 placeholder: 'Optional note',
             },
 
             {
+                name: 'organizationColour',
+
+                label: 'Appointment Colour',
+
+                type: 'color',
+            },
+
+            {
                 name: 'paymentMethod',
+
                 label: 'Payment Method',
+
                 type: 'select',
+
                 options: Object.values(PaymentMethod).map((method) => ({
                     value: method,
+
                     label: method,
                 })),
+
                 placeholder: 'Select payment method',
             },
         ],
@@ -314,41 +401,51 @@ export function CreateAppointmentDialog({
     );
 
     async function handleSubmit(values: CreateAppointmentFormOutput) {
-        if (!values.scheduledStartAtUTC) {
-            toast.error('Please select an available appointment time.');
-            return;
-        }
+        const {
+            organizationTitle,
+            userUuid,
+            serviceUuid,
+            timeType,
+            workerUuid,
+            scheduledStartAtUTC,
+            organizationNote,
+            organizationColour,
+            paymentMethod,
+        } = values;
 
+        /*
+         * WORKER mode:
+         *     workerUuid comes from the form.
+         *
+         * NEAREST mode:
+         *     worker comes from the availability option
+         *     selected by the user.
+         */
         const appointmentWorkerUuid =
-            values.timeType === AppointmentTimeType.WORKER
-                ? values.workerUuid
-                : selectedAppointmentWorkerUuid;
+            timeType === AppointmentTimeType.WORKER ? workerUuid : selectedAppointmentWorkerUuid;
 
         if (!appointmentWorkerUuid) {
             toast.error('Please select an available appointment time.');
+
             return;
         }
 
-        /*
-         * timeType is a scheduling-only field.
-         *
-         * fromAtUTC is a scheduling-only field.
-         *
-         * roomUuid is also not sent here because the current appointment
-         * creation schema/API does not accept it.
-         *
-         * The selected availability already determines the worker and
-         * scheduled start time for the appointment.
-         */
         const appointment = {
-            name: values.name,
-            userUuid: values.userUuid,
-            serviceUuid: values.serviceUuid,
+            organizationTitle,
+
+            userUuid,
+
+            serviceUuid,
+
             workerUuid: appointmentWorkerUuid,
-            scheduledStartAtUTC: values.scheduledStartAtUTC,
-            organizationNote: values.organizationNote || undefined,
-            organizationColour: values.organizationColour || undefined,
-            paymentMethod: values.paymentMethod,
+
+            scheduledStartAtUTC,
+
+            organizationNote: organizationNote || undefined,
+
+            organizationColour: organizationColour || undefined,
+
+            paymentMethod,
         };
 
         const result = createOrganizationAppointmentSchema.safeParse(appointment);
@@ -363,15 +460,23 @@ export function CreateAppointmentDialog({
 
         await toast.promise(createMutation.mutateAsync(result.data), {
             loading: 'Creating appointment...',
+
             success: 'Appointment created successfully',
+
             error: 'Failed to create appointment',
         });
 
         onOpenChange(false);
     }
 
+    const appointmentDateKey = useMemo(
+        () => [selectedDate?.getTime() ?? 'none', selectedTime?.getTime() ?? 'none'].join('-'),
+        [selectedDate, selectedTime],
+    );
+
     return (
         <CreateDialog<CreateAppointmentFormInput, CreateAppointmentFormOutput>
+            key={`${open}-${appointmentDateKey}-${initialSelectedWorkerUuid ?? 'none'}`}
             open={open}
             onOpenChange={onOpenChange}
             title="Create Appointment"

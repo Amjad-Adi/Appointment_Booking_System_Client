@@ -8,7 +8,7 @@ import type {
     TimeBlock,
     TimeBlockResponse,
     UpdateTimeBlock,
-} from '../../../models/time-block.ts';
+} from '../../../models/time-block.model.ts';
 
 import { ORGANIZATION_TIME_BLOCK, ORGANIZATION_TIME_BLOCKS } from '../../../utlis/query-keys.ts';
 

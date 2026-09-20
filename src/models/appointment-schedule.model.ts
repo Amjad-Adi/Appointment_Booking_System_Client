@@ -1,5 +1,9 @@
-import type { AppointmentResponse } from './appointment.model.ts';
-import type { TimeBlockResponse } from './time-block.ts';
+import type {
+    OrganizationAppointment,
+    OrganizationAppointmentResponse,
+    UserAppointment,
+} from './appointment.model.ts';
+import type { TimeBlockResponse } from './time-block.model.ts';
 
 export interface WorkingInterval {
     startAt: Date;
@@ -15,7 +19,7 @@ export interface WorkerSchedule {
 export type AppointmentScheduleSegment =
     | {
           type: 'appointment';
-          appointment: AppointmentResponse;
+          appointment: OrganizationAppointmentResponse;
       }
     | {
           type: 'time-block';

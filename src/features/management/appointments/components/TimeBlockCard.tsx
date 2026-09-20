@@ -1,6 +1,6 @@
 import { CalendarClock, Info } from 'lucide-react';
 
-import type { TimeBlockResponse } from '../../../../models/time-block.ts';
+import type { TimeBlockResponse } from '../../../../models/time-block.model.ts';
 
 import { formatTimeInTimeZone } from '../../user-view/utils/timezone.ts';
 
@@ -31,7 +31,7 @@ export function TimeBlockCard({ timeBlock, organizationTimeZone }: TimeBlockCard
                     </div>
 
                     <p className="mt-0.5 text-[10px] text-[#777789]">
-                        {startTime} – {endTime}
+                        {startTime} –{endTime}
                     </p>
 
                     {timeBlock.reason ? (

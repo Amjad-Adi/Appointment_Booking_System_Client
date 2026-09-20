@@ -40,7 +40,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectModel>(function Select
                 name={name}
                 className={twMerge(
                     'font-inter box-border h-8 w-full min-w-0 cursor-pointer rounded-lg border px-2 py-1 text-left text-[11px] outline-none',
-                    'bg-input text-input-placeholder',
+                    'bg-input text-[#343447]',
                     'border-input-border',
                     'hover:border-input-border-hover hover:bg-input-hover',
                     'focus:border-input-border-focus focus:ring-primary/20 focus:ring-2',
@@ -53,7 +53,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectModel>(function Select
             >
                 {children}
             </select>
-            <ErrorField errorMessage={errorMessage} />{' '}
+            <ErrorField errorMessage={errorMessage} />
         </div>
     );
 });

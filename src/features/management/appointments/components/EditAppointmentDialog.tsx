@@ -9,16 +9,20 @@ import { useUpdateOrganizationAppointment } from '../../hooks/appointment-hook.t
 
 import { updateAppointmentSchemaByOrganization } from '../../../../zod-schemas/appointment.schema.ts';
 
-import type { AppointmentResponse } from '../../../../models/appointment.model.ts';
+import type { OrganizationAppointmentResponse } from '../../../../models/appointment.model.ts';
 
 interface EditAppointmentDialogProps {
     organizationUuid?: string;
-    appointment: AppointmentResponse;
+
+    appointment: OrganizationAppointmentResponse;
+
     open: boolean;
+
     onOpenChange: (open: boolean) => void;
 }
 
 type EditAppointmentForm = z.input<typeof updateAppointmentSchemaByOrganization>;
+
 type EditAppointmentFormOutput = z.output<typeof updateAppointmentSchemaByOrganization>;
 
 export function EditAppointmentDialog({
@@ -31,7 +35,10 @@ export function EditAppointmentDialog({
 
     const defaultValues = useMemo<EditAppointmentForm>(
         () => ({
+            organizationTitle: appointment.organizationTitle ?? '',
+
             organizationNote: appointment.organizationNote,
+
             organizationColour: appointment.organizationColour || '#2563EB',
         }),
         [appointment],
@@ -40,14 +47,30 @@ export function EditAppointmentDialog({
     const fields = useMemo<readonly EditDialogField<EditAppointmentForm>[]>(
         () => [
             {
-                name: 'organizationNote',
-                label: 'Organization Note',
+                name: 'organizationTitle',
+
+                label: 'Appointment Title',
+
                 type: 'text',
+
+                placeholder: 'Enter appointment title',
+            },
+
+            {
+                name: 'organizationNote',
+
+                label: 'Organization Note',
+
+                type: 'text',
+
                 placeholder: 'Optional note',
             },
+
             {
                 name: 'organizationColour',
+
                 label: 'Organization Colour',
+
                 type: 'color',
             },
         ],
@@ -58,11 +81,14 @@ export function EditAppointmentDialog({
         await toast.promise(
             updateMutation.mutateAsync({
                 uuid: appointment.uuid,
+
                 ...changedValues,
             }),
             {
                 loading: 'Updating appointment...',
+
                 success: 'Appointment updated successfully',
+
                 error: 'Failed to update appointment',
             },
         );

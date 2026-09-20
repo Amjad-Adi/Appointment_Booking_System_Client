@@ -4,6 +4,7 @@ import type {
     QueryWorkingHours,
     UpdateWorkingHours,
     WorkingHours,
+    WorkingHoursResponse,
 } from '../../../models/working-hours.model.ts';
 
 import {
@@ -12,6 +13,7 @@ import {
 } from '../../../utlis/query-keys.ts';
 
 import { api } from '../../../services/axios.ts';
+
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
 
 export function useOrganizationWorkingHours(
@@ -21,8 +23,8 @@ export function useOrganizationWorkingHours(
     return useQuery({
         queryKey: [ORGANIZATION_WORKING_HOURS, organizationUuid, query],
 
-        queryFn: async (): Promise<QueryResponse<WorkingHours>> => {
-            const response = await api.get<QueryResponse<WorkingHours>>(
+        queryFn: async (): Promise<QueryResponse<WorkingHoursResponse>> => {
+            const response = await api.get<QueryResponse<WorkingHoursResponse>>(
                 `/api/organizations/${organizationUuid}/working-hours`,
                 {
                     params: query,
@@ -31,7 +33,6 @@ export function useOrganizationWorkingHours(
 
             return response.data;
         },
-
         enabled: !!organizationUuid,
     });
 }
@@ -44,7 +45,7 @@ export function useOrganizationWorkingHour(
         queryKey: [ORGANIZATION_WORKING_HOUR, organizationUuid, workingHoursUuid],
 
         queryFn: async (): Promise<WorkingHours> => {
-            const response = await api.get<WorkingHours>(
+            const response = await api.get<WorkingHoursResponse>(
                 `/api/organizations/${organizationUuid}/working-hours/${workingHoursUuid}`,
             );
 
@@ -55,6 +56,9 @@ export function useOrganizationWorkingHour(
     });
 }
 
+/**
+ * Update one working-hours day.
+ */
 export function useUpdateOrganizationWorkingHours(organizationUuid: string | undefined) {
     const queryClient = useQueryClient();
 

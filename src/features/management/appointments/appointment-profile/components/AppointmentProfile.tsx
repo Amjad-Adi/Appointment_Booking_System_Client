@@ -1,4 +1,5 @@
 import {
+    Building2,
     CalendarClock,
     CheckCircle2,
     CircleDollarSign,
@@ -11,17 +12,29 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-import type { AppointmentResponse } from '../../../../../models/appointment.model.ts';
+import type {
+    OrganizationAppointmentResponse,
+    UserAppointmentResponse,
+} from '../../../../../models/appointment.model.ts';
 
 import { BackButton } from '../../../components/BackButton.tsx';
 import { Button } from '../../../../../components/Button.tsx';
 
 import { EditAppointmentDialog } from '../../components/EditAppointmentDialog.tsx';
+import { useCurrentUser } from '../../../hooks/users-hook.ts';
+import { Role } from '../../../../../models/enums/roles.ts';
 
 interface AppointmentProfileProps {
-    appointment: AppointmentResponse;
+    appointment: OrganizationAppointmentResponse | UserAppointmentResponse;
     organizationUuid: string;
     canManage?: boolean;
+}
+
+// Type guard to narrow the appointment type safely
+function isOrganizationAppointment(
+    appointment: OrganizationAppointmentResponse | UserAppointmentResponse,
+): appointment is OrganizationAppointmentResponse {
+    return 'organizationColour' in appointment;
 }
 
 export function AppointmentProfile({
@@ -30,14 +43,28 @@ export function AppointmentProfile({
     canManage = false,
 }: AppointmentProfileProps) {
     const [editOpen, setEditOpen] = useState(false);
+    const { data: currentUser } = useCurrentUser();
+
+    const isOrgMember = currentUser?.role !== Role.SUPER_ADMIN && currentUser?.role !== Role.CUSTOMER;
+
+    const isOrgApp = isOrganizationAppointment(appointment);
+
+    // Normalize properties based on appointment interface
+    const title = isOrgApp ? appointment.organizationTitle : appointment.userTitle;
+    const note = isOrgApp ? appointment.organizationNote : appointment.userNote;
+    const colour = isOrgApp ? appointment.organizationColour : appointment.userColour;
+    const noteLabel = isOrgApp ? 'Organization Note' : 'User Note';
+
+    const backPath = isOrgMember ? '/organization/appointments' : '/appointments';
+    const canEdit = canManage && isOrgMember && isOrgApp;
 
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-4">
             {/* Actions */}
             <div className="flex min-w-0 items-center justify-between gap-3">
-                <BackButton backPath="/organization/appointments" />
+                <BackButton backPath={backPath} />
 
-                {canManage ? (
+                {canEdit ? (
                     <Button
                         type="button"
                         onClick={() => setEditOpen(true)}
@@ -55,7 +82,7 @@ export function AppointmentProfile({
                     <div
                         className="mt-0.5 h-10 w-1 shrink-0 rounded-full"
                         style={{
-                            backgroundColor: appointment.organizationColour || '#2563EB',
+                            backgroundColor: colour || '#2563EB',
                         }}
                     />
 
@@ -68,8 +95,8 @@ export function AppointmentProfile({
                             <StatusBadge status={appointment.appointmentStatus} />
                         </div>
 
-                        <p className="mt-1 text-[11px] text-[#777789]">
-                            Appointment for {appointment.name}
+                        <p className="mt-1 truncate text-[11px] text-[#777789]">
+                            {title || 'Untitled appointment'}
                         </p>
                     </div>
                 </div>
@@ -86,21 +113,30 @@ export function AppointmentProfile({
 
                     <InfoRow
                         label="Time"
-                        value={`${formatTime(appointment.scheduledStartAtUTC)} – ${formatTime(
+                        value={`${formatTime(appointment.scheduledStartAtUTC)} - ${formatTime(
                             appointment.scheduledEndAtUTC,
                         )}`}
                     />
                 </InformationCard>
 
-                <InformationCard
-                    title="Customer"
-                    description="Customer associated with this appointment."
-                    icon={<UserRound className="size-4" strokeWidth={1.8} />}
-                >
-                    <InfoRow label="Name" value={appointment.userName} />
-
-                    <InfoRow label="Appointment" value={appointment.name} />
-                </InformationCard>
+                {isOrgMember ? (
+                    <InformationCard
+                        title="Customer"
+                        description="Customer associated with this appointment."
+                        icon={<UserRound className="size-4" strokeWidth={1.8} />}
+                    >
+                        <InfoRow label="Name" value={appointment.userName} />
+                        <InfoRow label="Title" value={title} />
+                    </InformationCard>
+                ) : (
+                    <InformationCard
+                        title="Organization"
+                        description="Organization providing this service."
+                        icon={<Building2 className="size-4" strokeWidth={1.8} />}
+                    >
+                        <InfoRow label="Name" value={appointment.organizationName} />
+                    </InformationCard>
+                )}
 
                 <InformationCard
                     title="Service"
@@ -116,8 +152,10 @@ export function AppointmentProfile({
                     icon={<DoorOpen className="size-4" strokeWidth={1.8} />}
                 >
                     <InfoRow label="Worker" value={appointment.workerName} />
-
                     <InfoRow label="Room" value={appointment.roomName} />
+                    {isOrgApp && appointment.approvalUserName ? (
+                        <InfoRow label="Approved By" value={appointment.approvalUserName} />
+                    ) : null}
                 </InformationCard>
 
                 <InformationCard
@@ -126,7 +164,6 @@ export function AppointmentProfile({
                     icon={<CircleDollarSign className="size-4" strokeWidth={1.8} />}
                 >
                     <InfoRow label="Status" value={appointment.paymentStatus} />
-
                     <InfoRow label="Method" value={appointment.paymentMethod || 'No method'} />
                 </InformationCard>
 
@@ -140,25 +177,19 @@ export function AppointmentProfile({
             </div>
 
             {/* Notes */}
-            <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
-                <SectionHeader
-                    title="Appointment Notes"
-                    description="Notes associated with this appointment."
-                    icon={<ClipboardList className="size-4" strokeWidth={1.8} />}
-                />
-
-                <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
-                    <NoteCard
-                        title="Customer Note"
-                        value={appointment.userNote || 'No customer note.'}
+            {note ? (
+                <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
+                    <SectionHeader
+                        title="Appointment Notes"
+                        description="Notes associated with this appointment."
+                        icon={<ClipboardList className="size-4" strokeWidth={1.8} />}
                     />
 
-                    <NoteCard
-                        title="Organization Note"
-                        value={appointment.organizationNote || 'No organization note.'}
-                    />
-                </div>
-            </section>
+                    <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
+                        <NoteCard title={noteLabel} value={note} />
+                    </div>
+                </section>
+            ) : null}
 
             {/* Rejection Reason */}
             {appointment.rejectionReason ? (
@@ -178,7 +209,7 @@ export function AppointmentProfile({
             ) : null}
 
             {/* Edit */}
-            {canManage ? (
+            {canEdit ? (
                 <EditAppointmentDialog
                     organizationUuid={organizationUuid}
                     appointment={appointment}

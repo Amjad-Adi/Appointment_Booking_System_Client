@@ -1,10 +1,18 @@
-import { CalendarClock, CircleDollarSign, Info, MapPin, Pencil, UserRound } from 'lucide-react';
+import {
+    CalendarClock,
+    CircleDollarSign,
+    Info,
+    MapPin,
+    Pencil,
+    UserRound,
+} from 'lucide-react';
 
-import type { AppointmentResponse } from '../../../../models/appointment.model.ts';
+import type { OrganizationAppointmentResponse } from '../../../../models/appointment.model.ts';
 
 import {
     Tooltip,
     TooltipContent,
+    TooltipProvider,
     TooltipTrigger,
 } from '../../../../../@/components/ui/Tooltip.tsx';
 
@@ -13,10 +21,10 @@ import { Button } from '../../../../components/Button.tsx';
 import { formatTimeInTimeZone } from '../../user-view/utils/timezone.ts';
 
 interface AppointmentCardProps {
-    appointment: AppointmentResponse;
+    appointment: OrganizationAppointmentResponse;
     organizationTimeZone: string;
-    onView?: (appointment: AppointmentResponse) => void;
-    onEdit?: (appointment: AppointmentResponse) => void;
+    onView?: (appointment: OrganizationAppointmentResponse) => void;
+    onEdit?: (appointment: OrganizationAppointmentResponse) => void;
 }
 
 export function AppointmentCard({
@@ -25,28 +33,44 @@ export function AppointmentCard({
     onView,
     onEdit,
 }: AppointmentCardProps) {
-    const hasOrganizationNote = Boolean(appointment.organizationNote?.trim());
+    const hasOrganizationNote =
+        Boolean(appointment.organizationNote?.trim());
 
-    const startTime = formatTimeInTimeZone(appointment.scheduledStartAtUTC, organizationTimeZone);
+    const startTime =
+        formatTimeInTimeZone(
+            appointment.scheduledStartAtUTC,
+            organizationTimeZone,
+        );
 
-    const endTime = formatTimeInTimeZone(appointment.scheduledEndAtUTC, organizationTimeZone);
+    const endTime =
+        formatTimeInTimeZone(
+            appointment.scheduledEndAtUTC,
+            organizationTimeZone,
+        );
 
-    return (
-        <article className="relative flex min-w-0 overflow-hidden rounded-xl border border-[#d3d3df] bg-white shadow-sm">
+    const appointmentContent = (
+        <article className="pointer-events-auto relative flex min-w-0 overflow-hidden rounded-xl border border-[#d3d3df] bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
             <div
                 className="w-1 shrink-0"
                 style={{
-                    backgroundColor: appointment.organizationColour || '#2563EB',
+                    backgroundColor:
+                        appointment.organizationColour ||
+                        '#2563EB',
                 }}
             />
 
             <div className="flex min-w-0 flex-1 flex-col gap-3 p-3">
                 <div className="flex min-w-0 items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="flex min-w-0 items-center gap-1.5">
-                            <h3 className="truncate text-sm font-semibold text-[#343447]">
-                                {appointment.serviceName}
-                            </h3>
+                    <div className="min-w-0 text-left">
+                        <h3 className="min-w-0 truncate text-left text-sm font-semibold text-[#343447]">
+                            {appointment.serviceName}
+                        </h3>
+
+                        <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                            <p className="min-w-0 truncate text-left text-[10px] text-[#777789]">
+                                {appointment.organizationTitle ||
+                                    'Untitled appointment'}
+                            </p>
 
                             {hasOrganizationNote ? (
                                 <Tooltip>
@@ -71,8 +95,6 @@ export function AppointmentCard({
                                 </Tooltip>
                             ) : null}
                         </div>
-
-                        <p className="mt-0.5 text-[10px] text-[#777789]">{appointment.name}</p>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
@@ -81,26 +103,33 @@ export function AppointmentCard({
                         </span>
 
                         <div className="flex items-center gap-1">
-                            {onView ? (
+                            {onView && (
                                 <Button
                                     type="button"
-                                    onClick={() => onView(appointment)}
+                                    onClick={() =>
+                                        onView(appointment)
+                                    }
                                     className="h-7 px-2 text-[10px]"
                                 >
                                     View
                                 </Button>
-                            ) : null}
+                            )}
 
-                            {onEdit ? (
+                            {onEdit && (
                                 <Button
                                     type="button"
-                                    onClick={() => onEdit(appointment)}
+                                    onClick={() =>
+                                        onEdit(appointment)
+                                    }
                                     className="flex h-7 items-center gap-1.5 px-2 text-[10px]"
                                 >
-                                    <Pencil className="size-3.5" strokeWidth={1.8} />
+                                    <Pencil
+                                        className="size-3.5"
+                                        strokeWidth={1.8}
+                                    />
                                     Edit
                                 </Button>
-                            ) : null}
+                            )}
                         </div>
                     </div>
                 </div>
@@ -110,29 +139,41 @@ export function AppointmentCard({
                         <CalendarClock className="size-3.5 shrink-0" />
 
                         <span className="truncate">
-                            {startTime} – {endTime}
+                            {startTime} - {endTime}
                         </span>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-1.5">
                         <UserRound className="size-3.5 shrink-0" />
 
-                        <span className="truncate">{appointment.userName}</span>
+                        <span className="truncate">
+                            {appointment.userName}
+                        </span>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-1.5">
                         <MapPin className="size-3.5 shrink-0" />
 
-                        <span className="truncate">{appointment.roomName}</span>
+                        <span className="truncate">
+                            {appointment.roomName}
+                        </span>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-1.5">
                         <CircleDollarSign className="size-3.5 shrink-0" />
 
-                        <span className="truncate">{appointment.paymentStatus}</span>
+                        <span className="truncate">
+                            {appointment.paymentStatus}
+                        </span>
                     </div>
                 </div>
             </div>
         </article>
+    );
+
+    return (
+        <TooltipProvider>
+            {appointmentContent}
+        </TooltipProvider>
     );
 }
