@@ -14,8 +14,8 @@ export default defineConfig(({ mode }) => {
                 '/api': {
                     target:
                         env.VITE_NODE_ENV == 'development'
-                            ? env.VITE_SERVER_DEVELOPMENT + (Number(env.VITE_SERVER_PORT) || 3000)
-                            : env.VITE_DEPLOYMENT_SERVER,
+                            ? env.VITE_DEVELOPMENT_SERVER + (Number(env.VITE_SERVER_PORT) || 3000)
+                            : env.VITE_PRODUCTION_SERVER,
                     changeOrigin: true,
                 },
             },

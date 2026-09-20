@@ -61,7 +61,7 @@ createRoot(document.getElementById('root')!).render(
             <TooltipProvider>
                 <RouterProvider router={router} />
             </TooltipProvider>
-            {import.meta.env.VITE_NODE_ENV === 'development' && (
+            {import.meta.env.VITE_NODE_ENV == 'development' && (
                 <ReactQueryDevtools initialIsOpen={false} />
             )}
         </QueryClientProvider>

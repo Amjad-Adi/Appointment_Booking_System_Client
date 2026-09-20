@@ -13,7 +13,8 @@ const axiosConfig = {
 };
 
 function getBaseURL(): string {
-    const isDev = import.meta.env.DEV || import.meta.env.VITE_NODE_ENV === 'development';
+    const isDev = import.meta.env.VITE_NODE_ENV === 'development' || import.meta.env.DEV;
+
     if (isDev) {
         const devServer = import.meta.env.VITE_DEVELOPMENT_SERVER || 'http://localhost';
 
@@ -21,7 +22,8 @@ function getBaseURL(): string {
 
         return `${devServer}:${devPort}`;
     }
-    return import.meta.env.VITE_DEPLOYMENT_SERVER || '';
+
+    return import.meta.env.VITE_PRODUCTION_SERVER || '';
 }
 
 export const api: AxiosInstance = axios.create(axiosConfig);

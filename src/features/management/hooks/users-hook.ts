@@ -22,6 +22,8 @@ import {
 } from '../../../utlis/query-keys.ts';
 import type { OrganizationResponse } from '../../../models/organization.model.ts';
 import { Role } from '../../../models/enums/roles.ts';
+import { fireBaseLogIn } from '../../../services/firebase/firebase.ts';
+import { firebaseAuth } from '../../../config/firebase.ts';
 
 export function useUsers(query: QueryUser) {
     return useQuery({
@@ -35,13 +37,19 @@ export function useUsers(query: QueryUser) {
         placeholderData: keepPreviousData,
     });
 }
+
 export function useLogin() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (loginForm: LoginForm) => {
-            const response = await api.post('/api/auth/login', loginForm);
+            const idToken = await fireBaseLogIn(firebaseAuth, loginForm.email, loginForm.password);
+
+            const response = await api.post('/api/auth/login', {
+                idToken,
+            });
+
             return response.data;
         },
 
