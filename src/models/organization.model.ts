@@ -1,4 +1,3 @@
-import { Role } from './enums/roles.js';
 import { z } from 'zod';
 import { ActivationStatus } from './enums/activation-status.js';
 import {
@@ -8,9 +7,8 @@ import {
     queryOrganizationSchema,
     createOrganizationByAdminSchema,
 } from '../zod-schemas/organization.schema.js';
-import { createLocationSchema } from '../zod-schemas/location.schema.js';
 import type { LocationResponse } from './location.model.js';
-import { updateUserByAdminSchema } from '../zod-schemas/user.schema.ts';
+
 export interface Organization {
     uuid: string;
     name: string;
@@ -23,6 +21,7 @@ export interface Organization {
     updatedAtUTC: Date;
     status: ActivationStatus;
 }
+
 export interface OrganizationResponse {
     uuid: string;
     name: string;
@@ -35,6 +34,7 @@ export interface OrganizationResponse {
     updatedAtUTC: Date;
     status: ActivationStatus;
 }
+
 export interface OrganizationRow {
     uuid: string;
     name: string;
@@ -51,14 +51,18 @@ export interface OrganizationRow {
     updatedAtUTC: Date;
     status: ActivationStatus;
 }
-export type CreateOrganization = z.infer<typeof createOrganizationSchema> & {
-    organizationOwnerUuid: string;
-};
+
+export type CreateOrganization = z.infer<typeof createOrganizationSchema>;
+
+export type CreateOrganizationByAdmin = z.infer<typeof createOrganizationByAdminSchema>;
+
 export type UpdateOrganization = z.infer<typeof updateOrganizationSchema> & {
     uuid: string;
     userUuid: string;
 };
+
 export type UpdateOrganizationByAdminForm = z.infer<typeof updateOrganizationByAdminSchema>;
+
 export type UpdateOrganizationByAdmin = UpdateOrganizationByAdminForm & { uuid: string };
+
 export type QueryOrganization = z.infer<typeof queryOrganizationSchema>;
-export type CreateOrganizationByAdmin = z.infer<typeof createOrganizationByAdminSchema>;

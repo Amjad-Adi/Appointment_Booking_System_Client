@@ -29,7 +29,7 @@ export const createServiceSchema = z
             .number('Duration must be a number')
             .int('Duration must be a whole number')
             .positive('Duration must be greater than 0'),
-        profilePicturePath: z.string().trim().optional(),
+        picturePath: z.string().trim().optional(),
     })
     .strict();
 

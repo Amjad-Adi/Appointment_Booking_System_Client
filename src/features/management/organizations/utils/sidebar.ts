@@ -7,10 +7,40 @@ import {
     Star,
     User,
     Settings,
+    Building2,
 } from 'lucide-react';
 
 import type { SidebarGroup } from '../../../../components/sidebar/sidebar.types';
 
+export function getOrganizationSetupSidebarGroups(): SidebarGroup[] {
+    return [
+        {
+            label: 'Main',
+            items: [
+                {
+                    title: 'Dashboard',
+                    url: '/organization',
+                    icon: LayoutDashboard,
+                },
+                {
+                    title: 'Create Organization',
+                    url: '/organization/create',
+                    icon: Building2,
+                },
+            ],
+        },
+        {
+            label: 'Account',
+            items: [
+                {
+                    title: 'Profile',
+                    url: '/organization/profile',
+                    icon: User,
+                },
+            ],
+        },
+    ];
+}
 
 export function getOrganizationSidebarGroups(organizationUuid: string): SidebarGroup[] {
     return [
@@ -45,7 +75,7 @@ export function getOrganizationSidebarGroups(organizationUuid: string): SidebarG
                 {
                     title: 'Organization',
                     url: `/organization/organization-profile/${organizationUuid}`,
-                    icon: BriefcaseBusiness,
+                    icon: Building2,
                 },
             ],
         },

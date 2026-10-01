@@ -42,14 +42,6 @@ const createUserFields = {
         .max(64, {
             error: 'Confirm Password must be at most 64 characters',
         }),
-
-    profilePicturePath: z
-        .string()
-        .trim()
-        .min(1, {
-            error: 'Profile picture path cannot be empty',
-        })
-        .default('DEFAULT_PICTURE_PATH'),
     language: z.string().trim().length(2, {
         error: 'Language must be a 2-character code',
     }),

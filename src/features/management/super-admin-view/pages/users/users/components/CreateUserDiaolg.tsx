@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { z } from 'zod';
 
 import {
     CreateDialog,
@@ -8,16 +9,12 @@ import {
 } from '../../../../../../../components/CreateDialog.tsx';
 
 import { useCreateUserByAdmin } from '../../../../../hooks/users-hook.ts';
-import {
-    createUserByAdminSchema,
-    createUserSchema,
-} from '../../../../../../../zod-schemas/user.schema.ts';
+import { createUserByAdminSchema } from '../../../../../../../zod-schemas/user.schema.ts';
 
 import { Role } from '../../../../../../../models/enums/roles.ts';
 import type { CreateUserByAdmin } from '../../../../../../../models/user.model.ts';
 
 import toast from 'react-hot-toast';
-import { Language } from '../../../../../../../models/enums/language.ts';
 
 interface CreateUserDialogProps {
     open: boolean;
@@ -29,6 +26,8 @@ interface CreateUserErrorResponse {
     fieldErrors?: Partial<Record<keyof CreateUserByAdmin, string>>;
 }
 
+type CreateUserFormValues = z.infer<typeof createUserByAdminSchema>;
+
 const loading = 'Creating user...';
 const success = 'User created successfully';
 const error = 'Failed to create user';
@@ -36,7 +35,7 @@ const error = 'Failed to create user';
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
     const createUserMutation = useCreateUserByAdmin();
 
-    const fields = useMemo<readonly CreateDialogField<CreateUserByAdmin>[]>(
+    const fields = useMemo<readonly CreateDialogField<CreateUserFormValues>[]>(
         () => [
             {
                 name: 'firstName',
@@ -67,38 +66,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 label: 'Confirm Password',
                 type: 'password',
                 placeholder: 'Confirm password',
-            },
-            {
-                name: 'role',
-                label: 'Role',
-                type: 'select',
-                options: [
-                    {
-                        value: Language.ENGLISH,
-                        label: Role.CUSTOMER,
-                    },
-                    {
-                        value: Role.WORKER,
-                        label: Role.WORKER,
-                    },
-                    {
-                        value: Role.CRM,
-                        label: Role.CRM,
-                    },
-                    {
-                        value: Role.MANAGER,
-                        label: Role.MANAGER,
-                    },
-                    {
-                        value: Role.OWNER,
-                        label: Role.OWNER,
-                    },
-                    {
-                        value: Role.SUPER_ADMIN,
-                        label: Role.SUPER_ADMIN,
-                    },
-                ],
-                placeholder: 'Select role',
             },
             {
                 name: 'role',
@@ -144,10 +111,13 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     const fieldErrors = errorResponse?.fieldErrors;
 
     const errorMessage =
-        createUserMutation.isError && !fieldErrors ? (errorResponse?.message ?? error) : undefined;
+        createUserMutation.isError && !fieldErrors
+            ? (errorResponse?.message ?? error)
+            : undefined;
 
-    async function handleSubmit(values: CreateUserByAdmin) {
+    async function handleSubmit(values: CreateUserFormValues) {
         const toastId = toast.loading(loading);
+
         try {
             await createUserMutation.mutateAsync(values);
             toast.success(success, {
@@ -156,18 +126,20 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             onOpenChange(false);
         } catch (mutationError) {
             toast.dismiss(toastId);
+
             if (
                 axios.isAxiosError<CreateUserErrorResponse>(mutationError) &&
                 mutationError.response?.data?.fieldErrors
             ) {
                 return;
             }
+
             toast.error(error);
         }
     }
 
     return (
-        <CreateDialog<CreateUserByAdmin>
+        <CreateDialog<CreateUserFormValues, CreateUserByAdmin>
             open={open}
             onOpenChange={onOpenChange}
             title="Create User"

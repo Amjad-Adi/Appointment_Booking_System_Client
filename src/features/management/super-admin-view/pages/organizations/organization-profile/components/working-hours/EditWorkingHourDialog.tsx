@@ -9,7 +9,6 @@ import {
 import { Toast } from '../../../../../../../../utlis/toast.ts';
 import {
     updateWorkingHoursForm,
-    updateWorkingHoursSchema,
 } from '../../../../../../../../zod-schemas/working-hours.schema.ts';
 import { useUpdateOrganizationWorkingHours } from '../../../../../../hooks/working-hours-hook.ts';
 import type {

@@ -29,7 +29,6 @@ export function RegisterForm() {
         defaultValues: {
             role: Role.CUSTOMER,
             language: Language.ENGLISH,
-            profilePicturePath: 'DEFAULT_PICTURE_PATH',
         },
     });
 

@@ -31,11 +31,11 @@ import { ViewMode } from '../../../../../../models/enums/ViewMode.ts';
 import { ServiceViewSwitcher } from '../components/ServiceViewSwitcher.tsx';
 import { ServicesGrid } from '../grids/ServiceGrid.tsx';
 
-interface ServicesTableProps {
+interface ServicesViewProps {
     organizationUuid?: string;
 }
 
-export function ServicesTable({ organizationUuid }: ServicesTableProps) {
+export function ServicesView({ organizationUuid }: ServicesViewProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
 
     const [pagination, setPagination] = useState<PaginationState>({

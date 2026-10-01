@@ -1,5 +1,5 @@
 import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { data, useNavigate } from 'react-router';
 
 import { api } from '../../../services/axios.ts';
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
@@ -144,6 +144,7 @@ export function useUpdateCurrentUser() {
 
 export function useRegisterUser() {
     const navigate = useNavigate();
+
     return useMutation({
         mutationFn: async (userForm: CreateUser) => {
             const response = await api.post('api/users/register', userForm);
@@ -153,7 +154,7 @@ export function useRegisterUser() {
             navigate('/login');
         },
         onError: (error) => {
-            console.log(error);
+            console.error(error);
         },
     });
 }
