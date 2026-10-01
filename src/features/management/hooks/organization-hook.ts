@@ -12,7 +12,7 @@ import type {
     CreateOrganization,
 } from '../../../models/organization.model.ts';
 
-import { ORGANIZATION, ORGANIZATION_TABLE } from '../../../utlis/query-keys.ts';
+import { CURRENT_USER, ORGANIZATION, ORGANIZATION_TABLE } from '../../../utlis/query-keys.ts';
 
 export function useOrganizations(query: QueryOrganization) {
     return useQuery({
@@ -77,12 +77,39 @@ export function useCreateOrganization() {
             return response.data;
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: [ORGANIZATION_TABLE],
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: [CURRENT_USER],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: [ORGANIZATION_TABLE],
+                }),
+            ]);
         },
         onError: (error) => {
             console.log(error);
         },
     });
 }
+
+export function useCreateOrganizationBySuperAdmin() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (organization: CreateOrganizationByAdmin | CreateOrganization) => {
+            const response = await api.post('/api/organizations', organization);
+            return response.data;
+        },
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: [ORGANIZATION_TABLE],
+                }),
+            ]);
+        },
+        onError: (error) => {
+            console.log(error);
+        },
+    });
+}
+

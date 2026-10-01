@@ -1,9 +1,9 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Label } from '../../../../../../../components/Label.tsx';
 import 'leaflet/dist/leaflet.css';
-
+import tzlookup from 'tz-lookup';
 const markerIcon = new L.Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -54,41 +54,58 @@ export function LocationPicker({
         longitude ?? defaultCenter[1],
     ];
 
-    const handleUpdateCoords = async (lat: number, lng: number) => {
-        let detectedName = '';
-        try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
-            );
-            const data = await res.json();
-            detectedName = (data.display_name as string) || '';
-        } catch {
-            // Keep empty on network failure
-        }
 
-        const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const handleUpdateCoords = useCallback(
+        async (lat: number, lng: number) => {
+            let detectedName = '';
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                );
 
-        onSelectLocation({
-            latitude: Number(lat.toFixed(6)),
-            longitude: Number(lng.toFixed(6)),
-            name: detectedName,
-            timezone: systemTimezone,
-        });
-    };
+                if (!res.ok) {
+                    throw new Error('Failed to detect location');
+                }
+
+                const data = await res.json();
+
+                detectedName = data.display_name || '';
+            } catch (error) {
+                console.error(error);
+            }
+
+            let timezone = 'UTC';
+
+            try {
+                timezone = tzlookup(lat, lng);
+            } catch (error) {
+                console.error('Timezone detection failed:', error);
+            }
+
+            onSelectLocation({
+                latitude: Number(lat.toFixed(6)),
+                longitude: Number(lng.toFixed(6)),
+                name: detectedName,
+                timezone,
+            });
+        },
+        [onSelectLocation],
+    );
 
     const markerEvents = useMemo(
         () => ({
             dragend() {
                 const marker = markerRef.current;
-                if (marker) {
-                    const { lat, lng } = marker.getLatLng();
-                    handleUpdateCoords(lat, lng);
-                }
+
+                if (!marker) return;
+
+                const { lat, lng } = marker.getLatLng();
+
+                void handleUpdateCoords(lat, lng);
             },
         }),
-        [],
+        [handleUpdateCoords],
     );
-
     return (
         <div className="flex flex-col gap-1.5 sm:col-span-2">
             <Label>{label}</Label>

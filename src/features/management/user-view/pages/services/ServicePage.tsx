@@ -1,5 +1,5 @@
 import { ManagementPage } from '../../../components/ManagementPage.tsx';
-import { ServicesTable } from './tables/ServiceTable.tsx';
+import { ServicesView } from './tables/ServiceTable.tsx';
 import { useCurrentUser } from '../../../hooks/users-hook.ts';
 
 export function ServicesPage() {
@@ -11,7 +11,7 @@ export function ServicesPage() {
                 'Manage and monitor organization services, their categories, pricing, and availability.',
             ]}
         >
-            <ServicesTable organizationUuid={currentUser?.organizationUuid} />
+            <ServicesView organizationUuid={currentUser?.organizationUuid} />
         </ManagementPage>
     );
 }

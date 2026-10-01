@@ -1,50 +1,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
+import type { z } from 'zod';
 
 import {
     CreateDialog,
     type CreateDialogField,
 } from '../../../../../../../components/CreateDialog.tsx';
 
-import { createOrganizationSchema } from '../../../../../../../zod-schemas/organization.schema.ts';
-import type { CreateOrganization } from '../../../../../../../models/organization.model.ts';
+import { createOrganizationByAdminSchema } from '../../../../../../../zod-schemas/organization.schema.ts';
+import type { CreateOrganizationByAdmin } from '../../../../../../../models/organization.model.ts';
 
-import { useCurrentUser } from '../../../../../hooks/users-hook.ts';
-import { useCreateOrganization } from '../../../../../hooks/organization-hook.ts';
+import { useCreateOrganizationBySuperAdmin } from '../../../../../hooks/organization-hook.ts';
 
-import {
-    LocationPicker,
-    type SelectedLocationData,
-} from '../../organization-profile/components/LocationPicker.tsx';
-
-type CreateOrgFormValues = {
-    name: string;
-    email: string;
-    phoneNumber: string;
-    bio: string;
-    profilePicturePath?: string;
-    location: {
-        name: string;
-        locationOnMap: [number, number];
-        timezone: string;
-    };
-};
+type CreateOrgFormValues = z.infer<typeof createOrganizationByAdminSchema>;
 
 interface CreateOrganizationDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
-export function CreateOrganizationDialog({
-    open,
-    onOpenChange,
-}: CreateOrganizationDialogProps) {
-    const { data: currentUser } = useCurrentUser();
+export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizationDialogProps) {
+    const createMutation = useCreateOrganizationBySuperAdmin();
 
-    const createMutation = useCreateOrganization();
-
-    const initialTimezone =
-        Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const initialTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
     const fields: readonly CreateDialogField<CreateOrgFormValues>[] = [
         {
@@ -55,6 +33,11 @@ export function CreateOrganizationDialog({
         {
             name: 'email',
             label: 'Contact Email',
+            type: 'text',
+        },
+        {
+            name: 'userEmail',
+            label: 'Owner Email',
             type: 'text',
         },
         {
@@ -75,24 +58,16 @@ export function CreateOrganizationDialog({
     ];
 
     async function handleSubmit(values: CreateOrgFormValues) {
-        if (!currentUser?.uuid) {
-            toast.error('You must be logged in to create an organization');
-            return;
-        }
-
-        const payload: CreateOrganization = {
+        const payload: CreateOrganizationByAdmin = {
             ...values,
-            organizationOwnerUuid: currentUser.uuid,
+            bio: values.bio?.trim() || undefined,
         };
 
-        await toast.promise(
-            createMutation.mutateAsync(payload),
-            {
-                loading: 'Creating your organization...',
-                success: 'Organization created successfully',
-                error: 'Failed to create organization',
-            },
-        );
+        await toast.promise(createMutation.mutateAsync(payload), {
+            loading: 'Creating organization...',
+            success: 'Organization created successfully',
+            error: 'Failed to create organization',
+        });
 
         onOpenChange(false);
     }
@@ -103,11 +78,12 @@ export function CreateOrganizationDialog({
             onOpenChange={onOpenChange}
             title="Create Organization"
             description="Set up your organization profile and branch location."
-            resolver={zodResolver(createOrganizationSchema) as any}
+            resolver={zodResolver(createOrganizationByAdminSchema)}
             defaultValues={{
                 name: '',
-                email: currentUser?.email ?? '',
+                email: '',
                 phoneNumber: '',
+                userEmail: '',
                 bio: '',
                 location: {
                     name: '',
