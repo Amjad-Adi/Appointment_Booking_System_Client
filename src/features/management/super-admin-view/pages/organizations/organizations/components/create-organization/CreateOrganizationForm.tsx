@@ -4,39 +4,81 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Building2, Check, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import { TextField } from '../../../../../../../../components/TextField.tsx';
 import { Button } from '../../../../../../../../components/Button.tsx';
+import { ImagePicker } from '../../../../../../../../components/ImagePicker.tsx';
 import { LocationPicker } from '../../../organization-profile/components/LocationPicker.tsx';
 
-import { createOrganizationByAdminSchema } from '../../../../../../../../zod-schemas/organization.schema.ts';
+import {
+    createOrganizationByAdminSchema,
+    createOrganizationSchema,
+} from '../../../../../../../../zod-schemas/organization.schema.ts';
 import { useCreateOrganization } from '../../../../../../hooks/organization-hook.ts';
+import { useCurrentUser } from '../../../../../../hooks/users-hook.ts';
 
-import type { CreateOrganizationByAdmin } from '../../../../../../../../models/organization.model.ts';
+import { getApiErrorMessage } from '../../../../../../../../utlis/api-error.ts';
 
-type FormValues = z.infer<typeof createOrganizationByAdminSchema>;
+import type {
+    CreateOrganization,
+    CreateOrganizationByAdmin,
+} from '../../../../../../../../models/organization.model.ts';
+import { Role } from '../../../../../../../../models/enums/roles.ts';
+
+const optionalBioSchema = z.string().trim().max(4096).optional().or(z.literal(''));
+
+const createOrganizationFormSchema = createOrganizationSchema.extend({
+    bio: optionalBioSchema,
+});
+
+const createOrganizationByAdminFormSchema = createOrganizationByAdminSchema.extend({
+    bio: optionalBioSchema,
+});
+
+type FormValues = {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    bio?: string;
+    userEmail?: string;
+    location: {
+        name: string;
+        locationOnMap: [number, number];
+        timezone: string;
+    };
+};
 
 export function CreateOrganizationForm() {
     const navigate = useNavigate();
     const createMutation = useCreateOrganization();
+    const { data: currentUser, isLoading: currentUserLoading } = useCurrentUser();
+
+    const isSuperAdmin = currentUser?.role === Role.SUPER_ADMIN;
 
     const [locationSelected, setLocationSelected] = useState(false);
+    const [picture, setPicture] = useState<File | null>(null);
+
+    const defaultValues: FormValues = {
+        name: '',
+        email: '',
+        phoneNumber: '',
+        bio: '',
+        ...(isSuperAdmin ? { userEmail: '' } : {}),
+        location: {
+            name: '',
+            locationOnMap: [35.2034, 31.9038],
+            timezone: 'Asia/Hebron',
+        },
+    };
 
     const { register, control, handleSubmit, formState, setError } = useForm<FormValues>({
-        resolver: zodResolver(createOrganizationByAdminSchema),
-        defaultValues: {
-            name: '',
-            email: '',
-            phoneNumber: '',
-            userEmail: '',
-            bio: '',
-            location: {
-                name: '',
-                locationOnMap: [35.2034, 31.9038],
-                timezone: 'Asia/Hebron',
-            },
-        },
+        resolver: zodResolver(
+            (isSuperAdmin
+                ? createOrganizationByAdminFormSchema
+                : createOrganizationFormSchema) as any,
+        ) as any,
+        defaultValues,
     });
 
     async function submitOrganization(values: FormValues) {
@@ -48,25 +90,48 @@ export function CreateOrganizationForm() {
             return;
         }
 
-        const payload: CreateOrganizationByAdmin = {
-            ...values,
+        const basePayload = {
+            name: values.name,
+            email: values.email,
+            phoneNumber: values.phoneNumber,
             bio: values.bio?.trim() || undefined,
+            location: values.location as CreateOrganization['location'],
         };
 
-        try {
-            await toast.promise(createMutation.mutateAsync(payload), {
-                loading: 'Creating organization...',
-                success: 'Organization created successfully!',
-                error: 'Failed to create organization.',
-            });
+        const schema = isSuperAdmin ? createOrganizationByAdminSchema : createOrganizationSchema;
 
-            navigate('/organization', { replace: true });
+        const validation = schema.safeParse(
+            isSuperAdmin ? { ...basePayload, userEmail: values.userEmail } : basePayload,
+        );
+
+        if (!validation.success) {
+            toast.error('Please check the organization details.');
+            return;
+        }
+
+        try {
+            await toast.promise(
+                createMutation.mutateAsync({
+                    ...(validation.data as CreateOrganizationByAdmin | CreateOrganization),
+                    picture,
+                }),
+                {
+                    loading: 'Creating organization...',
+                    success: 'Organization created successfully!',
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to create organization.'),
+                },
+            );
+
+            navigate(isSuperAdmin ? '/admin/organizations' : '/organization', {
+                replace: true,
+            });
         } catch {
             // Error is already displayed by toast.
         }
     }
 
-    const errorClass = 'mt-1 text-[10px] text-[#c94a5c]';
+    const errorClass = 'mt-1 text-[10px] text-destructive';
 
     return (
         <form onSubmit={handleSubmit(submitOrganization)} className="flex min-w-0 flex-col gap-4">
@@ -76,14 +141,14 @@ export function CreateOrganizationForm() {
                     type="button"
                     onClick={() => navigate(-1)}
                     disabled={createMutation.isPending}
-                    className="h-8 w-auto shrink-0 border border-[#d3d3df] bg-transparent px-3 text-[11px] font-semibold text-[#454556] hover:bg-[#ededf2] hover:text-[#343447]"
+                    className="h-8 w-auto shrink-0 border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground"
                 >
                     Cancel
                 </Button>
 
                 <Button
                     type="submit"
-                    disabled={createMutation.isPending}
+                    disabled={createMutation.isPending || currentUserLoading}
                     className="flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 px-3 text-[11px] font-semibold"
                 >
                     <Check className="size-3.5" strokeWidth={2} />
@@ -93,21 +158,31 @@ export function CreateOrganizationForm() {
             </div>
 
             {/* Business Information */}
-            <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                         <Building2 className="size-4" strokeWidth={1.8} />
                     </div>
 
                     <div className="min-w-0">
-                        <h3 className="text-[13px] font-semibold text-[#343447]">
+                        <h3 className="text-[13px] font-semibold text-foreground">
                             Business Information
                         </h3>
 
-                        <p className="mt-0.5 text-[10px] leading-4 text-[#777789]">
+                        <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                             Enter your organization's basic details.
                         </p>
                     </div>
+                </div>
+
+                <div className="mt-5">
+                    <ImagePicker
+                        file={picture}
+                        onChange={setPicture}
+                        label="Organization Picture"
+                        description="Optional. PNG, JPG or WEBP uploaded to Cloudinary."
+                        disabled={createMutation.isPending}
+                    />
                 </div>
 
                 <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
@@ -129,14 +204,16 @@ export function CreateOrganizationForm() {
                         {...register('email')}
                     />
 
-                    <TextField
-                        label="Owner Email"
-                        id="organization_owner_email"
-                        type="email"
-                        placeholder="Owner email"
-                        errorMessage={formState.errors.userEmail?.message}
-                        {...register('userEmail')}
-                    />
+                    {isSuperAdmin ? (
+                        <TextField
+                            label="Owner Email"
+                            id="organization_owner_email"
+                            type="email"
+                            placeholder="Owner email"
+                            errorMessage={formState.errors.userEmail?.message}
+                            {...register('userEmail')}
+                        />
+                    ) : null}
 
                     <TextField
                         label="Phone Number"
@@ -150,10 +227,10 @@ export function CreateOrganizationForm() {
                     <div className="sm:col-span-2">
                         <label
                             htmlFor="organization_bio"
-                            className="text-[11px] font-medium text-[#343447]"
+                            className="text-[11px] font-medium text-foreground"
                         >
                             Description
-                            <span className="ml-1 font-normal text-[#777789]">(Optional)</span>
+                            <span className="ml-1 font-normal text-muted-foreground">(Optional)</span>
                         </label>
 
                         <textarea
@@ -161,7 +238,7 @@ export function CreateOrganizationForm() {
                             rows={3}
                             maxLength={4096}
                             placeholder="Describe your organization..."
-                            className="mt-1.5 w-full resize-y rounded-lg border border-[#d3d3df] bg-white p-2.5 text-[11px] text-[#343447] transition-colors outline-none placeholder:text-[#777789] focus:border-[#454556]"
+                            className="mt-1.5 w-full resize-y rounded-lg border border-border bg-card p-2.5 text-[11px] text-foreground transition-colors outline-none placeholder:text-muted-foreground focus:border-ring"
                             {...register('bio')}
                         />
 
@@ -173,18 +250,18 @@ export function CreateOrganizationForm() {
             </section>
 
             {/* Business Location */}
-            <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                         <MapPin className="size-4" strokeWidth={1.8} />
                     </div>
 
                     <div className="min-w-0">
-                        <h3 className="text-[13px] font-semibold text-[#343447]">
+                        <h3 className="text-[13px] font-semibold text-foreground">
                             Business Location
                         </h3>
 
-                        <p className="mt-0.5 text-[10px] leading-4 text-[#777789]">
+                        <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                             Select your organization's location on the map.
                         </p>
                     </div>
@@ -213,16 +290,16 @@ export function CreateOrganizationForm() {
                                 />
 
                                 {locationSelected && (
-                                    <div className="rounded-lg bg-white p-3">
-                                        <p className="text-[11px] font-medium text-[#343447]">
+                                    <div className="rounded-lg bg-card p-3">
+                                        <p className="text-[11px] font-medium text-foreground">
                                             Selected Location
                                         </p>
 
-                                        <p className="mt-1 text-[10px] break-words text-[#777789]">
+                                        <p className="mt-1 text-[10px] break-words text-muted-foreground">
                                             {field.value.name || 'Unnamed location'}
                                         </p>
 
-                                        <p className="mt-1 text-[10px] text-[#777789]">
+                                        <p className="mt-1 text-[10px] text-muted-foreground">
                                             Timezone: {field.value.timezone}
                                         </p>
                                     </div>

@@ -5,6 +5,8 @@ import type { RoomResponse } from '../../../../../../models/room.model.ts';
 import { ActivationStatusRender } from '../../../../components/ActivationStatusRender.tsx';
 import { BackButton } from '../../../../components/BackButton.tsx';
 import { Button } from '../../../../../../components/Button.tsx';
+import { EntityImage } from '../../../../../../components/EntityImage.tsx';
+import { roomOccupancyStatusRecord } from '../../../../../../models/enums-mapping/room-occupancy-status.ts';
 
 interface RoomProfileProps {
     room: RoomResponse;
@@ -36,15 +38,20 @@ export function RoomProfile({ room, canEdit = false, onEdit }: RoomProfileProps)
             </div>
 
             {/* Room header */}
-            <section className="overflow-hidden rounded-xl border border-[#d3d3df] bg-white shadow-sm">
-                <div className="relative h-40 bg-[#f5f5f8]">
+            <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div className="relative h-40 bg-card">
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="flex size-24 items-center justify-center overflow-hidden rounded-2xl border border-[#d3d3df] bg-[#ededf2] shadow-sm">
-                            <DoorOpen className="size-10 text-[#777789]" strokeWidth={1.5} />
-                        </div>
+                        <EntityImage
+                            src={room.profilePicturePath}
+                            alt={room.name}
+                            icon={DoorOpen}
+                            className="flex size-24 items-center justify-center overflow-hidden rounded-2xl border border-border bg-secondary text-muted-foreground shadow-sm"
+                            iconClassName="size-10"
+                            strokeWidth={1.5}
+                        />
                     </div>
 
-                    <div className="absolute top-3 right-3 rounded-full border border-[#d3d3df] bg-white px-2.5 py-1 shadow-sm">
+                    <div className="absolute top-3 right-3 rounded-full border border-border bg-card px-2.5 py-1 shadow-sm">
                         {ActivationStatusRender({
                             status: room.status,
                         })}
@@ -54,14 +61,14 @@ export function RoomProfile({ room, canEdit = false, onEdit }: RoomProfileProps)
                 <div className="p-5">
                     <div className="flex min-w-0 flex-col gap-2">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <h1 className="min-w-0 truncate text-xl font-semibold text-[#343447]">
+                            <h1 className="min-w-0 truncate text-xl font-semibold text-foreground">
                                 {room.name}
                             </h1>
 
-                            <span className="text-[11px] text-[#777789]">Room</span>
+                            <span className="text-[11px] text-muted-foreground">Room</span>
                         </div>
 
-                        <p className="max-w-3xl text-[12px] leading-5 text-[#777789]">
+                        <p className="max-w-3xl text-[12px] leading-5 text-muted-foreground">
                             {room.description || 'No description available.'}
                         </p>
                     </div>
@@ -71,37 +78,37 @@ export function RoomProfile({ room, canEdit = false, onEdit }: RoomProfileProps)
             {/* Room information */}
             <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Occupancy Status */}
-                <section className="rounded-xl border border-[#d3d3df] bg-white p-4 shadow-sm">
+                <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
                     <div className="flex items-center gap-2">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#ededf2]">
-                            <DoorOpen className="size-4 text-[#777789]" strokeWidth={1.8} />
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
+                            <DoorOpen className="size-4 text-muted-foreground" strokeWidth={1.8} />
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[10px] font-medium tracking-wide text-[#777789] uppercase">
+                            <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                                 Occupancy
                             </p>
 
-                            <p className="mt-0.5 truncate text-lg font-semibold text-[#343447]">
-                                {room.occupancyStatus}
+                            <p className="mt-0.5 truncate text-lg font-semibold text-foreground">
+                                {roomOccupancyStatusRecord[room.occupancyStatus]}
                             </p>
                         </div>
                     </div>
                 </section>
 
                 {/* Assigned User */}
-                <section className="rounded-xl border border-[#d3d3df] bg-white p-4 shadow-sm">
+                <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
                     <div className="flex items-center gap-2">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#ededf2]">
-                            <User className="size-4 text-[#777789]" strokeWidth={1.8} />
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
+                            <User className="size-4 text-muted-foreground" strokeWidth={1.8} />
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[10px] font-medium tracking-wide text-[#777789] uppercase">
+                            <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                                 Assigned User
                             </p>
 
-                            <p className="mt-0.5 truncate text-lg font-semibold text-[#343447]">
+                            <p className="mt-0.5 truncate text-lg font-semibold text-foreground">
                                 {assignedUserName || 'Unassigned'}
                             </p>
                         </div>
@@ -109,18 +116,18 @@ export function RoomProfile({ room, canEdit = false, onEdit }: RoomProfileProps)
                 </section>
 
                 {/* Created At */}
-                <section className="rounded-xl border border-[#d3d3df] bg-white p-4 shadow-sm">
+                <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
                     <div className="flex items-center gap-2">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-[#ededf2]">
-                            <CalendarDays className="size-4 text-[#777789]" strokeWidth={1.8} />
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
+                            <CalendarDays className="size-4 text-muted-foreground" strokeWidth={1.8} />
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-[10px] font-medium tracking-wide text-[#777789] uppercase">
+                            <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                                 Created At
                             </p>
 
-                            <p className="mt-0.5 text-lg font-semibold text-[#343447]">
+                            <p className="mt-0.5 text-lg font-semibold text-foreground">
                                 {new Date(room.createdAtUTC).toLocaleDateString()}
                             </p>
                         </div>
@@ -129,23 +136,23 @@ export function RoomProfile({ room, canEdit = false, onEdit }: RoomProfileProps)
             </div>
 
             {/* Room details */}
-            <section className="rounded-xl border border-[#d3d3df] bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <div className="flex items-center gap-2">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-[#ededf2]">
-                        <Info className="size-4 text-[#777789]" strokeWidth={1.8} />
+                    <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
+                        <Info className="size-4 text-muted-foreground" strokeWidth={1.8} />
                     </div>
 
                     <div>
-                        <h2 className="text-sm font-semibold text-[#343447]">Room Details</h2>
+                        <h2 className="text-sm font-semibold text-foreground">Room Details</h2>
 
-                        <p className="text-[10px] text-[#777789]">
+                        <p className="text-[10px] text-muted-foreground">
                             Additional information about this room
                         </p>
                     </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-[#d3d3df] bg-[#f5f5f8] p-3">
-                    <p className="text-[11px] leading-5 text-[#777789]">
+                <div className="mt-4 rounded-lg border border-border bg-card p-3">
+                    <p className="text-[11px] leading-5 text-muted-foreground">
                         {room.description || 'No description available.'}
                     </p>
                 </div>

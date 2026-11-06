@@ -1,6 +1,7 @@
 import type { OrganizationResponse } from '../../../../../../../models/organization.model.ts';
 import type { DataTableColumn } from '../../../../../../../components/DataTableFeatures.ts';
 import { Button } from '../../../../../../../components/Button.tsx';
+import { EntityImage } from '../../../../../../../components/EntityImage.tsx';
 import { Building2, Info, MapPin, MoreHorizontalIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
@@ -80,7 +81,12 @@ export function getOrganizationColumns(
             accessorKey: ORGANIZATION_TABLE_COLUMN.PROFILE_PICTURE,
             header: ORGANIZATION_TABLE_HEADER.PROFILE_PICTURE,
             enableSorting: false,
-            cell: () => <OrganizationProfilePicture />,
+            cell: ({ row }) => (
+                <OrganizationProfilePicture
+                    name={row.original.name}
+                    profilePicturePath={row.original.profilePicturePath}
+                />
+            ),
         },
         {
             accessorKey: ORGANIZATION_TABLE_COLUMN.CREATED_AT,
@@ -132,7 +138,7 @@ function OrganizationName({ name, bio }: { name: string; bio: string }) {
 
 function OrganizationLocation({ location }: { location: OrganizationResponse['location'] }) {
     if (!location) {
-        return <span className="text-slate-400">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     const [longitude, latitude] = location.locationOnMap;
@@ -152,7 +158,7 @@ function OrganizationLocation({ location }: { location: OrganizationResponse['lo
                     href={googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-primary inline-flex size-6 shrink-0 items-center justify-center text-slate-500"
+                    className="hover:text-primary inline-flex size-6 shrink-0 items-center justify-center text-muted-foreground"
                     aria-label={`Open ${location.name ?? 'location'} in Google Maps`}
                 >
                     <MapPin className="size-4" />
@@ -166,11 +172,21 @@ function OrganizationLocation({ location }: { location: OrganizationResponse['lo
     );
 }
 
-function OrganizationProfilePicture() {
+function OrganizationProfilePicture({
+    name,
+    profilePicturePath,
+}: {
+    name: string;
+    profilePicturePath?: string | null;
+}) {
     return (
-        <div className="flex items-center">
-            <Building2 className="size-6 text-slate-500" />
-        </div>
+        <EntityImage
+            src={profilePicturePath}
+            alt={name}
+            icon={Building2}
+            className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary text-muted-foreground"
+            iconClassName="size-4"
+        />
     );
 }
 
@@ -190,7 +206,7 @@ function OrganizationActions({
                     render={
                         <Button
                             type="button"
-                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-slate-600 transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
+                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
                         >
                             <MoreHorizontalIcon className="size-4 shrink-0" />
 

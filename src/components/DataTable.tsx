@@ -7,8 +7,6 @@ import {
     type SortingState,
     useTable,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-
 import { dataTableFeatures, type DataTableColumn } from './DataTableFeatures.ts';
 
 import {
@@ -21,10 +19,12 @@ import {
     TableRow,
 } from '../../@/components/ui/Table.tsx';
 
-import { Button } from './Button.tsx';
-import { Input } from './Input.tsx';
+import { Pagination } from './Pagination.tsx';
+import { Skeleton } from './Skeleton.tsx';
 import { TextField } from './TextField.tsx';
 import { DataViewToolbar } from './DataViewToolbar.tsx';
+
+const SKELETON_ROW_COUNT = 6;
 
 interface DataTableProps<TData extends RowData> {
     tableKey: string;
@@ -40,6 +40,8 @@ interface DataTableProps<TData extends RowData> {
     actions?: ReactNode;
     rowCount: number;
     rowCountLabel: string;
+    isLoading?: boolean;
+    emptyMessage?: string;
 }
 
 export function DataTable<TData extends RowData>({
@@ -56,6 +58,8 @@ export function DataTable<TData extends RowData>({
     actions,
     rowCount,
     rowCountLabel,
+    isLoading = false,
+    emptyMessage = 'No data found.',
 }: DataTableProps<TData>) {
     const table = useTable({
         key: tableKey,
@@ -83,7 +87,7 @@ export function DataTable<TData extends RowData>({
     };
 
     return (
-        <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-[#dedee8] bg-[#f5f5f8]">
+        <div className="w-full max-w-full min-w-0 overflow-hidden rounded-xl border border-border bg-card">
             <DataViewToolbar
                 search={search}
                 onSearchChange={handleSearchChange}
@@ -98,7 +102,7 @@ export function DataTable<TData extends RowData>({
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow
                                     key={headerGroup.id}
-                                    className="border-0 bg-[#dedee8] hover:bg-[#dedee8]"
+                                    className="border-0 bg-muted hover:bg-muted"
                                 >
                                     {headerGroup.headers.map((header, index) => {
                                         const isLast = index === headerGroup.headers.length - 1;
@@ -106,7 +110,7 @@ export function DataTable<TData extends RowData>({
                                         return (
                                             <TableHead
                                                 key={header.id}
-                                                className={`h-9 px-3 py-1 text-[11px] font-semibold whitespace-nowrap text-[#454556] ${
+                                                className={`h-9 px-3 py-1 text-[11px] font-semibold whitespace-nowrap text-secondary-foreground ${
                                                     isLast ? 'text-right' : 'text-left'
                                                 }`}
                                             >
@@ -117,7 +121,7 @@ export function DataTable<TData extends RowData>({
                                                         type="button"
                                                         onClick={header.column.getToggleSortingHandler()}
                                                         disabled={!header.column.getCanSort()}
-                                                        className="inline-flex items-center rounded-md px-1 py-1 text-[11px] font-semibold whitespace-nowrap text-[#454556] transition-colors hover:bg-[#d3d3df] hover:text-[#343447] disabled:cursor-default"
+                                                        className="inline-flex items-center rounded-md px-1 py-1 text-[11px] font-semibold whitespace-nowrap text-secondary-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default"
                                                     >
                                                         {flexRender(
                                                             header.column.columnDef.header,
@@ -139,14 +143,30 @@ export function DataTable<TData extends RowData>({
                         </TableHeader>
 
                         <TableBody>
-                            {table.getRowModel().rows.length === 0 ? (
+                            {isLoading ? (
+                                Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
+                                    <TableRow
+                                        key={`skeleton-${rowIndex}`}
+                                        className="border-0 bg-card hover:bg-card"
+                                    >
+                                        {columns.map((_, columnIndex) => (
+                                            <TableCell
+                                                key={`skeleton-${rowIndex}-${columnIndex}`}
+                                                className="py-2"
+                                            >
+                                                <Skeleton className="h-4 w-full min-w-16 rounded-md" />
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : table.getRowModel().rows.length === 0 ? (
                                 <TableRow className="h-60 border-0 hover:bg-transparent">
                                     <TableCell
                                         colSpan={columns.length}
-                                        className="h-60 p-0 text-center align-middle text-[11px] text-[#777789]"
+                                        className="h-60 p-0 text-center align-middle text-[11px] text-muted-foreground"
                                     >
                                         <div className="flex h-60 items-center justify-center">
-                                            No data found.
+                                            {emptyMessage}
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -154,7 +174,7 @@ export function DataTable<TData extends RowData>({
                                 table.getRowModel().rows.map((row) => (
                                     <TableRow
                                         key={row.id}
-                                        className="border-0 bg-[#f5f5f8] transition-colors hover:bg-[#ededf2]"
+                                        className="border-0 bg-card transition-colors hover:bg-secondary"
                                     >
                                         {row.getAllCells().map((cell, index) => {
                                             const isLast = index === row.getAllCells().length - 1;
@@ -162,7 +182,7 @@ export function DataTable<TData extends RowData>({
                                             return (
                                                 <TableCell
                                                     key={cell.id}
-                                                    className={`py-1 text-[11px] whitespace-nowrap text-[#454556] ${
+                                                    className={`py-1 text-[11px] whitespace-nowrap text-secondary-foreground ${
                                                         isLast ? 'text-right' : 'text-left'
                                                     }`}
                                                 >
@@ -179,48 +199,24 @@ export function DataTable<TData extends RowData>({
                         </TableBody>
 
                         <TableFooter>
-                            <TableRow className="border-0 bg-[#dedee8] hover:bg-[#dedee8]">
+                            <TableRow className="border-0 bg-muted hover:bg-muted">
                                 <TableCell colSpan={columns.length} className="p-2">
-                                    <div className="flex w-full min-w-0 items-center justify-between">
-                                        <span className="min-w-0 truncate text-[11px] font-medium text-[#666679]">
+                                    <div className="flex w-full min-w-0 items-center justify-between gap-3">
+                                        <span className="min-w-0 truncate text-[11px] font-medium text-muted-foreground">
                                             {rowCountLabel}
                                         </span>
 
-                                        <div className="flex shrink-0 items-center">
-                                            <div className="group">
-                                                <Button
-                                                    type="button"
-                                                    disabled={!table.getCanPreviousPage()}
-                                                    onClick={() => table.previousPage()}
-                                                    aria-label="Previous page"
-                                                    className="flex h-7 min-h-0 w-7 min-w-0 shrink-0 items-center justify-center border border-[#b9b9cc] bg-transparent p-0 text-[#666679] group-hover:bg-[#ededf2] group-hover:text-[#343447] disabled:cursor-not-allowed disabled:opacity-40 disabled:group-hover:bg-transparent disabled:group-hover:text-[#666679] sm:h-7 sm:w-7 sm:px-0 md:h-7 md:w-7 md:px-0"
-                                                >
-                                                    <ChevronLeft
-                                                        className="size-4 shrink-0"
-                                                        strokeWidth={2}
-                                                    />
-                                                </Button>
-                                            </div>
-
-                                            <span className="flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[11px] font-semibold text-[#454556]">
-                                                {pagination.pageIndex + 1}
-                                            </span>
-
-                                            <div className="group">
-                                                <Button
-                                                    type="button"
-                                                    disabled={!table.getCanNextPage()}
-                                                    onClick={() => table.nextPage()}
-                                                    aria-label="Next page"
-                                                    className="flex h-7 min-h-0 w-7 min-w-0 shrink-0 items-center justify-center border border-[#b9b9cc] bg-transparent p-0 text-[#666679] group-hover:bg-[#ededf2] group-hover:text-[#343447] disabled:cursor-not-allowed disabled:opacity-40 disabled:group-hover:bg-transparent disabled:group-hover:text-[#666679] sm:h-7 sm:w-7 sm:px-0 md:h-7 md:w-7 md:px-0"
-                                                >
-                                                    <ChevronRight
-                                                        className="size-4 shrink-0"
-                                                        strokeWidth={2}
-                                                    />
-                                                </Button>
-                                            </div>
-                                        </div>
+                                        <Pagination
+                                            pageIndex={pagination.pageIndex}
+                                            pageSize={pagination.pageSize}
+                                            rowCount={rowCount}
+                                            onPageChange={(nextPageIndex) =>
+                                                onPaginationChange((previous) => ({
+                                                    ...previous,
+                                                    pageIndex: nextPageIndex,
+                                                }))
+                                            }
+                                        />
                                     </div>
                                 </TableCell>
                             </TableRow>

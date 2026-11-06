@@ -13,20 +13,33 @@ import { BackButton } from '../../../../../components/BackButton.tsx';
 
 interface UserProfileProps {
     user: UserResponse;
+    backPath?: string;
     editPath?: string;
+    canEdit?: boolean;
 }
 
-export function UserProfile({ user }: UserProfileProps) {
+export function UserProfile({
+    user,
+    backPath = '/admin/users',
+    editPath,
+    canEdit,
+}: UserProfileProps) {
     const { data } = useCurrentUser();
 
-    const canEdit = data?.role === Role.SUPER_ADMIN;
+    const isSelf = data?.uuid === user.uuid;
+    const canManageUsers = data?.role === Role.SUPER_ADMIN;
+    const canEditProfile = canEdit ?? (isSelf || canManageUsers);
 
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="flex min-w-0 items-center justify-between gap-3">
-                <BackButton backPath="/admin/users" />
+                {backPath ? <BackButton backPath={backPath} /> : <span />}
 
-                <ProfileActions editPath={`edit`} />
+                {canEditProfile ? (
+                    <ProfileActions
+                        editPath={editPath ?? `/admin/users/${user.uuid}/edit`}
+                    />
+                ) : null}
             </div>
 
             <UserProfileHeader user={user} />

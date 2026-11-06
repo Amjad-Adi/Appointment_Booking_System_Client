@@ -8,6 +8,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import axios from 'axios';
 import { Toaster } from 'react-hot-toast';
 import { TooltipProvider } from '../@/components/ui/Tooltip.tsx';
+import { ThemeProvider } from './components/ThemeProvider.tsx';
+import { Theme } from './models/enums/theme.ts';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -47,23 +49,28 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <Toaster
-            position="bottom-center"
-            toastOptions={{
-                style: {
-                    fontSize: '11px',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                },
-            }}
-        />
-        <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-                <RouterProvider router={router} />
-            </TooltipProvider>
-            {import.meta.env.VITE_NODE_ENV == 'development' && (
-                <ReactQueryDevtools initialIsOpen={false} />
-            )}
-        </QueryClientProvider>
+        <ThemeProvider defaultTheme={Theme.SYSTEM} storageKey="appointment-theme">
+            <Toaster
+                position="bottom-center"
+                toastOptions={{
+                    style: {
+                        fontSize: '11px',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        background: 'var(--card)',
+                        color: 'var(--card-foreground)',
+                        border: '1px solid var(--border)',
+                    },
+                }}
+            />
+            <QueryClientProvider client={queryClient}>
+                <TooltipProvider>
+                    <RouterProvider router={router} />
+                </TooltipProvider>
+                {import.meta.env.VITE_NODE_ENV == 'development' && (
+                    <ReactQueryDevtools initialIsOpen={false} />
+                )}
+            </QueryClientProvider>
+        </ThemeProvider>
     </StrictMode>,
 );

@@ -3,6 +3,8 @@ import { MoreHorizontalIcon, Mail } from 'lucide-react';
 import type { InvitationResponse } from '../../../../../../../models/invitation.model.ts';
 import type { DataTableColumn } from '../../../../../../../components/DataTableFeatures.ts';
 import { InvitationStatus } from '../../../../../../../models/enums/invitation-status.ts';
+import { invitationStatusRecord } from '../../../../../../../models/enums-mapping/invitation-status.ts';
+import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,8 +25,9 @@ export const INVITATION_TABLE_HEADER = {
 
 export function getOrganizationInvitationColumns(
     onEdit: (invitation: InvitationResponse) => void,
+    canUpdate = true,
 ): DataTableColumn<InvitationResponse>[] {
-    return [
+    const columns: DataTableColumn<InvitationResponse>[] = [
         {
             accessorKey: 'status',
             header: INVITATION_TABLE_HEADER.STATUS,
@@ -37,7 +40,7 @@ export function getOrganizationInvitationColumns(
             enableSorting: false,
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
-                    <Mail className="size-4 text-slate-400" />
+                    <Mail className="size-4 text-muted-foreground" />
                     <span className="truncate">{row.original.recipientEmail}</span>
                 </div>
             ),
@@ -47,8 +50,8 @@ export function getOrganizationInvitationColumns(
             header: INVITATION_TABLE_HEADER.ROLE,
             enableSorting: false,
             cell: ({ row }) => (
-                <span className="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-700">
-                    {row.original.role}
+                <span className="rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-foreground">
+                    {roleRecord[row.original.role]}
                 </span>
             ),
         },
@@ -63,35 +66,40 @@ export function getOrganizationInvitationColumns(
             cell: ({ row }) => {
                 const isExpired = new Date(row.original.expiresAtUTC) < new Date();
                 return (
-                    <span className={isExpired ? 'text-[#c94a5c]' : ''}>
+                    <span className={isExpired ? 'text-destructive' : ''}>
                         {new Date(row.original.expiresAtUTC).toLocaleDateString()}
                     </span>
                 );
             },
         },
-        {
+    ];
+
+    if (canUpdate) {
+        columns.push({
             id: 'actions',
             header: INVITATION_TABLE_HEADER.ACTIONS,
             enableSorting: false,
             cell: ({ row }) => <InvitationActions invitation={row.original} onEdit={onEdit} />,
-        },
-    ];
+        });
+    }
+
+    return columns;
 }
 
 function InvitationStatusRender({ status }: { status: InvitationStatus }) {
-    const config = {
-        [InvitationStatus.PENDING]: { color: 'bg-yellow-500', label: 'Pending' },
-        [InvitationStatus.ACCEPTED]: { color: 'bg-green-500', label: 'Accepted' },
-        [InvitationStatus.EXPIRED]: { color: 'bg-red-500', label: 'Expired' },
-        [InvitationStatus.CANCELLED]: { color: 'bg-slate-400', label: 'Cancelled' },
+    const colorByStatus: Record<InvitationStatus, string> = {
+        [InvitationStatus.PENDING]: 'bg-warning',
+        [InvitationStatus.ACCEPTED]: 'bg-success',
+        [InvitationStatus.EXPIRED]: 'bg-destructive',
+        [InvitationStatus.CANCELLED]: 'bg-muted-foreground',
     };
-
-    const style = config[status] || config[InvitationStatus.PENDING];
 
     return (
         <div className="flex items-center gap-1.5">
-            <span className={`size-2 shrink-0 rounded-full ${style.color}`} />
-            <span className="text-[11px] font-medium text-[#343447]">{style.label}</span>
+            <span className={`size-2 shrink-0 rounded-full ${colorByStatus[status]}`} />
+            <span className="text-[11px] font-medium text-foreground">
+                {invitationStatusRecord[status]}
+            </span>
         </div>
     );
 }
@@ -113,7 +121,7 @@ function InvitationActions({
                         <Button
                             type="button"
                             disabled={!canEdit}
-                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-slate-600 transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent disabled:opacity-50 sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
+                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent disabled:opacity-50 sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
                         >
                             <MoreHorizontalIcon className="size-4 shrink-0" />
                             <span className="sr-only">Open menu</span>

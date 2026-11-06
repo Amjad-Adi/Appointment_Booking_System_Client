@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { TextField } from '../../../../../../../components/TextField.tsx';
+import { ImagePicker } from '../../../../../../../components/ImagePicker.tsx';
 import { EditDialog, type EditDialogField } from '../../../../../../../components/EditDialog.tsx';
 
 import { useUpdateUser } from '../../../../../hooks/users-hook.ts';
@@ -12,12 +13,15 @@ import { ActivationStatus } from '../../../../../../../models/enums/activation-s
 
 import type {
     UserResponse,
-    UpdateUserByAdminForm, CreateUserByAdmin,
+    UpdateUserByAdminForm,
+    CreateUserByAdmin,
 } from '../../../../../../../models/user.model.ts';
 
 import toast from 'react-hot-toast';
 import { Toast } from '../../../../../../../utlis/toast.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../../utlis/api-error.ts';
 import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
+import { activationStatusRecord } from '../../../../../../../models/enums-mapping/activation-status.ts';
 
 interface EditUserDialogProps {
     user: UserResponse;
@@ -31,6 +35,7 @@ const error = 'Failed to update user';
 
 export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
     const updateUserMutation = useUpdateUser();
+    const [picture, setPicture] = useState<File | null>(null);
 
     const defaultValues = useMemo<UpdateUserByAdminForm>(
         () => ({
@@ -48,7 +53,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 type: 'select',
                 options: Object.values(Role).map((role) => ({
                     value: role,
-                    label: roleRecord[role]
+                    label: roleRecord[role],
                 })),
                 placeholder: 'Select role',
                 showPlaceholder: false,
@@ -59,7 +64,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
                 type: 'select',
                 options: Object.values(ActivationStatus).map((status) => ({
                     value: status,
-                    label: status,
+                    label: activationStatusRecord[status],
                 })),
                 placeholder: 'Select status',
                 showPlaceholder: false,
@@ -69,29 +74,58 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     );
 
     async function handleSubmit(changedValues: UpdateUserByAdminForm) {
-        await toast.promise(
-            updateUserMutation.mutateAsync({
-                uuid: user.uuid,
-                ...changedValues,
-            }),
-            new Toast(loading, success, error),
-        );
-        onOpenChange(false);
-    };
+        try {
+            await toast.promise(
+                updateUserMutation.mutateAsync({
+                    uuid: user.uuid,
+                    ...changedValues,
+                    profilePicture: picture,
+                }),
+                {
+                    loading,
+                    success,
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, error),
+                },
+            );
+            setPicture(null);
+            onOpenChange(false);
+        } catch {
+            // toast.promise already surfaced the error.
+        }
+    }
 
     return (
         <EditDialog<UpdateUserByAdminForm>
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={(nextOpen) => {
+                if (!nextOpen) {
+                    setPicture(null);
+                }
+                onOpenChange(nextOpen);
+            }}
             title="Edit User"
             description="Update the user's role and activation status."
+            topContent={
+                <ImagePicker
+                    file={picture}
+                    onChange={setPicture}
+                    currentPath={user.profilePicturePath}
+                    label="Profile Picture"
+                    rounded="full"
+                />
+            }
+            hasExternalChanges={picture !== null}
             resolver={zodResolver(updateUserByAdminSchema)}
             defaultValues={defaultValues}
             fields={fields}
             submitLabel="Apply Changes"
             errorMessage={
-                updateUserMutation.isError ? 'Failed to update user. Please try again.' : undefined
+                updateUserMutation.isError && !getApiFieldErrors(updateUserMutation.error)
+                    ? getApiErrorMessage(updateUserMutation.error, 'Failed to update user')
+                    : undefined
             }
+            fieldErrors={getApiFieldErrors(updateUserMutation.error)}
             onSubmit={handleSubmit}
             readOnlyContent={
                 <>

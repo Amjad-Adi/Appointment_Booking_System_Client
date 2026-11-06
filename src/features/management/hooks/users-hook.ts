@@ -1,5 +1,5 @@
 import { useMutation, useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-query';
-import { data, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import { api } from '../../../services/axios.ts';
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
@@ -7,6 +7,8 @@ import type {
     CreateUser,
     CreateUserByAdmin,
     LoginForm,
+    OrganizationCustomer,
+    QueryOrganizationCustomer,
     QueryUser,
     RegisterUser,
     UpdateUser,
@@ -16,24 +18,55 @@ import type {
 import {
     CURRENT_USER,
     ORGANIZATION,
+    ORGANIZATION_CUSTOMERS,
     ORGANIZATION_TABLE,
     USER,
     USER_TABLE,
 } from '../../../utlis/query-keys.ts';
-import type { OrganizationResponse } from '../../../models/organization.model.ts';
 import { Role } from '../../../models/enums/roles.ts';
 import { fireBaseLogIn } from '../../../services/firebase/firebase.ts';
 import { firebaseAuth } from '../../../config/firebase.ts';
+import { toFormData } from '../../../utlis/form-data.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
-export function useUsers(query: QueryUser) {
+export function useUsers(query: QueryUser, enabled = true) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [USER_TABLE, query],
+        queryKey: [USER_TABLE, debouncedQuery],
         queryFn: async (): Promise<QueryResponse<UserResponse>> => {
             const response = await api.get<QueryResponse<UserResponse>>('/api/users', {
-                params: query,
+                params: debouncedQuery,
             });
             return response.data;
         },
+        enabled,
+        placeholderData: keepPreviousData,
+    });
+}
+
+const DEFAULT_CUSTOMER_QUERY: QueryOrganizationCustomer = {
+    page: 1,
+    limit: 100,
+};
+
+export function useOrganizationCustomers(
+    organizationUuid: string | undefined,
+    query: QueryOrganizationCustomer = DEFAULT_CUSTOMER_QUERY,
+    enabled = true,
+) {
+    const debouncedQuery = useDebouncedQuery(query);
+
+    return useQuery({
+        queryKey: [ORGANIZATION_CUSTOMERS, organizationUuid, debouncedQuery],
+        queryFn: async (): Promise<QueryResponse<OrganizationCustomer>> => {
+            const response = await api.get<QueryResponse<OrganizationCustomer>>(
+                `/api/organizations/${organizationUuid}/customers`,
+                { params: debouncedQuery },
+            );
+            return response.data;
+        },
+        enabled: enabled && !!organizationUuid,
         placeholderData: keepPreviousData,
     });
 }
@@ -79,9 +112,6 @@ export function useLogin() {
             }
         },
 
-        onError: (error) => {
-            console.log(error);
-        },
     });
 }
 
@@ -99,8 +129,14 @@ export function useUpdateUser() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (user: UpdateUserByAdmin) => {
-            const { uuid, ...userData } = user;
-            const response = await api.patch(`/api/users/${uuid}`, userData);
+            const { uuid, profilePicture, ...userData } = user;
+            const formData = toFormData(userData);
+
+            if (profilePicture instanceof File) {
+                formData.append('profilePicturePath', profilePicture);
+            }
+
+            const response = await api.patch(`/api/users/${uuid}`, formData);
             return response.data;
         },
         onSuccess: async (user: UserResponse) => {
@@ -113,17 +149,23 @@ export function useUpdateUser() {
                 }),
             ]);
         },
-        onError: (error) => {
-            console.log(error);
-        },
     });
 }
 
 export function useUpdateCurrentUser() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (user: UpdateUser) => {
-            const response = await api.patch(`/api/users/me`, user);
+        mutationFn: async (
+            user: Omit<UpdateUser, 'uuid'> & { profilePicture?: File | null },
+        ) => {
+            const { profilePicture, ...userData } = user;
+            const formData = toFormData(userData);
+
+            if (profilePicture instanceof File) {
+                formData.append('profilePicturePath', profilePicture);
+            }
+
+            const response = await api.patch(`/api/users/me`, formData);
             return response.data;
         },
         onSuccess: async (user: UserResponse) => {
@@ -136,8 +178,14 @@ export function useUpdateCurrentUser() {
                 }),
             ]);
         },
-        onError: (error) => {
-            console.log(error);
+    });
+}
+
+export function useUpdateCurrentUserPassword() {
+    return useMutation({
+        mutationFn: async (passwords: { password: string; confirmPassword: string }) => {
+            const response = await api.patch(`/api/users/me/password`, passwords);
+            return response.data;
         },
     });
 }
@@ -152,9 +200,6 @@ export function useRegisterUser() {
         },
         onSuccess: async () => {
             navigate('/login');
-        },
-        onError: (error) => {
-            console.error(error);
         },
     });
 }
@@ -181,9 +226,6 @@ export function useLogout() {
             queryClient.removeQueries({ queryKey: [CURRENT_USER] });
             navigate('/login');
         },
-        onError: (error) => {
-            console.log(error);
-        },
     });
 }
 
@@ -191,14 +233,18 @@ export function useCreateUserByAdmin() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (userForm: CreateUserByAdmin) => {
-            const response = await api.post('api/users/', userForm);
+            const { profilePicture, ...userData } = userForm;
+            const formData = toFormData(userData);
+
+            if (profilePicture instanceof File) {
+                formData.append('profilePicturePath', profilePicture);
+            }
+
+            const response = await api.post('api/users/', formData);
             return response.data;
         },
         onSuccess: async () => {
             await queryClient.invalidateQueries({ queryKey: [USER_TABLE] });
-        },
-        onError: (error) => {
-            console.log(error);
         },
     });
 }

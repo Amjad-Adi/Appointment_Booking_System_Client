@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 import { ManagementPage } from '../../../../components/ManagementPage.tsx';
+import { ErrorState } from '../../../../../../components/ErrorState.tsx';
+import { LoadingState } from '../../../../../../components/LoadingState.tsx';
 import { useCurrentUser } from '../../../../hooks/users-hook.ts';
 import { useOrganization } from '../../../../hooks/organization-hook.ts';
 
@@ -19,9 +22,25 @@ export function OrganizationProfilePage() {
     }>();
 
     const { data: currentUser } = useCurrentUser();
-    const { data: organization, isLoading, isError } = useOrganization(organizationUuid ?? '');
+    const {
+        data: organization,
+        isLoading,
+        isError,
+        error,
+        refetch,
+    } = useOrganization(organizationUuid ?? '');
 
     const role = currentUser?.role;
+
+    useEffect(() => {
+        if (isLoading || !location.hash) {
+            return;
+        }
+
+        document
+            .getElementById(location.hash.slice(1))
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, [isLoading, location.hash]);
 
     const isSuperAdmin = role === Role.SUPER_ADMIN;
     const isCustomer = role === Role.CUSTOMER;
@@ -37,9 +56,12 @@ export function OrganizationProfilePage() {
     const canShowBackButton = isSuperAdmin && !isOrgStaff;
 
     // Edit Permissions
-    const canEdit = !isCustomer && (isSuperAdmin || isOrgStaff);
+    // The edit screen only changes organization details/status, which the server
+    // allows for SUPER_ADMIN (admin schema) and OWNER (organization schema).
+    const canEdit = isSuperAdmin || role === Role.OWNER;
     const canEditStatus = isSuperAdmin;
-    const canEditDetails = isOrgStaff;
+    // Server grants UPDATE_ORGANIZATION to OWNER only; managers/CRMs can still edit working hours.
+    const canEditDetails = role === Role.OWNER;
     const canEditWorkingHours = isOrgStaff;
 
     const handleOpenEdit = () => {
@@ -58,20 +80,36 @@ export function OrganizationProfilePage() {
                 title="Organization Profile"
                 description={['View organization information and details.']}
             >
-                <div className="text-[11px] text-[#777789]">Loading organization profile...</div>
+                <LoadingState label="Loading organization profile..." />
             </ManagementPage>
         );
     }
 
-    if (isError || !organization) {
+    if (isError) {
         return (
             <ManagementPage
                 title="Organization Profile"
                 description={['View organization information and details.']}
             >
-                <div className="text-[11px] text-[#c94a5c]">
-                    Failed to load organization profile.
-                </div>
+                <ErrorState
+                    error={error}
+                    title="Failed to load organization profile"
+                    onRetry={() => refetch()}
+                />
+            </ManagementPage>
+        );
+    }
+
+    if (!organization) {
+        return (
+            <ManagementPage
+                title="Organization Profile"
+                description={['View organization information and details.']}
+            >
+                <ErrorState
+                    title="Organization not found"
+                    message="This organization does not exist or is no longer available."
+                />
             </ManagementPage>
         );
     }

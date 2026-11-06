@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import toast from 'react-hot-toast';
 import { Label } from '../../../../../../../components/Label.tsx';
 import 'leaflet/dist/leaflet.css';
 import tzlookup from 'tz-lookup';
@@ -54,7 +55,6 @@ export function LocationPicker({
         longitude ?? defaultCenter[1],
     ];
 
-
     const handleUpdateCoords = useCallback(
         async (lat: number, lng: number) => {
             let detectedName = '';
@@ -70,16 +70,18 @@ export function LocationPicker({
                 const data = await res.json();
 
                 detectedName = data.display_name || '';
-            } catch (error) {
-                console.error(error);
+            } catch {
+                toast.error(
+                    'Could not detect the address for this pin. Please enter the location name manually.',
+                );
             }
 
             let timezone = 'UTC';
 
             try {
                 timezone = tzlookup(lat, lng);
-            } catch (error) {
-                console.error('Timezone detection failed:', error);
+            } catch {
+                toast.error('Could not detect the timezone for this pin. Defaulting to UTC.');
             }
 
             onSelectLocation({
@@ -110,7 +112,7 @@ export function LocationPicker({
         <div className="flex flex-col gap-1.5 sm:col-span-2">
             <Label>{label}</Label>
 
-            <div className="h-64 w-full overflow-hidden rounded-lg border border-[#d3d3df]">
+            <div className="h-64 w-full overflow-hidden rounded-lg border border-border">
                 <MapContainer
                     center={defaultCenter}
                     zoom={latitude && longitude ? 14 : 9}
@@ -134,7 +136,7 @@ export function LocationPicker({
                 </MapContainer>
             </div>
 
-            <p className="text-[10px] text-[#777789]">{helperText}</p>
+            <p className="text-[10px] text-muted-foreground">{helperText}</p>
         </div>
     );
 }

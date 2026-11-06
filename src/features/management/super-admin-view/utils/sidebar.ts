@@ -1,4 +1,12 @@
-import { LayoutDashboard, Users, Building2, BriefcaseBusiness, Settings } from 'lucide-react';
+import {
+    LayoutDashboard,
+    Users,
+    Building2,
+    BriefcaseBusiness,
+    Tags,
+    User,
+    Settings,
+} from 'lucide-react';
 
 import type { SidebarGroup } from '../../../../components/sidebar/sidebar.types';
 
@@ -31,11 +39,21 @@ export const adminSidebarGroups: SidebarGroup[] = [
                 url: '/admin/services',
                 icon: BriefcaseBusiness,
             },
+            {
+                title: 'Service Categories',
+                url: '/admin/service-categories',
+                icon: Tags,
+            },
         ],
     },
     {
-        label: 'System',
+        label: 'Account',
         items: [
+            {
+                title: 'Profile',
+                url: '/admin/profile',
+                icon: User,
+            },
             {
                 title: 'Settings',
                 url: '/admin/settings',

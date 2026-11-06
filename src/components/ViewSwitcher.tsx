@@ -16,7 +16,7 @@ interface ViewSwitcherProps<T extends string> {
 
 export function ViewSwitcher<T extends string>({ value, options, onChange }: ViewSwitcherProps<T>) {
     return (
-        <div className="group flex h-8 items-center justify-center rounded-md border border-[#d3d3df] bg-[#f5f5f8] px-0.5 py-4">
+        <div className="group flex h-8 items-center justify-center rounded-md border border-border bg-card px-0.5 py-4">
             {options.map(({ value: optionValue, label, icon: Icon }) => {
                 const isSelected = value === optionValue;
 
@@ -29,15 +29,15 @@ export function ViewSwitcher<T extends string>({ value, options, onChange }: Vie
                             onClick={() => onChange(optionValue)}
                             className={`flex h-7 min-h-0 w-8 min-w-0 items-center justify-center rounded p-0 transition-colors ${
                                 isSelected
-                                    ? 'bg-[#d3d3df] text-[#343447]'
-                                    : 'bg-transparent text-[#777789] group-hover:bg-[#ededf2] group-hover:text-[#343447]'
+                                    ? 'bg-muted text-foreground'
+                                    : 'bg-transparent text-muted-foreground group-hover:bg-secondary group-hover:text-foreground'
                             }`}
                         >
                             <Icon
                                 className={`size-3.5 ${
                                     isSelected
-                                        ? 'text-[#343447]'
-                                        : 'text-[#777789] group-hover:text-[#343447]'
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground group-hover:text-foreground'
                                 }`}
                                 strokeWidth={1.8}
                             />

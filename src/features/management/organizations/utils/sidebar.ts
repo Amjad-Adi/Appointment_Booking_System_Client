@@ -4,13 +4,15 @@ import {
     DoorOpen,
     CalendarCheck,
     Mail,
-    Star,
     User,
-    Settings,
     Building2,
+    Users,
+    MailPlus,
+    Settings,
 } from 'lucide-react';
 
 import type { SidebarGroup } from '../../../../components/sidebar/sidebar.types';
+import { Role } from '../../../../models/enums/roles.ts';
 
 export function getOrganizationSetupSidebarGroups(): SidebarGroup[] {
     return [
@@ -37,12 +39,23 @@ export function getOrganizationSetupSidebarGroups(): SidebarGroup[] {
                     url: '/organization/profile',
                     icon: User,
                 },
+                {
+                    title: 'Settings',
+                    url: '/organization/settings',
+                    icon: Settings,
+                },
             ],
         },
     ];
 }
 
-export function getOrganizationSidebarGroups(organizationUuid: string): SidebarGroup[] {
+export function getOrganizationSidebarGroups(
+    organizationUuid: string,
+    role?: Role,
+): SidebarGroup[] {
+    const isWorker = role === Role.WORKER;
+    const canManageInvitations = !isWorker;
+
     return [
         {
             label: 'Main',
@@ -72,26 +85,43 @@ export function getOrganizationSidebarGroups(organizationUuid: string): SidebarG
                     url: '/organization/appointments',
                     icon: CalendarCheck,
                 },
+                ...(!isWorker
+                    ? [
+                          {
+                              title: 'Organization',
+                              url: `/organization/organization-profile/${organizationUuid}`,
+                              icon: Building2,
+                          },
+                      ]
+                    : []),
                 {
-                    title: 'Organization',
-                    url: `/organization/organization-profile/${organizationUuid}`,
-                    icon: Building2,
+                    title: 'Customers',
+                    url: '/organization/customers',
+                    icon: Users,
                 },
+                ...(canManageInvitations
+                    ? [
+                          {
+                              title: 'Customer Invitations',
+                              url: '/organization/customer-invitations',
+                              icon: MailPlus,
+                          },
+                      ]
+                    : []),
             ],
         },
         {
             label: 'Account',
             items: [
-                {
-                    title: 'Invitations',
-                    url: '/organization/invitations',
-                    icon: Mail,
-                },
-                {
-                    title: 'Reviews',
-                    url: '/organization/reviews',
-                    icon: Star,
-                },
+                ...(canManageInvitations
+                    ? [
+                          {
+                              title: 'Invitations',
+                              url: '/organization/invitations',
+                              icon: Mail,
+                          },
+                      ]
+                    : []),
                 {
                     title: 'Profile',
                     url: '/organization/profile',

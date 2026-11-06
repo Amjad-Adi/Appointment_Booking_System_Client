@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import axios from 'axios';
+import type { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 
@@ -13,7 +13,7 @@ import { useCreateOrganizationInvitation } from '../../../../../hooks/invitation
 import { createInvitationSchema } from '../../../../../../../zod-schemas/invitations.schema.ts';
 
 import { Role } from '../../../../../../../models/enums/roles.ts';
-import type { CreateInvitation } from '../../../../../../../models/invitation.model.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../../utlis/api-error.ts';
 
 interface CreateInvitationDialogProps {
     organizationUuid: string;
@@ -21,10 +21,8 @@ interface CreateInvitationDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
-interface CreateInvitationErrorResponse {
-    message?: string;
-    fieldErrors?: Partial<Record<keyof CreateInvitation, string>>;
-}
+type CreateInvitationFormInput = z.input<typeof createInvitationSchema>;
+type CreateInvitationFormOutput = z.output<typeof createInvitationSchema>;
 
 const loading = 'Sending invitation...';
 const success = 'Invitation sent successfully';
@@ -45,10 +43,10 @@ export function CreateInvitationDialog({
 }: CreateInvitationDialogProps) {
     const createInvitationMutation = useCreateOrganizationInvitation(organizationUuid);
 
-    const fields = useMemo<readonly CreateDialogField<CreateInvitation>[]>(
+    const fields = useMemo<readonly CreateDialogField<CreateInvitationFormInput>[]>(
         () => [
             {
-                name: 'email',
+                name: 'recipientEmail',
                 label: 'Recipient Email',
                 type: 'email',
                 placeholder: 'Enter recipient email',
@@ -89,19 +87,14 @@ export function CreateInvitationDialog({
         [],
     );
 
-    const errorResponse: CreateInvitationErrorResponse | undefined =
-        axios.isAxiosError<CreateInvitationErrorResponse>(createInvitationMutation.error)
-            ? createInvitationMutation.error.response?.data
-            : undefined;
-
-    const fieldErrors = errorResponse?.fieldErrors;
+    const fieldErrors = getApiFieldErrors(createInvitationMutation.error);
 
     const errorMessage =
         createInvitationMutation.isError && !fieldErrors
-            ? (errorResponse?.message ?? error)
+            ? getApiErrorMessage(createInvitationMutation.error, error)
             : undefined;
 
-    async function handleSubmit(values: CreateInvitation) {
+    async function handleSubmit(values: CreateInvitationFormOutput) {
         const toastId = toast.loading(loading);
 
         try {
@@ -115,26 +108,23 @@ export function CreateInvitationDialog({
         } catch (mutationError) {
             toast.dismiss(toastId);
 
-            if (
-                axios.isAxiosError<CreateInvitationErrorResponse>(mutationError) &&
-                mutationError.response?.data?.fieldErrors
-            ) {
+            if (getApiFieldErrors(mutationError)) {
                 return;
             }
 
-            toast.error(error);
+            toast.error(getApiErrorMessage(mutationError, error));
         }
     }
 
     return (
-        <CreateDialog<CreateInvitation>
+        <CreateDialog<CreateInvitationFormInput, CreateInvitationFormOutput>
             open={open}
             onOpenChange={onOpenChange}
             title="Invite New Member"
             description="Send an email invitation to add a new member to this organization."
             resolver={zodResolver(createInvitationSchema)}
             defaultValues={{
-                email: '',
+                recipientEmail: '',
                 role: Role.WORKER,
                 expiresAtUTC: getDefaultExpiresAtUTC(),
             }}

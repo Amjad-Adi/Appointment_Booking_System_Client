@@ -15,19 +15,22 @@ import {
 import { api } from '../../../services/axios.ts';
 
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
 export function useOrganizationWorkingHours(
     organizationUuid: string | undefined,
     query: QueryWorkingHours,
 ) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [ORGANIZATION_WORKING_HOURS, organizationUuid, query],
+        queryKey: [ORGANIZATION_WORKING_HOURS, organizationUuid, debouncedQuery],
 
         queryFn: async (): Promise<QueryResponse<WorkingHoursResponse>> => {
             const response = await api.get<QueryResponse<WorkingHoursResponse>>(
                 `/api/organizations/${organizationUuid}/working-hours`,
                 {
-                    params: query,
+                    params: debouncedQuery,
                 },
             );
 

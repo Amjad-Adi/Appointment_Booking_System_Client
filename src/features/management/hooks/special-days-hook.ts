@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
     CreateSpecialDay,
+    QuerySpecialDay,
     SpecialDay,
     UpdateSpecialDay,
 } from '../../../models/special-days.model.ts';
@@ -11,14 +12,21 @@ import { ORGANIZATION_SPECIAL_DAY, ORGANIZATION_SPECIAL_DAYS } from '../../../ut
 import { api } from '../../../services/axios.ts';
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
 import type { WorkingHours } from '../../../models/working-hours.model.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
-export function useOrganizationSpecialDays(organizationUuid: string | undefined) {
+export function useOrganizationSpecialDays(
+    organizationUuid: string | undefined,
+    query?: QuerySpecialDay,
+) {
+    const debouncedQuery = useDebouncedQuery(query ?? ({} as QuerySpecialDay));
+
     return useQuery({
-        queryKey: [ORGANIZATION_SPECIAL_DAYS, organizationUuid],
+        queryKey: [ORGANIZATION_SPECIAL_DAYS, organizationUuid, debouncedQuery],
 
         queryFn: async (): Promise<QueryResponse<SpecialDay>> => {
             const response = await api.get<QueryResponse<SpecialDay>>(
                 `/api/organizations/${organizationUuid}/special-days`,
+                { params: debouncedQuery },
             );
 
             return response.data;

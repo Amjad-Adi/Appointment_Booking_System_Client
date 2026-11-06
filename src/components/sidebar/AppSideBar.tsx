@@ -29,10 +29,10 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
     const logoutMutation = useLogout();
 
     return (
-        <Sidebar collapsible="icon" className="border-r-0 bg-[#dedee8]">
+        <Sidebar collapsible="icon" className="border-r-0 bg-sidebar">
             <SidebarHeader className="p-4">
                 <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-                    <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#cfcfdd]">
+                    <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-sidebar-accent">
                         <Image
                             src={icon}
                             alt="Smart Appointment Booking icon"
@@ -41,12 +41,12 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
                     </div>
 
                     <div className="flex min-w-0 flex-col gap-0 group-data-[collapsible=icon]:hidden">
-                        <span className="truncate text-[13px] leading-tight font-semibold text-[#343447]">
+                        <span className="truncate text-[13px] leading-tight font-semibold text-sidebar-foreground">
                             {title}
                         </span>
 
                         {subtitle && (
-                            <span className="truncate text-[11px] text-left font-medium text-[#777789]">
+                            <span className="truncate text-left text-[11px] font-medium text-muted-foreground">
                                 {subtitle}
                             </span>
                         )}
@@ -57,10 +57,10 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
             <SidebarContent>
                 {groups.map((group, index) => (
                     <div key={group.label}>
-                        {index > 0 && <div className="mx-4 my-2 h-px bg-[#c9c9d6]" />}
+                        {index > 0 && <div className="mx-4 my-2 h-px bg-sidebar-border" />}
 
                         <SidebarGroup>
-                            <SidebarGroupLabel className="text-[10px] font-semibold tracking-wide text-[#777789] uppercase group-data-[collapsible=icon]:opacity-0">
+                            <SidebarGroupLabel className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase group-data-[collapsible=icon]:opacity-0">
                                 {group.label}
                             </SidebarGroupLabel>
 
@@ -72,13 +72,13 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
                                         return (
                                             <SidebarMenuItem key={item.title}>
                                                 <SidebarMenuButton
-                                                    className="rounded-xl text-[#555566] transition-colors duration-150 hover:bg-[#d8d8e3] hover:text-[#343447]"
+                                                    className="rounded-xl text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                                     render={
                                                         <NavLink
                                                             to={item.url}
                                                             className={({ isActive }) =>
                                                                 isActive
-                                                                    ? 'bg-[#d3d3df] text-[#343447]'
+                                                                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                                                                     : ''
                                                             }
                                                         >
@@ -105,22 +105,24 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
                     <SidebarMenu>
                         <SidebarMenuItem>
                             <SidebarMenuButton
-                                className="rounded-xl text-[#555566] transition-colors duration-150 hover:bg-[#d8d8e3] hover:text-[#343447]"
+                                className="rounded-xl text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 render={
                                     <NavLink
-                                        to={'/profile'}
+                                        to={profile.url}
                                         className={({ isActive }) =>
-                                            isActive ? 'bg-[#d3d3df] text-[#343447]' : ''
+                                            isActive
+                                                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                                : ''
                                         }
                                     >
                                         <UserCircle />
 
                                         <div className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
-                                            <span className="truncate text-[11px] font-semibold text-[#343447]">
+                                            <span className="truncate text-[11px] font-semibold text-sidebar-foreground">
                                                 {profile.name}
                                             </span>
 
-                                            <span className="truncate text-[10px] font-medium text-[#777789]">
+                                            <span className="truncate text-[10px] font-medium text-muted-foreground">
                                                 {profile.email}
                                             </span>
                                         </div>
@@ -131,7 +133,7 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
 
                         <SidebarMenuItem>
                             <SidebarMenuButton
-                                className="rounded-xl text-[#555566] transition-colors duration-150 hover:bg-[#d8d8e3] hover:text-[#343447]"
+                                className="rounded-xl text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 onClick={handleLogout}
                             >
                                 <LogOut />
@@ -148,6 +150,10 @@ export function AppSidebar({ title, subtitle, groups, profile }: SidebarProps) {
     );
 
     async function handleLogout() {
-        await toast.promise(logoutMutation.mutateAsync(), new Toast(loading, success, error));
+        try {
+            await toast.promise(logoutMutation.mutateAsync(), new Toast(loading, success, error));
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     }
 }

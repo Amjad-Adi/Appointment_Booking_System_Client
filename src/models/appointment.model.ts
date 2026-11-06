@@ -1,136 +1,90 @@
-import { z } from 'zod';
-
+import type { z } from 'zod';
 import {
     createAppointmentSchema,
     createOrganizationAppointmentSchema,
-    queryAppointmentSchema,
-    updateAppointmentSchemaByOrganization,
     updateAppointmentSchemaByUser,
-    updateAppointmentSchemaStatus,
-    confirmAppointmentSchema,
-    rejectAppointmentSchemaBy,
-    payAppointmentSchema,
-} from '../zod-schemas/appointment.schema.ts';
+    updateAppointmentSchemaByOrganization,
+    queryAppointmentSchema,
+} from '../zod-schemas/appointment.schema';
+import { AppointmentStatus } from './enums/appointment-status';
+import { PaymentMethod } from './enums/payment-method';
+import { PaymentStatus } from './enums/payment-status';
+import type { DataResponses } from './Query/query.model';
 
-import { AppointmentStatus } from './enums/appointment-status.ts';
-import { PaymentMethod } from './enums/payment-method.ts';
-import { PaymentStatus } from './enums/payment-status.ts';
-
-export interface UserAppointment {
+interface Appointment {
     uuid: string;
+    userUuid: string;
+    userName: string;
+    organizationUuid: string;
+    organizationName: string;
+    serviceUuid: string;
+    serviceName: string;
+    workerUuid: string;
+    workerName: string;
+    roomUuid: string;
+    roomName: string;
+    scheduledStartAtUTC: string;
+    scheduledEndAtUTC: string;
+    actualStartAtUTC: string | null;
+    actualEndAtUTC: string | null;
+    appointmentStatus: AppointmentStatus;
+    rejectionReason: string | null;
+    paymentMethod: PaymentMethod | null;
+    paymentStatus: PaymentStatus;
+    paidAtUTC: string | null;
+    createdAtUTC: string;
+    updatedAtUTC: string;
+}
 
+export interface UserAppointmentResponse extends Appointment, DataResponses {
     userTitle: string | null;
     userNote: string | null;
-    userColour: string;
-
-    scheduledStartAtUTC: string;
-    scheduledEndAtUTC: string;
-
-    actualStartAtUTC: string | null;
-    actualEndAtUTC: string | null;
-
-    appointmentStatus: AppointmentStatus;
-
-    rejectionReason: string | null;
-
-    paymentMethod: PaymentMethod | null;
-    paymentStatus: PaymentStatus;
-    paidAtUTC: string | null;
-
-    createdAtUTC: string;
-    updatedAtUTC: string;
+    userColour: string | null;
 }
 
-export interface OrganizationAppointment {
-    uuid: string;
-
-    organizationTitle: string | null;
-    organizationNote: string | null;
-    organizationColour: string;
-
-    scheduledStartAtUTC: string;
-    scheduledEndAtUTC: string;
-
-    actualStartAtUTC: string | null;
-    actualEndAtUTC: string | null;
-
-    appointmentStatus: AppointmentStatus;
-
-    rejectionReason: string | null;
-
-    paymentMethod: PaymentMethod | null;
-    paymentStatus: PaymentStatus;
-    paidAtUTC: string | null;
-
-    createdAtUTC: string;
-    updatedAtUTC: string;
-}
-
-export interface UserAppointmentResponse extends UserAppointment {
-    userUuid: string;
-    userName: string;
-
-    organizationUuid: string;
-    organizationName: string;
-
-    serviceUuid: string;
-    serviceName: string;
-
-    workerUuid: string;
-    workerName: string;
-
-    roomUuid: string;
-    roomName: string;
-}
-
-export interface OrganizationAppointmentResponse extends OrganizationAppointment {
-    userUuid: string;
-    userName: string;
-
-    organizationUuid: string;
-    organizationName: string;
-
-    serviceUuid: string;
-    serviceName: string;
-
-    workerUuid: string;
-    workerName: string;
-
-    roomUuid: string;
-    roomName: string;
-
+export interface OrganizationAppointmentResponse extends Appointment, DataResponses {
     approvalUserUuid: string | null;
     approvalUserName: string | null;
+    organizationTitle: string | null;
+    organizationNote: string | null;
+    organizationColour: string | null;
 }
 
-export type CreateAppointment = z.infer<typeof createAppointmentSchema>;
+export type CreateAppointment = z.infer<typeof createAppointmentSchema> & {
+    organizationUuid: string;
+};
 
 export type CreateOrganizationAppointment = z.infer<typeof createOrganizationAppointmentSchema>;
 
-export type UpdateAppointmentByUser = z.infer<typeof updateAppointmentSchemaByUser> & {
-    uuid: string;
-};
+export type UpdateAppointmentByUser = z.infer<typeof updateAppointmentSchemaByUser>;
 
-export type UpdateAppointmentByOrganization = z.infer<
-    typeof updateAppointmentSchemaByOrganization
+export type UpdateAppointmentByOrganization = z.infer<typeof updateAppointmentSchemaByOrganization>;
+
+export type UpdateAppointmentByUserValues = Partial<
+    Pick<UpdateAppointmentByUser, 'userTitle' | 'userNote' | 'userColour'>
+>;
+
+export type UpdateAppointmentByOrganizationValues = Partial<
+    Pick<
+        UpdateAppointmentByOrganization,
+        | 'organizationTitle'
+        | 'organizationNote'
+        | 'organizationColour'
+        | 'paymentMethod'
+        | 'paymentStatus'
+    >
 > & {
-    uuid: string;
+    appointmentStatus?: AppointmentStatus;
+    rejectionReason?: string | null;
 };
 
-export type ConfirmAppointment = z.infer<typeof confirmAppointmentSchema> & {
-    uuid: string;
+export type QueryAppointment = z.infer<typeof queryAppointmentSchema> & {
+    offset?: number;
 };
 
-export type RejectAppointment = z.infer<typeof rejectAppointmentSchemaBy> & {
-    uuid: string;
-};
-
-export type UpdateAppointmentStatus = z.infer<typeof updateAppointmentSchemaStatus> & {
-    uuid: string;
-};
-
-export type PayAppointment = z.infer<typeof payAppointmentSchema> & {
-    uuid: string;
-};
-
-export type QueryAppointment = z.infer<typeof queryAppointmentSchema>;
+export const ACTIVE_APPOINTMENT_STATUSES = [
+    AppointmentStatus.PENDING_USER_CONFIRMATION,
+    AppointmentStatus.PENDING_ORGANIZATION_APPROVAL,
+    AppointmentStatus.CONFIRMED,
+    AppointmentStatus.IN_PROGRESS,
+];

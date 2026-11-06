@@ -6,15 +6,14 @@ import {
     EditDialog,
     type EditDialogField,
 } from '../../../../../../../../components/EditDialog.tsx';
-import { Toast } from '../../../../../../../../utlis/toast.ts';
-import {
-    updateWorkingHoursForm,
-} from '../../../../../../../../zod-schemas/working-hours.schema.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../../../utlis/api-error.ts';
+import { updateWorkingHoursForm } from '../../../../../../../../zod-schemas/working-hours.schema.ts';
 import { useUpdateOrganizationWorkingHours } from '../../../../../../hooks/working-hours-hook.ts';
 import type {
     WorkingHours,
     UpdateWorkingHours,
 } from '../../../../../../../../models/working-hours.model.ts';
+import { dayOfWeekRecord } from '../../../../../../../../models/enums-mapping/day-of-week.ts';
 
 interface EditWorkingHourDialogProps {
     organizationUuid: string;
@@ -83,10 +82,16 @@ export function EditWorkingHourDialog({
             endTime: currentFormState.isClosed ? null : currentFormState.endTime || null,
         };
 
-        await toast.promise(
-            updateMutation.mutateAsync(payload),
-            new Toast('Updating hours...', 'Working hours updated', 'Failed to update hours'),
-        );
+        try {
+            await toast.promise(updateMutation.mutateAsync(payload), {
+                loading: 'Updating hours...',
+                success: 'Working hours updated',
+                error: (mutationError) =>
+                    getApiErrorMessage(mutationError, 'Failed to update hours'),
+            });
+        } catch {
+            return;
+        }
 
         onOpenChange(false);
     };
@@ -95,12 +100,18 @@ export function EditWorkingHourDialog({
         <EditDialog<WorkingHourFormValues, WorkingHourFormValues>
             open={open}
             onOpenChange={onOpenChange}
-            title={`Edit ${workingHour.dayOfWeek.toLowerCase()} Hours`}
+            title={`Edit ${dayOfWeekRecord[workingHour.dayOfWeek]} Hours`}
             description="Set the opening and closing time, or mark the day as closed."
             resolver={zodResolver(updateWorkingHoursForm)}
             defaultValues={defaultValues}
             fields={fields}
             submitLabel="Save Hours"
+            errorMessage={
+                updateMutation.isError && !getApiFieldErrors(updateMutation.error)
+                    ? getApiErrorMessage(updateMutation.error, 'Failed to update hours')
+                    : undefined
+            }
+            fieldErrors={getApiFieldErrors(updateMutation.error)}
             onSubmit={handleSubmit}
         />
     );

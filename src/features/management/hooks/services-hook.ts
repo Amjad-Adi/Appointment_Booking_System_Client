@@ -16,22 +16,27 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import type { QueryResponse } from '../../../models/Query/query.model.ts';
 import { api } from '../../../services/axios.ts';
+import { toFormData } from '../../../utlis/form-data.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
-export function useServices(query: QueryService) {
+export function useServices(query: QueryService, enabled = true) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [SERVICE_TABLE, query],
+        queryKey: [SERVICE_TABLE, debouncedQuery],
         queryFn: async (): Promise<QueryResponse<ServiceResponse>> => {
             const response = await api.get<QueryResponse<ServiceResponse>>('/api/services', {
-                params: query,
+                params: debouncedQuery,
             });
 
             return response.data;
         },
+        enabled,
         placeholderData: keepPreviousData,
     });
 }
 
-export function useService(serviceUuid: string) {
+export function useService(serviceUuid: string, enabled = true) {
     return useQuery({
         queryKey: [SERVICE, serviceUuid],
         queryFn: async (): Promise<ServiceResponse> => {
@@ -39,24 +44,30 @@ export function useService(serviceUuid: string) {
 
             return response.data;
         },
-        enabled: !!serviceUuid,
+        enabled: enabled && !!serviceUuid,
     });
 }
 
-export function useOrganizationServices(organizationUuid: string | undefined, query: QueryService) {
+export function useOrganizationServices(
+    organizationUuid: string | undefined,
+    query: QueryService,
+    enabled = true,
+) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [ORGANIZATION_SERVICE_TABLE, organizationUuid, query],
+        queryKey: [ORGANIZATION_SERVICE_TABLE, organizationUuid, debouncedQuery],
         queryFn: async (): Promise<QueryResponse<ServiceResponse>> => {
             const response = await api.get<QueryResponse<ServiceResponse>>(
                 `/api/organizations/${organizationUuid}/services`,
                 {
-                    params: query,
+                    params: debouncedQuery,
                 },
             );
 
             return response.data;
         },
-        enabled: !!organizationUuid,
+        enabled: enabled && !!organizationUuid,
         placeholderData: keepPreviousData,
     });
 }
@@ -82,10 +93,21 @@ export function useCreateOrganizationService(organizationUuid: string | undefine
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (service: CreateService): Promise<ServiceResponse> => {
+        mutationFn: async (
+            service: Omit<CreateService, 'organizationUuid'> & {
+                picture?: File | null;
+            },
+        ): Promise<ServiceResponse> => {
+            const { picture, ...serviceData } = service;
+            const formData = toFormData(serviceData);
+
+            if (picture) {
+                formData.append('servicePicturePath', picture);
+            }
+
             const response = await api.post<ServiceResponse>(
                 `/api/organizations/${organizationUuid}/services`,
-                service,
+                formData,
             );
 
             return response.data;
@@ -104,13 +126,21 @@ export function useUpdateOrganizationService(organizationUuid: string) {
     return useMutation({
         mutationFn: async ({
             uuid,
+            picture,
             ...service
-        }: UpdateService & {
+        }: Omit<UpdateService, 'organizationUuid' | 'userUuid'> & {
             uuid: string;
+            picture?: File | null;
         }): Promise<ServiceResponse> => {
+            const formData = toFormData(service);
+
+            if (picture) {
+                formData.append('servicePicturePath', picture);
+            }
+
             const response = await api.patch<ServiceResponse>(
                 `/api/organizations/${organizationUuid}/services/${uuid}`,
-                service,
+                formData,
             );
 
             return response.data;

@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-import type { SchedulingRequest, SchedulingResponse } from '../../../models/scheduling.model.ts';
+import type {
+    OrganizationWorker,
+    SchedulingRequest,
+    SchedulingResponse,
+} from '../../../models/scheduling.model.ts';
 
 import { AppointmentTimeType } from '../../../models/enums/appointment-time-type.ts';
-import { ORGANIZATION_SCHEDULING } from '../../../utlis/query-keys.ts';
+import { ORGANIZATION_SCHEDULING, ORGANIZATION_WORKERS } from '../../../utlis/query-keys.ts';
 import { api } from '../../../services/axios.ts';
 
 function datetimeLocalToUTC(value: string): string {
@@ -27,6 +31,19 @@ function buildSchedulingPayload(request: SchedulingRequest) {
         fromAtUTC: request.fromAtUTC,
     };
 }
+export function useOrganizationWorkers(organizationUuid: string | undefined, enabled = true) {
+    return useQuery({
+        queryKey: [ORGANIZATION_WORKERS, organizationUuid],
+        queryFn: async (): Promise<OrganizationWorker[]> => {
+            const response = await api.get<OrganizationWorker[]>(
+                `/api/organizations/${organizationUuid}/scheduling/workers`,
+            );
+            return response.data;
+        },
+        enabled: enabled && !!organizationUuid,
+    });
+}
+
 export function useOrganizationScheduling(
     organizationUuid: string | undefined,
     request: SchedulingRequest | undefined,

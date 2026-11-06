@@ -1,12 +1,11 @@
 import {
     LayoutDashboard,
     BriefcaseBusiness,
-    DoorOpen,
     CalendarCheck,
-    Mail,
+    User,
     Heart,
     Star,
-    User,
+    Mail,
     Settings,
 } from 'lucide-react';
 
@@ -32,11 +31,6 @@ export const userSidebarGroups: SidebarGroup[] = [
                 icon: BriefcaseBusiness,
             },
             {
-                title: 'Rooms',
-                url: '/customer/rooms',
-                icon: DoorOpen,
-            },
-            {
                 title: 'Booked Appointments',
                 url: '/customer/appointments',
                 icon: CalendarCheck,
@@ -51,16 +45,16 @@ export const userSidebarGroups: SidebarGroup[] = [
                 url: '/customer/reviews',
                 icon: Star,
             },
-        ],
-    },
-    {
-        label: 'Account',
-        items: [
             {
                 title: 'Invitations',
                 url: '/customer/invitations',
                 icon: Mail,
             },
+        ],
+    },
+    {
+        label: 'Account',
+        items: [
             {
                 title: 'Profile',
                 url: '/customer/profile',

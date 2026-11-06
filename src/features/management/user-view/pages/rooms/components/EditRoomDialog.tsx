@@ -8,16 +8,18 @@ import { EditDialog, type EditDialogField } from '../../../../../../components/E
 import { useUpdateOrganizationRoom } from '../../../../hooks/room-hook.ts';
 import { useUsers } from '../../../../hooks/users-hook.ts';
 
-import { updateRoomSchema } from '../../../../../../zod-schemas/room.schema.ts';
-
 import type { RoomResponse } from '../../../../../../models/room.model.ts';
 import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
 import { RoomOccupancyStatus } from '../../../../../../models/enums/room-occupancy-status.ts';
 import { Role } from '../../../../../../models/enums/roles.ts';
+import { activationStatusRecord } from '../../../../../../models/enums-mapping/activation-status.ts';
+import { roomOccupancyStatusRecord } from '../../../../../../models/enums-mapping/room-occupancy-status.ts';
 
 import { PAGE_SIZE } from '../../../../../../components/DataTableFeatures.ts';
 
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deounce.ts';
+
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../utlis/api-error.ts';
 
 interface EditRoomDialogProps {
     organizationUuid?: string;
@@ -26,8 +28,30 @@ interface EditRoomDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
-type EditRoomForm = z.input<typeof updateRoomSchema>;
-type EditRoomFormOutput = z.output<typeof updateRoomSchema>;
+const editRoomFormSchema = z
+    .object({
+        name: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Room Name is required' })
+            .max(256, { error: 'Room Name must be at most 256 characters' })
+            .optional(),
+        description: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Description must be at most 4096 characters' })
+            .optional(),
+        assignedUserUuid: z.string().nullable().optional(),
+        status: z.enum(ActivationStatus).optional(),
+        occupancyStatus: z.enum(RoomOccupancyStatus).optional(),
+    })
+    .strict()
+    .refine((data) => Object.keys(data).length !== 0, {
+        message: 'At least one field must be provided',
+    });
+
+type EditRoomForm = z.input<typeof editRoomFormSchema>;
+type EditRoomFormOutput = z.output<typeof editRoomFormSchema>;
 
 export function EditRoomDialog({
     organizationUuid,
@@ -117,7 +141,7 @@ export function EditRoomDialog({
                 type: 'select',
                 options: Object.values(ActivationStatus).map((status) => ({
                     value: status,
-                    label: status,
+                    label: activationStatusRecord[status],
                 })),
                 showPlaceholder: false,
             },
@@ -127,7 +151,7 @@ export function EditRoomDialog({
                 type: 'select',
                 options: Object.values(RoomOccupancyStatus).map((status) => ({
                     value: status,
-                    label: status,
+                    label: roomOccupancyStatusRecord[status],
                 })),
                 showPlaceholder: false,
             },
@@ -136,17 +160,38 @@ export function EditRoomDialog({
     );
 
     async function handleSubmit(changedValues: Partial<EditRoomFormOutput>) {
-        await toast.promise(
-            updateMutation.mutateAsync({
-                uuid: room.uuid,
-                ...changedValues,
+        const payload = {
+            ...changedValues,
+            ...('assignedUserUuid' in changedValues && {
+                assignedUserUuid: changedValues.assignedUserUuid || null,
             }),
-            {
-                loading: 'Updating room...',
-                success: 'Room updated successfully',
-                error: 'Failed to update room',
-            },
-        );
+        };
+
+        if (payload.description !== undefined && payload.description.trim() === '') {
+            delete payload.description;
+        }
+
+        if (Object.keys(payload).length === 0) {
+            onOpenChange(false);
+            return;
+        }
+
+        try {
+            await toast.promise(
+                updateMutation.mutateAsync({
+                    uuid: room.uuid,
+                    ...payload,
+                }),
+                {
+                    loading: 'Updating room...',
+                    success: 'Room updated successfully',
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to update room'),
+                },
+            );
+        } catch {
+            return;
+        }
 
         onOpenChange(false);
     }
@@ -157,13 +202,16 @@ export function EditRoomDialog({
             onOpenChange={onOpenChange}
             title="Edit Room"
             description="Update this organization's room."
-            resolver={zodResolver(updateRoomSchema)}
+            resolver={zodResolver(editRoomFormSchema)}
             defaultValues={defaultValues}
             fields={fields}
             submitLabel="Apply Changes"
             errorMessage={
-                updateMutation.isError ? 'Failed to update room. Please try again.' : undefined
+                updateMutation.isError && !getApiFieldErrors(updateMutation.error)
+                    ? getApiErrorMessage(updateMutation.error, 'Failed to update room')
+                    : undefined
             }
+            fieldErrors={getApiFieldErrors(updateMutation.error)}
             onSubmit={handleSubmit}
         />
     );

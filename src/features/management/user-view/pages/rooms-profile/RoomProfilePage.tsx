@@ -4,6 +4,9 @@ import { Role } from '../../../../../models/enums/roles.ts';
 import { useOrganizationRoom } from '../../../hooks/room-hook.ts';
 import { useCurrentUser } from '../../../hooks/users-hook.ts';
 
+import { ErrorState } from '../../../../../components/ErrorState.tsx';
+import { LoadingState } from '../../../../../components/LoadingState.tsx';
+
 import { RoomProfile } from './components/RoomProfile.tsx';
 
 export function RoomProfilePage() {
@@ -14,6 +17,8 @@ export function RoomProfilePage() {
         data: room,
         isLoading,
         isError,
+        error,
+        refetch,
     } = useOrganizationRoom(currentUser?.organizationUuid, roomUuid);
 
     const canManageRooms =
@@ -21,15 +26,26 @@ export function RoomProfilePage() {
         currentUser?.organizationUuid != null;
 
     if (!roomUuid) {
-        return <div>Room not found</div>;
+        return (
+            <ErrorState title="Room not found" message="The requested room does not exist." />
+        );
     }
 
     if (isLoading) {
-        return <div>Loading room...</div>;
+        return <LoadingState label="Loading room..." />;
     }
 
-    if (isError || !room) {
-        return <div>Failed to load room.</div>;
+    if (isError) {
+        return <ErrorState error={error} title="Failed to load room" onRetry={() => refetch()} />;
+    }
+
+    if (!room) {
+        return (
+            <ErrorState
+                title="Room not found"
+                message="This room does not exist or is no longer available."
+            />
+        );
     }
 
     return <RoomProfile room={room} canEdit={canManageRooms} />;

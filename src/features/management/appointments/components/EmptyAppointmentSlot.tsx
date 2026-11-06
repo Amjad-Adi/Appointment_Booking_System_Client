@@ -42,14 +42,14 @@ export function EmptyAppointmentSlot({
     const endTime = formatTimeInTimeZone(endAt, organizationTimeZone);
 
     return (
-        <article className="rounded-xl border border-dashed border-[#d3d3df] bg-[#f5f5f8] p-3">
+        <article className="rounded-xl border border-dashed border-border bg-card p-3">
             <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-[#343447]">
+                    <p className="text-[11px] font-medium text-foreground">
                         {startTime} - {endTime}
                     </p>
 
-                    <p className="mt-0.5 text-[10px] text-[#777789]">
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
                         Available for {formatDuration(startAt, endAt)}
                     </p>
                 </div>

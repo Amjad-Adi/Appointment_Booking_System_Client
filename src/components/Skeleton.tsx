@@ -6,5 +6,5 @@ interface Props {
 }
 
 export function Skeleton({ className }: Props): JSX.Element {
-    return <div className={cn(className, 'animate-pulse bg-gray-300')} />;
+    return <div className={cn(className, 'animate-pulse bg-muted')} />;
 }

@@ -3,6 +3,7 @@ import { type PaginationState, type SortingState } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 
 import { DataTable } from '../../../../../../../components/DataTable.tsx';
+import { ErrorState } from '../../../../../../../components/ErrorState.tsx';
 import {
     type DataTableColumn,
     PAGE_SIZE,
@@ -12,7 +13,6 @@ import type { UserResponse } from '../../../../../../../models/user.model.ts';
 import { Order } from '../../../../../../../models/enums/order.ts';
 import { Role } from '../../../../../../../models/enums/roles.ts';
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
-import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../../hooks/deounce.ts';
 import { EditUserDialog } from '../components/EditUserDialog.tsx';
 import { CreateUserDialog } from '../components/CreateUserDiaolg.tsx';
 import { useDialog } from '../../../../../../../hooks/open-dialog.ts';
@@ -20,6 +20,7 @@ import { getUserColumns } from '../columns/UserColumns.tsx';
 import { Select } from '../../../../../../../components/Select.tsx';
 import { Button } from '../../../../../../../components/Button.tsx';
 import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
+import { activationStatusRecord } from '../../../../../../../models/enums-mapping/activation-status.ts';
 
 export function UsersTable() {
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -29,7 +30,6 @@ export function UsersTable() {
     });
 
     const [search, setSearch] = useState('');
-    const debounceSearch = useDebounce(search, GENERAL_DEBOUNCE_DELAY);
 
     const [role, setRole] = useState<Role | undefined>();
     const [status, setStatus] = useState<ActivationStatus | undefined>();
@@ -50,12 +50,18 @@ export function UsersTable() {
 
     const order = sort ? (sort.desc ? Order.DESC : Order.ASC) : undefined;
 
-    const { data, isError, isLoading } = useUsers({
+    const {
+        data,
+        isError,
+        isLoading,
+        error,
+        refetch,
+    } = useUsers({
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         sortBy,
         order,
-        search: debounceSearch || undefined,
+        search: search || undefined,
         filter: {
             ...(role && { role }),
             ...(status && { status }),
@@ -110,19 +116,21 @@ export function UsersTable() {
 
                 {Object.values(ActivationStatus).map((status) => (
                     <option key={status} value={status}>
-                        {status}
+                        {activationStatusRecord[status]}
                     </option>
                 ))}
             </Select>
         </div>
     );
 
-    if (isLoading) {
-        return <div>Loading users...</div>;
-    }
-
     if (isError) {
-        return <div>Failed to load users.</div>;
+        return (
+            <ErrorState
+                error={error}
+                title="Failed to load users"
+                onRetry={() => refetch()}
+            />
+        );
     }
 
     return (
@@ -150,6 +158,8 @@ export function UsersTable() {
                 }
                 rowCount={data?.pagination?.totalItems ?? 0}
                 rowCountLabel={`${data?.pagination?.totalItems == 0 ? 'No' : `${data?.pagination.totalItems}`} Users`}
+                isLoading={isLoading}
+                emptyMessage="No users match the current filters."
             />
             <CreateUserDialog open={createUserOpen} onOpenChange={setCreateUserOpen} />
             {userDialog.selectedItem && (

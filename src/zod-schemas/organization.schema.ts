@@ -1,55 +1,104 @@
 import { z } from 'zod';
-import { ActivationStatus } from '../models/enums/activation-status.js';
-import { createLocationSchema, updateLocationSchema } from './location.schema.js';
-import { querySchema } from './query.schema.js';
+import { ActivationStatus } from '../models/enums/activation-status';
+import { createLocationSchema, updateLocationSchema } from './location.schema';
+import { querySchema } from './query.schema';
 
-export const SORT_BY_NAME = 'name';
-export const SORT_BY_CREATED_AT_UTC = 'createdAtUTC';
+const SORT_BY_NAME = 'name';
+const SORT_BY_CREATED_AT_UTC = 'createdAtUTC';
+const SORT_BY_UPDATED_AT_UTC = 'updatedAtUTC';
 
 export const createOrganizationSchema = z
     .object({
-        name: z.string().trim().nonempty().max(256),
-        email: z.email(),
-        phoneNumber: z.e164(),
-        bio: z.string().trim().nonempty().max(4096).optional(),
-        location: createLocationSchema,
-        profilePicturePath: z.string().trim().nonempty().optional(),
-    })
-    .strict();
-
-export const createOrganizationByAdminSchema = createOrganizationSchema
-    .extend({
-        userEmail: z.email(),
+        name: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Organization Name is required' })
+            .max(256, { error: 'Organization Name must be at most 256 characters' }),
+        email: z.email({ error: 'Invalid email address' }),
+        phoneNumber: z.e164({ error: 'Invalid phone number' }),
+        bio: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Bio cannot be empty' })
+            .max(4096, { error: 'Bio must be at most 4096 characters' })
+            .optional(),
+        location: createLocationSchema.optional(),
     })
     .strict();
 
 export const updateOrganizationSchema = z
     .object({
-        name: z.string().trim().nonempty().max(256).optional(),
-        bio: z.string().trim().nonempty().max(4096).optional(),
-        phoneNumber: z.e164().optional(),
+        name: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Organization Name is required' })
+            .max(256, { error: 'Organization Name must be at most 256 characters' })
+            .optional(),
+        bio: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Bio cannot be empty' })
+            .max(4096, { error: 'Bio must be at most 4096 characters' })
+            .optional(),
+        phoneNumber: z.e164({ error: 'Invalid phone number' }).optional(),
         location: updateLocationSchema.optional(),
-        profilePicturePath: z.string().trim().nonempty().optional(),
-        status: z.enum(ActivationStatus).optional(),
     })
-    .strict();
+    .strict()
+    .refine((data) => Object.keys(data).length !== 0, {
+        message: 'At least one field must be provided',
+    });
 
 export const updateOrganizationByAdminSchema = z
     .object({
-        status: z.enum(ActivationStatus).optional(),
+        status: z.enum(ActivationStatus, { error: 'Invalid activation status' }),
     })
     .strict();
 
 export const organizationFilterSchema = z
     .object({
-        status: z.enum(ActivationStatus).optional(),
+        status: z.enum(ActivationStatus, { error: 'Invalid activation status filter' }).optional(),
     })
     .strict();
 
 export const queryOrganizationSchema = querySchema
     .extend({
-        search: z.string().trim().nonempty().max(320).optional(),
+        search: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Search cannot be empty' })
+            .max(320, { error: 'Search must be at most 320 characters' })
+            .optional(),
         filter: organizationFilterSchema.optional(),
-        sortBy: z.enum([SORT_BY_NAME, SORT_BY_CREATED_AT_UTC]).optional(),
+        sortBy: z
+            .enum([SORT_BY_NAME, SORT_BY_CREATED_AT_UTC, SORT_BY_UPDATED_AT_UTC], {
+                error: 'Invalid sort field',
+            })
+            .optional(),
     })
     .strict();
+
+export const createOrganizationByAdminSchema = z
+    .object({
+        name: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Organization Name is required' })
+            .max(256, { error: 'Organization Name must be at most 256 characters' }),
+        email: z.email({ error: 'Invalid email address' }),
+        phoneNumber: z.e164({ error: 'Invalid phone number' }),
+        bio: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Bio cannot be empty' })
+            .max(4096, { error: 'Bio must be at most 4096 characters' })
+            .optional(),
+        location: createLocationSchema,
+        userEmail: z.email({ error: 'Invalid user email address' }),
+    })
+    .strict();
+
+export type CreateOrganizationForm = z.infer<typeof createOrganizationSchema>;
+export type CreateOrganizationByAdminForm = z.infer<typeof createOrganizationByAdminSchema>;
+export type UpdateOrganizationForm = z.infer<typeof updateOrganizationSchema>;
+export type UpdateOrganizationByAdminForm = z.infer<typeof updateOrganizationByAdminSchema>;
+export type QueryOrganizationForm = z.infer<typeof queryOrganizationSchema>;

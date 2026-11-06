@@ -1,18 +1,25 @@
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import {
     CreateDialog,
     type CreateDialogField,
 } from '../../../../../../../components/CreateDialog.tsx';
+import { ImagePicker } from '../../../../../../../components/ImagePicker.tsx';
 
 import { createOrganizationByAdminSchema } from '../../../../../../../zod-schemas/organization.schema.ts';
 import type { CreateOrganizationByAdmin } from '../../../../../../../models/organization.model.ts';
 
 import { useCreateOrganizationBySuperAdmin } from '../../../../../hooks/organization-hook.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../../utlis/api-error.ts';
 
-type CreateOrgFormValues = z.infer<typeof createOrganizationByAdminSchema>;
+const createOrganizationByAdminFormSchema = createOrganizationByAdminSchema.extend({
+    bio: z.string().trim().max(4096).optional().or(z.literal('')),
+});
+
+type CreateOrgFormValues = z.infer<typeof createOrganizationByAdminFormSchema>;
 
 interface CreateOrganizationDialogProps {
     open: boolean;
@@ -21,6 +28,7 @@ interface CreateOrganizationDialogProps {
 
 export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizationDialogProps) {
     const createMutation = useCreateOrganizationBySuperAdmin();
+    const [picture, setPicture] = useState<File | null>(null);
 
     const initialTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
@@ -63,22 +71,42 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
             bio: values.bio?.trim() || undefined,
         };
 
-        await toast.promise(createMutation.mutateAsync(payload), {
-            loading: 'Creating organization...',
-            success: 'Organization created successfully',
-            error: 'Failed to create organization',
-        });
+        try {
+            await toast.promise(createMutation.mutateAsync({ ...payload, picture }), {
+                loading: 'Creating organization...',
+                success: 'Organization created successfully',
+                error: (mutationError) =>
+                    getApiErrorMessage(mutationError, 'Failed to create organization'),
+            });
+        } catch {
+            return;
+        }
 
+        setPicture(null);
         onOpenChange(false);
     }
 
     return (
         <CreateDialog<CreateOrgFormValues, CreateOrgFormValues>
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={(nextOpen) => {
+                if (!nextOpen) {
+                    setPicture(null);
+                }
+                onOpenChange(nextOpen);
+            }}
             title="Create Organization"
             description="Set up your organization profile and branch location."
-            resolver={zodResolver(createOrganizationByAdminSchema)}
+            topContent={
+                <div className="mb-4">
+                    <ImagePicker
+                        file={picture}
+                        onChange={setPicture}
+                        label="Organization Picture"
+                    />
+                </div>
+            }
+            resolver={zodResolver(createOrganizationByAdminFormSchema)}
             defaultValues={{
                 name: '',
                 email: '',
@@ -93,6 +121,12 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
             }}
             fields={fields}
             submitLabel="Create Organization"
+            errorMessage={
+                createMutation.isError && !getApiFieldErrors(createMutation.error)
+                    ? getApiErrorMessage(createMutation.error, 'Failed to create organization')
+                    : undefined
+            }
+            fieldErrors={getApiFieldErrors(createMutation.error)}
             onSubmit={handleSubmit}
         />
     );

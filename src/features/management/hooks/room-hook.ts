@@ -12,6 +12,7 @@ import type { QueryResponse } from '../../../models/Query/query.model.ts';
 import { ROOM, ROOMS, ORGANIZATION_ROOM, ORGANIZATION_ROOMS } from '../../../utlis/query-keys.ts';
 
 import { api } from '../../../services/axios.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
 /*
  * =========================
@@ -20,14 +21,16 @@ import { api } from '../../../services/axios.ts';
  */
 
 export function useOrganizationRooms(organizationUuid: string | undefined, query: QueryRoom) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [ORGANIZATION_ROOMS, organizationUuid, query],
+        queryKey: [ORGANIZATION_ROOMS, organizationUuid, debouncedQuery],
 
         queryFn: async (): Promise<QueryResponse<RoomResponse>> => {
             const response = await api.get<QueryResponse<RoomResponse>>(
                 `/api/organizations/${organizationUuid}/rooms`,
                 {
-                    params: query,
+                    params: debouncedQuery,
                 },
             );
 
@@ -63,7 +66,9 @@ export function useCreateOrganizationRoom(organizationUuid: string | undefined) 
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (room: CreateRoom): Promise<RoomResponse> => {
+        mutationFn: async (
+            room: Omit<CreateRoom, 'organizationUuid' | 'userUuid'>,
+        ): Promise<RoomResponse> => {
             if (!organizationUuid) {
                 throw new Error('Organization UUID is required');
             }
@@ -91,7 +96,7 @@ export function useUpdateOrganizationRoom(organizationUuid: string | undefined) 
         mutationFn: async ({
             uuid,
             ...room
-        }: UpdateRoom & {
+        }: Omit<UpdateRoom, 'organizationUuid' | 'userUuid'> & {
             uuid: string;
         }): Promise<RoomResponse> => {
             if (!organizationUuid) {

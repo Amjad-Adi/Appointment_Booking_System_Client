@@ -1,23 +1,20 @@
 import { Link } from 'react-router';
-import axios from 'axios';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import googleLogo from '../../../../../assets/images/login-images/google-logo.svg';
-
 import { TextField } from '../../../../../components/TextField.tsx';
 import { CheckboxField } from '../../../../../components/CheckBoxField.tsx';
-import { Image } from '../../../../../components/Image.tsx';
 import { Button } from '../../../../../components/Button.tsx';
 
-import { loginUserSchema } from '../../../../../zod-schemas/user.schema.ts';
+import { loginFormSchema } from '../../../../../zod-schemas/user.schema.ts';
 import type { LoginForm } from '../../../../../models/user.model.ts';
 
 import { useLogin } from '../../../../management/hooks/users-hook.ts';
+import { getApiErrorMessage } from '../../../../../utlis/api-error.ts';
 
 export function LoginForm() {
     const { register, handleSubmit, formState } = useForm<LoginForm, never, LoginForm>({
-        resolver: zodResolver(loginUserSchema),
+        resolver: zodResolver(loginFormSchema),
     });
 
     const loginMutation = useLogin();
@@ -84,34 +81,13 @@ export function LoginForm() {
                     {/* Error message */}
                     <div className="min-h-[20px] w-full pt-1">
                         {loginMutation.isError && (
-                            <p className="text-error w-full text-center text-[10px]">
-                                {axios.isAxiosError(loginMutation.error)
-                                    ? (loginMutation.error.response?.data.message ?? 'Login failed')
-                                    : 'Something went wrong'}
+                            <p className="text-destructive w-full text-center text-[10px]">
+                                {getApiErrorMessage(loginMutation.error, 'Login failed')}
                             </p>
                         )}
                     </div>
                 </div>
             </form>
-
-            {/* Divider */}
-            <section className="flex w-[90%] items-center gap-2 py-2">
-                <span className="h-px flex-1 bg-[#ccc]" />
-
-                <span className="shrink-0 text-[11px] text-[#777]">Or</span>
-
-                <span className="h-px flex-1 bg-[#ccc]" />
-            </section>
-
-            {/* Google login */}
-            <Button
-                type="button"
-                className="flex h-11 w-[90%] shrink-0 items-center justify-center gap-2 bg-white px-3 text-[11px] text-[#777] hover:bg-gray-100"
-            >
-                <Image src={googleLogo} alt="" aria-hidden="true" className="h-5 w-5 shrink-0" />
-
-                <span>Continue With Google</span>
-            </Button>
 
             {/* Register */}
             <section className="flex w-[90%] flex-row items-center justify-center gap-2 py-2 max-[300px]:flex-col max-[300px]:gap-1 sm:flex-col sm:gap-1 md:flex-row">

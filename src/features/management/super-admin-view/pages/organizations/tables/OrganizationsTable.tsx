@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { type PaginationState, type SortingState } from '@tanstack/react-table';
+import { Plus } from 'lucide-react';
 
 import { DataTable } from '../../../../../../components/DataTable.tsx';
+import { ErrorState } from '../../../../../../components/ErrorState.tsx';
 import { type DataTableColumn, PAGE_SIZE } from '../../../../../../components/DataTableFeatures.ts';
 import { Select } from '../../../../../../components/Select.tsx';
+import { Button } from '../../../../../../components/Button.tsx';
 
 import { useOrganizations } from '../../../../hooks/organization-hook.ts';
 import type { OrganizationResponse } from '../../../../../../models/organization.model.ts';
 import { Order } from '../../../../../../models/enums/order.ts';
 import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
-import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deounce.ts';
+import { activationStatusRecord } from '../../../../../../models/enums-mapping/activation-status.ts';
 import { useDialog } from '../../../../../../hooks/open-dialog.ts';
 import { EditOrganizationDialog } from '../organizations/components/EditOrganizationDialog.tsx';
+import { CreateOrganizationDialog } from '../organizations/components/CreateOrganizationDialog.tsx';
 import { getOrganizationColumns } from '../organizations/columns/OrganizationColumns.tsx';
 
 export function OrganizationsTable() {
@@ -23,9 +27,10 @@ export function OrganizationsTable() {
     });
 
     const [search, setSearch] = useState('');
-    const debounceSearch = useDebounce(search, GENERAL_DEBOUNCE_DELAY);
 
     const [status, setStatus] = useState<ActivationStatus | undefined>();
+
+    const [createOpen, setCreateOpen] = useState(false);
 
     const organizationDialog = useDialog<OrganizationResponse>();
 
@@ -43,12 +48,12 @@ export function OrganizationsTable() {
 
     const order = sort ? (sort.desc ? Order.DESC : Order.ASC) : undefined;
 
-    const { data, isError, isLoading } = useOrganizations({
+    const { data, isError, isLoading, error, refetch } = useOrganizations({
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         sortBy,
         order,
-        search: debounceSearch || undefined,
+        search: search || undefined,
         filter: {
             ...(status && { status }),
         },
@@ -75,19 +80,21 @@ export function OrganizationsTable() {
 
                 {Object.values(ActivationStatus).map((status) => (
                     <option key={status} value={status}>
-                        {status}
+                        {activationStatusRecord[status]}
                     </option>
                 ))}
             </Select>
         </div>
     );
 
-    if (isLoading) {
-        return <div>Loading organizations...</div>; // Needs Improvement
-    }
-
     if (isError) {
-        return <div>Failed to load organizations.</div>;
+        return (
+            <ErrorState
+                error={error}
+                title="Failed to load organizations"
+                onRetry={() => refetch()}
+            />
+        );
     }
 
     return (
@@ -103,9 +110,23 @@ export function OrganizationsTable() {
                 search={search}
                 onSearchChange={setSearch}
                 filters={filters}
+                actions={
+                    <Button
+                        type="button"
+                        onClick={() => setCreateOpen(true)}
+                        className="flex h-8 min-h-0 w-auto shrink-0 items-center gap-1.5 px-3 text-[11px]"
+                    >
+                        <Plus className="size-3.5" strokeWidth={2} />
+                        New Organization
+                    </Button>
+                }
                 rowCount={data?.pagination?.totalItems ?? 0}
                 rowCountLabel={`${data?.pagination?.totalItems == 0 ? 'No' : `${data?.pagination.totalItems}`} Organizations`}
+                isLoading={isLoading}
+                emptyMessage="No organizations match the current filters."
             />
+
+            <CreateOrganizationDialog open={createOpen} onOpenChange={setCreateOpen} />
 
             {organizationDialog.selectedItem && (
                 <EditOrganizationDialog

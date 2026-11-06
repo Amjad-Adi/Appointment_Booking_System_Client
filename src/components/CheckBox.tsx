@@ -11,6 +11,7 @@ export function Checkbox({ type = 'checkbox', className = '', ...props }: Checkb
             type={type}
             className={twMerge(
                 'h-4 w-4 shrink-0 cursor-pointer',
+                'accent-primary',
                 'sm:h-[1.2vw] sm:w-[1.2vw]',
                 'md:h-[1vw] md:w-[1vw]',
                 className,

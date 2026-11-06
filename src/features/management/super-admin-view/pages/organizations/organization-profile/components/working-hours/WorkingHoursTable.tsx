@@ -7,10 +7,11 @@ import type {
     WorkingHoursResponse,
 } from '../../../../../../../../models/working-hours.model.ts';
 import { DayOfWeek } from '../../../../../../../../models/enums/day-of-week.ts';
+import { dayOfWeekRecord } from '../../../../../../../../models/enums-mapping/day-of-week.ts';
 
 import { DataTable } from '../../../../../../../../components/DataTable.tsx';
 import { useUpdateOrganizationWorkingHours } from '../../../../../../hooks/working-hours-hook.ts';
-import { Toast } from '../../../../../../../../utlis/toast.ts';
+import { getApiErrorMessage } from '../../../../../../../../utlis/api-error.ts';
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../../../hooks/deounce.ts';
 import { useDialog } from '../../../../../../../../hooks/open-dialog.ts';
 
@@ -32,6 +33,8 @@ const DAY_ORDER: DayOfWeek[] = [
     DayOfWeek.SATURDAY,
     DayOfWeek.SUNDAY,
 ];
+
+const normalizeTime = (time: string | null): string | null => (time ? time.slice(0, 5) : null);
 
 export function WorkingHoursTable({
     organizationUuid,
@@ -78,35 +81,40 @@ export function WorkingHoursTable({
         }
 
         return normalizedData.filter((workingHour) =>
-            workingHour.dayOfWeek.toLowerCase().includes(normalizedSearch),
+            dayOfWeekRecord[workingHour.dayOfWeek].toLowerCase().includes(normalizedSearch),
         );
     }, [normalizedData, debouncedSearch]);
 
     const handleCopy = (workingHour: WorkingHours) => {
         setCopiedTime({
-            startTime: workingHour.startTime,
-            endTime: workingHour.endTime,
+            startTime: normalizeTime(workingHour.startTime),
+            endTime: normalizeTime(workingHour.endTime),
         });
 
-        toast.success(`Copied hours from ${workingHour.dayOfWeek.toLowerCase()}`);
+        toast.success(`Copied hours from ${dayOfWeekRecord[workingHour.dayOfWeek]}`);
     };
 
     const handlePaste = async (workingHour: WorkingHours) => {
         if (!copiedTime) return;
         if (workingHour.uuid.startsWith('empty-')) return;
 
-        await toast.promise(
-            updateMutation.mutateAsync({
-                uuid: workingHour.uuid,
-                startTime: copiedTime.startTime,
-                endTime: copiedTime.endTime,
-            }),
-            new Toast(
-                `Pasting to ${workingHour.dayOfWeek.toLowerCase()}...`,
-                'Time pasted successfully',
-                'Failed to paste time',
-            ),
-        );
+        try {
+            await toast.promise(
+                updateMutation.mutateAsync({
+                    uuid: workingHour.uuid,
+                    startTime: normalizeTime(copiedTime.startTime),
+                    endTime: normalizeTime(copiedTime.endTime),
+                }),
+                {
+                    loading: `Pasting to ${dayOfWeekRecord[workingHour.dayOfWeek]}...`,
+                    success: 'Time pasted successfully',
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to paste time'),
+                },
+            );
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     };
 
     const columns = getWorkingHoursColumns(

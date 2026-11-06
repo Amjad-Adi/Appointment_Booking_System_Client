@@ -1,124 +1,140 @@
 import { z } from 'zod';
 
-import { DayOfWeek } from '../models/enums/day-of-week.ts';
+import { DayOfWeek } from '../models/enums/day-of-week';
 
-import { querySchema } from './query.schema.ts';
+import { querySchema } from './query.schema';
 
-const SORT_BY_DAY_OF_WEEK = 'dayOfWeek';
-const SORT_BY_START_TIME = 'startTime';
-const SORT_BY_END_TIME = 'endTime';
+export const SORT_BY_DAY_OF_WEEK = 'dayOfWeek';
+export const SORT_BY_START_TIME = 'startTime';
+export const SORT_BY_END_TIME = 'endTime';
 
-export const timeSchema = z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/, 'Invalid time');
+function parseTimeToMinutes(value: string): number | null {
+    const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(value.trim());
 
-export const updateWorkingHoursForm = z
+    if (!match) {
+        return null;
+    }
+
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+
+    if (hours > 23 || minutes > 59) {
+        return null;
+    }
+
+    return hours * 60 + minutes;
+}
+
+function isEndAfterStart(startTime: string, endTime: string): boolean {
+    const startMinutes = parseTimeToMinutes(startTime);
+    const endMinutes = parseTimeToMinutes(endTime);
+
+    if (startMinutes === null || endMinutes === null) {
+        return true;
+    }
+
+    return endMinutes > startMinutes;
+}
+
+export const updateDayWorkingHoursSchema = z
     .object({
-        startTime: timeSchema.nullable().optional(),
-        endTime: timeSchema.nullable().optional(),
-        isClosed: z.boolean()
-    })
-    .strict()
-    .superRefine((data, ctx) => {
-        const { startTime, endTime, isClosed } = data;
-
-        // 2. If the day is marked as closed, skip the time validation entirely
-        if (isClosed) {
-            return;
-        }
-
-        if (startTime !== undefined && endTime !== undefined) {
-            const startIsSet = startTime !== null;
-            const endIsSet = endTime !== null;
-
-            if (startIsSet !== endIsSet) {
-                if (!startIsSet) {
-                    ctx.addIssue({
-                        code: 'custom',
-                        path: ['startTime'],
-                        message: 'Start time is required when end time is set',
-                    });
-                }
-
-                if (!endIsSet) {
-                    ctx.addIssue({
-                        code: 'custom',
-                        path: ['endTime'],
-                        message: 'End time is required when start time is set',
-                    });
-                }
-
-                return;
-            }
-
-            if (startTime !== null && endTime !== null && startTime >= endTime) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['endTime'],
-                    message: 'End time must be after start time',
-                });
-            }
-        }
-    });
-
-
-export const updateWorkingHoursSchema = z
-    .object({
-        startTime: timeSchema.nullable().optional(),
-        endTime: timeSchema.nullable().optional(),
+        startTime: z.iso
+            .time({ precision: -1, error: 'Start time must be a valid time' })
+            .nullable(),
+        endTime: z.iso.time({ precision: -1, error: 'End time must be a valid time' }).nullable(),
     })
     .strict()
     .superRefine((data, ctx) => {
         const { startTime, endTime } = data;
+        const startIsSet = startTime !== null;
+        const endIsSet = endTime !== null;
 
-        if (startTime !== undefined && endTime !== undefined) {
-            const startIsSet = startTime !== null;
-            const endIsSet = endTime !== null;
-
-            if (startIsSet !== endIsSet) {
-                if (!startIsSet) {
-                    ctx.addIssue({
-                        code: 'custom',
-                        path: ['startTime'],
-                        message: 'Start time is required when end time is set',
-                    });
-                }
-
-                if (!endIsSet) {
-                    ctx.addIssue({
-                        code: 'custom',
-                        path: ['endTime'],
-                        message: 'End time is required when start time is set',
-                    });
-                }
-
-                return;
+        if (startIsSet !== endIsSet) {
+            if (!startIsSet) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['startTime'],
+                    message: 'Start time is required when end time is set',
+                });
             }
 
-            if (startTime !== null && endTime !== null && startTime >= endTime) {
+            if (!endIsSet) {
                 ctx.addIssue({
                     code: 'custom',
                     path: ['endTime'],
-                    message: 'End time must be after start time',
+                    message: 'End time is required when start time is set',
                 });
             }
+
+            return;
+        }
+
+        if (startIsSet && endIsSet && !isEndAfterStart(startTime, endTime)) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['endTime'],
+                message: 'End time must be after start time',
+            });
+        }
+    });
+
+export const updateWorkingHoursForm = z
+    .object({
+        startTime: z.string().trim().nullable().optional(),
+        endTime: z.string().trim().nullable().optional(),
+        isClosed: z.boolean(),
+    })
+    .strict()
+    .superRefine((data, ctx) => {
+        if (data.isClosed) {
+            return;
+        }
+
+        if (!data.startTime) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['startTime'],
+                message: 'Opening time is required',
+            });
+        }
+
+        if (!data.endTime) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['endTime'],
+                message: 'Closing time is required',
+            });
+        }
+
+        if (data.startTime && data.endTime && !isEndAfterStart(data.startTime, data.endTime)) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['endTime'],
+                message: 'Closing time must be after opening time',
+            });
         }
     });
 
 export const workingHoursFilterSchema = z
     .object({
-        organizationUuid: z.uuid('Invalid organization UUID').optional(),
-
-        dayOfWeek: z.enum(DayOfWeek).optional(),
+        organizationUuid: z.uuid({ error: 'Invalid organization UUID' }).optional(),
+        dayOfWeek: z.enum(DayOfWeek, { error: 'Invalid day of week filter' }).optional(),
     })
     .strict();
 
 export const queryWorkingHoursSchema = querySchema
     .extend({
-        search: z.string().trim().nonempty().max(256).optional(),
-
+        search: z
+            .string()
+            .trim()
+            .nonempty({ error: 'Search cannot be empty' })
+            .max(256, { error: 'Search must be at most 256 characters' })
+            .optional(),
         filter: workingHoursFilterSchema.optional(),
-
-        sortBy: z.enum([SORT_BY_DAY_OF_WEEK, SORT_BY_START_TIME, SORT_BY_END_TIME]).optional(),
+        sortBy: z
+            .enum([SORT_BY_DAY_OF_WEEK, SORT_BY_START_TIME, SORT_BY_END_TIME], {
+                error: 'Invalid sort field',
+            })
+            .optional(),
     })
     .strict();

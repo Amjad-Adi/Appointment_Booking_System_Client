@@ -1,12 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { TextField } from '../../../../../../../components/TextField.tsx';
+import { ImagePicker } from '../../../../../../../components/ImagePicker.tsx';
 import { EditDialog, type EditDialogField } from '../../../../../../../components/EditDialog.tsx';
 
 import { useUpdateOrganization } from '../../../../../hooks/organization-hook.ts';
 import { updateOrganizationByAdminSchema } from '../../../../../../../zod-schemas/organization.schema.ts';
 
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
+import { activationStatusRecord } from '../../../../../../../models/enums-mapping/activation-status.ts';
 
 import type {
     OrganizationResponse,
@@ -15,6 +17,7 @@ import type {
 
 import toast from 'react-hot-toast';
 import { Toast } from '../../../../../../../utlis/toast.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../../utlis/api-error.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 interface EditOrganizationDialogProps {
@@ -33,6 +36,7 @@ export function EditOrganizationDialog({
     onOpenChange,
 }: EditOrganizationDialogProps) {
     const updateOrganizationMutation = useUpdateOrganization();
+    const [picture, setPicture] = useState<File | null>(null);
 
     const defaultValues = useMemo<UpdateOrganizationByAdminForm>(
         () => ({
@@ -49,7 +53,7 @@ export function EditOrganizationDialog({
                 type: 'select',
                 options: Object.values(ActivationStatus).map((status) => ({
                     value: status,
-                    label: status,
+                    label: activationStatusRecord[status],
                 })),
                 placeholder: 'Select status',
             },
@@ -57,33 +61,68 @@ export function EditOrganizationDialog({
         [],
     );
 
-    const handleSubmit = async (changedValues: Partial<UpdateOrganizationByAdminForm>) => {
-        await toast.promise(
-            updateOrganizationMutation.mutateAsync({
-                uuid: organization.uuid,
-                ...changedValues,
-            }),
-            new Toast(loading, success, error),
-        );
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) {
+            setPicture(null);
+        }
 
-        onOpenChange(false);
+        onOpenChange(nextOpen);
+    };
+
+    const handleSubmit = async (changedValues: Partial<UpdateOrganizationByAdminForm>) => {
+        const hasFieldChanges = Object.keys(changedValues).length > 0;
+
+        try {
+            await toast.promise(
+                updateOrganizationMutation.mutateAsync({
+                    uuid: organization.uuid,
+                    ...(hasFieldChanges ? changedValues : { status: organization.status }),
+                    picture,
+                }),
+                {
+                    loading,
+                    success,
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, error),
+                },
+            );
+
+            setPicture(null);
+            onOpenChange(false);
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     };
 
     return (
         <EditDialog<UpdateOrganizationByAdminForm>
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={handleOpenChange}
             title="Edit Organization"
             description="Update the organization's activation status."
             resolver={zodResolver(updateOrganizationByAdminSchema)}
             defaultValues={defaultValues}
             fields={fields}
+            topContent={
+                <ImagePicker
+                    file={picture}
+                    onChange={setPicture}
+                    currentPath={organization.profilePicturePath}
+                    label="Organization Picture"
+                />
+            }
+            hasExternalChanges={picture !== null}
             submitLabel="Apply Changes"
             errorMessage={
-                updateOrganizationMutation.isError
-                    ? 'Failed to update organization. Please try again.'
+                updateOrganizationMutation.isError &&
+                !getApiFieldErrors(updateOrganizationMutation.error)
+                    ? getApiErrorMessage(
+                          updateOrganizationMutation.error,
+                          'Failed to update organization',
+                      )
                     : undefined
             }
+            fieldErrors={getApiFieldErrors(updateOrganizationMutation.error)}
             onSubmit={handleSubmit}
             readOnlyContent={
                 <>

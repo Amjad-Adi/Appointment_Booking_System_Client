@@ -10,6 +10,7 @@ import { useUpdateOrganizationAppointment } from '../../hooks/appointment-hook.t
 import { updateAppointmentSchemaByOrganization } from '../../../../zod-schemas/appointment.schema.ts';
 
 import type { OrganizationAppointmentResponse } from '../../../../models/appointment.model.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../utlis/api-error.ts';
 
 interface EditAppointmentDialogProps {
     organizationUuid?: string;
@@ -78,22 +79,27 @@ export function EditAppointmentDialog({
     );
 
     async function handleSubmit(changedValues: Partial<EditAppointmentFormOutput>) {
-        await toast.promise(
-            updateMutation.mutateAsync({
-                uuid: appointment.uuid,
+        try {
+            await toast.promise(
+                updateMutation.mutateAsync({
+                    uuid: appointment.uuid,
 
-                ...changedValues,
-            }),
-            {
-                loading: 'Updating appointment...',
+                    ...changedValues,
+                }),
+                {
+                    loading: 'Updating appointment...',
 
-                success: 'Appointment updated successfully',
+                    success: 'Appointment updated successfully',
 
-                error: 'Failed to update appointment',
-            },
-        );
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to update appointment'),
+                },
+            );
 
-        onOpenChange(false);
+            onOpenChange(false);
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     }
 
     return (
@@ -107,10 +113,11 @@ export function EditAppointmentDialog({
             fields={fields}
             submitLabel="Apply Changes"
             errorMessage={
-                updateMutation.isError
-                    ? 'Failed to update appointment. Please try again.'
+                updateMutation.isError && !getApiFieldErrors(updateMutation.error)
+                    ? getApiErrorMessage(updateMutation.error, 'Failed to update appointment')
                     : undefined
             }
+            fieldErrors={getApiFieldErrors(updateMutation.error)}
             onSubmit={handleSubmit}
         />
     );
