@@ -1,6 +1,11 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 
+interface RetryableAxiosRequestConfig extends InternalAxiosRequestConfig {
+    retry?: boolean;
+}
+
 const baseURL = getBaseURL();
+
 const axiosConfig = {
     baseURL,
     headers: {
@@ -23,7 +28,13 @@ function getBaseURL(): string {
         return `${devServer}:${devPort}`;
     }
 
-    return import.meta.env.VITE_PRODUCTION_SERVER || '';
+    const productionServer = import.meta.env.VITE_PRODUCTION_SERVER;
+
+    if (!productionServer) {
+        throw new Error('VITE_PRODUCTION_SERVER is not configured.');
+    }
+
+    return productionServer;
 }
 
 export const api: AxiosInstance = axios.create(axiosConfig);
@@ -32,16 +43,21 @@ export const api: AxiosInstance = axios.create(axiosConfig);
 const authApi: AxiosInstance = axios.create({
     baseURL,
     withCredentials: true,
+    timeout: 60 * 1000,
 });
 
-let refreshPromise: Promise<unknown> | null = null;
+let refreshPromise: Promise<void> | null = null;
+
 api.interceptors.response.use(
     function (response) {
         return response;
     },
-    async function (error) {
-        const config = error.config as
-            (InternalAxiosRequestConfig & { retry?: boolean }) | undefined;
+    async function (error: unknown) {
+        if (!axios.isAxiosError(error)) {
+            return Promise.reject(error);
+        }
+
+        const config = error.config as RetryableAxiosRequestConfig | undefined;
 
         if (error.response?.status !== 401 || !config || config.retry || isAuthRoute(config.url)) {
             return Promise.reject(error);
@@ -50,9 +66,12 @@ api.interceptors.response.use(
         config.retry = true;
 
         if (!refreshPromise) {
-            refreshPromise = authApi.post('/api/auth/refresh').finally(function () {
-                refreshPromise = null;
-            });
+            refreshPromise = authApi
+                .post('/api/auth/refresh')
+                .then(() => undefined)
+                .finally(() => {
+                    refreshPromise = null;
+                });
         }
 
         try {
@@ -66,10 +85,14 @@ api.interceptors.response.use(
 );
 
 function isAuthRoute(url?: string): boolean {
+    if (!url) {
+        return false;
+    }
+
     return (
-        url?.includes('/api/auth/login') ||
-        url?.includes('/api/auth/register') ||
-        url?.includes('/api/auth/refresh') ||
-        false
+        url.includes('/api/auth/login') ||
+        url.includes('/api/auth/register') ||
+        url.includes('/api/auth/refresh') ||
+        url.includes('/api/auth/logout')
     );
 }
