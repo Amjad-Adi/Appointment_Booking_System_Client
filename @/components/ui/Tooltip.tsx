@@ -1,4 +1,3 @@
-
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import { cn } from 'cn';
 
@@ -36,7 +35,7 @@ function TooltipContent({
                 <TooltipPrimitive.Popup
                     data-slot="tooltip-content"
                     className={cn(
-                        'z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-md border border-[#454556] bg-[#343447] px-3 py-2 text-[11px] leading-4 text-[#f5f5f8] shadow-lg',
+                        'z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-md border border-ring bg-primary px-3 py-2 text-[11px] leading-4 text-primary-foreground shadow-lg',
                         'has-data-[slot=kbd]:pr-1.5',
                         'data-[side=bottom]:slide-in-from-top-2',
                         'data-[side=inline-end]:slide-in-from-left-2',
@@ -66,7 +65,7 @@ function TooltipContent({
                     <TooltipPrimitive.Arrow
                         className={cn(
                             'z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px]',
-                            'bg-[#343447] fill-[#343447]',
+                            'bg-primary fill-primary',
                             'data-[side=bottom]:top-1',
                             'data-[side=inline-end]:top-1/2!',
                             'data-[side=inline-end]:-left-1',

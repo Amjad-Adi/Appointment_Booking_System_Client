@@ -1,13 +1,13 @@
-import { z } from 'zod';
-
-import type { InvitationStatus } from './enums/invitation-status.ts';
-import type { Role } from './enums/roles.ts';
-
+import type { z } from 'zod';
+import { InvitationStatus } from './enums/invitation-status';
+import { Role } from './enums/roles';
 import {
+    acceptInvitationSchema,
     createInvitationSchema,
     queryInvitationSchema,
-    updateInvitationSchema,
-} from '../zod-schemas/invitations.schema.ts';
+    updateInvitationByOrganizationSchema,
+} from '../zod-schemas/invitations.schema';
+import type { DataResponses } from './Query/query.model';
 
 export interface Invitation {
     uuid: string;
@@ -15,17 +15,16 @@ export interface Invitation {
     role: Role;
     createdAtUTC: string;
     expiresAtUTC: string;
-    acceptedAtUTC: string | null;
+    updatedAtUTC: string;
     status: InvitationStatus;
 }
 
-export interface InvitationResponse extends Invitation {
+export interface InvitationResponse extends Invitation, DataResponses {
     senderUuid: string;
     senderFirstName: string;
     senderLastName: string;
     senderEmail: string;
     senderProfilePicturePath: string | null;
-
     organizationUuid: string;
     organizationName: string;
     organizationProfilePicturePath: string | null;
@@ -33,6 +32,26 @@ export interface InvitationResponse extends Invitation {
 
 export type CreateInvitation = z.infer<typeof createInvitationSchema>;
 
-export type UpdateInvitation = z.infer<typeof updateInvitationSchema>;
+export type UpdateInvitation = z.infer<typeof updateInvitationByOrganizationSchema> & {
+    uuid: string;
+};
 
-export type QueryInvitation = z.infer<typeof queryInvitationSchema>;
+export type UpdateInvitationByOrganization = z.infer<
+    typeof updateInvitationByOrganizationSchema
+> & {
+    uuid: string;
+    organizationUuid: string;
+    userUuid: string;
+};
+
+export type AcceptInvitation = z.infer<typeof acceptInvitationSchema> & {
+    tokenHash: string;
+    uid: string;
+    profilePicturePath?: string;
+    profilePictureId?: string;
+};
+
+export type QueryInvitation = z.infer<typeof queryInvitationSchema> & {
+    offset?: number;
+    userUuid?: string;
+};

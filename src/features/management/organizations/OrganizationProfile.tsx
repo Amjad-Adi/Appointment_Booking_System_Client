@@ -1,20 +1,39 @@
 import { useParams } from 'react-router';
+
 import { useOrganization } from '../hooks/organization-hook.ts';
-import { Skeleton } from '../../../components/Skeleton.tsx';
+import { ErrorState } from '../../../components/ErrorState.tsx';
+import { LoadingState } from '../../../components/LoadingState.tsx';
 
 export function OrganizationProfile() {
     const { organizationUuid } = useParams();
-    const { data, isLoading, isError } = useOrganization(organizationUuid!);
+    const { data, isLoading, isError, error, refetch } = useOrganization(organizationUuid ?? '');
+
     if (isLoading) {
-        return <div>Loading organization...</div>;
+        return <LoadingState label="Loading organization..." />;
     }
-    if (isError || !data) {
-        return <div>Failed to load organization.</div>;
+
+    if (isError) {
+        return (
+            <ErrorState
+                error={error}
+                title="Failed to load organization"
+                onRetry={() => refetch()}
+            />
+        );
     }
+
+    if (!data) {
+        return (
+            <ErrorState
+                title="Organization not found"
+                message="This organization does not exist or is no longer available."
+            />
+        );
+    }
+
     return (
         <div>
             <h1>{data.name}</h1>
-            <Skeleton className="h-10 w-40 rounded-full" />
         </div>
     );
 }

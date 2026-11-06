@@ -1,11 +1,9 @@
 import { z } from 'zod';
-
 import { ActivationStatus } from '../models/enums/activation-status.js';
-import { Order } from '../models/enums/order.ts';
 import { querySchema } from './query.schema.ts';
-const SORT_BY_NAME = "name";
-const SORT_BY_DAY_DATE = "dayDate";
-const SORT_BY_CREATED_AT_UTC = "createdAtUTC";
+const SORT_BY_NAME = 'name';
+const SORT_BY_DAY_DATE = 'dayDate';
+const SORT_BY_CREATED_AT_UTC = 'createdAtUTC';
 export const createSpecialDaySchema = z
     .object({
         name: z.string().trim().nonempty('Name is required').max(256),
@@ -53,14 +51,14 @@ export const specialDayFilterSchema = z
         }
     });
 
-
 export const querySpecialDaySchema = querySchema
     .extend({
         search: z.string().trim().max(256).optional(),
 
         filter: specialDayFilterSchema.optional(),
 
-        sortBy: z.enum([SORT_BY_NAME, SORT_BY_DAY_DATE, SORT_BY_CREATED_AT_UTC], {
+        sortBy: z
+            .enum([SORT_BY_NAME, SORT_BY_DAY_DATE, SORT_BY_CREATED_AT_UTC], {
                 error: 'Invalid sort field',
             })
             .optional(),

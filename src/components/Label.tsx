@@ -7,7 +7,7 @@ export interface LabelModel extends LabelHTMLAttributes<HTMLLabelElement> {
 export function Label({ children, className = '', ...props }: LabelModel) {
     return (
         <label
-            className={`flex items-center text-[1vw] font-medium text-slate-700 ${className}`}
+            className={`flex items-center text-[12px] font-medium text-foreground ${className}`}
             {...props}
         >
             {children}

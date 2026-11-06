@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
+import { Tags } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 
 import type {
     DefaultValues,
-    FieldErrors,
     FieldValues,
     Path,
     Resolver,
@@ -16,6 +16,7 @@ import { TextField } from './TextField.tsx';
 import { Select } from './Select.tsx';
 import { SearchableSelect } from './SearchableSelect.tsx';
 import { Button } from './Button.tsx';
+import { EntityImage } from './EntityImage.tsx';
 
 export interface CreateDialogSelectOption<TValue extends string> {
     value: TValue;
@@ -142,10 +143,6 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
         await onSubmit(data);
     };
 
-    const handleInvalidSubmit = (validationErrors: FieldErrors<TInput>) => {
-        console.error('Create dialog validation failed:', validationErrors);
-    };
-
     const handleCancel = () => {
         reset(defaultValues);
         onOpenChange(false);
@@ -157,27 +154,27 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
 
     return (
         <div
-            className="fixed inset-0 z-200 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-4 backdrop-blur-[2px] sm:py-6"
+            className="fixed inset-0 z-200 flex items-start justify-center overflow-y-auto bg-overlay px-4 py-4 backdrop-blur-[2px] sm:py-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-dialog-title"
         >
-            <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[#d3d3df] bg-[#f5f5f8] shadow-2xl sm:max-h-[calc(100vh-3rem)]">
-                <div className="shrink-0 border-b border-[#d3d3df] px-5 py-4 sm:px-6">
+            <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+                <div className="shrink-0 border-b border-border px-5 py-4 sm:px-6">
                     <h2
                         id="create-dialog-title"
-                        className="text-[15px] font-semibold tracking-tight text-[#343447]"
+                        className="text-[15px] font-semibold tracking-tight text-foreground"
                     >
                         {title}
                     </h2>
 
                     {description && (
-                        <p className="mt-0.5 text-[11px] leading-4 text-[#777789]">{description}</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{description}</p>
                     )}
                 </div>
 
                 <form
-                    onSubmit={handleSubmit(handleFormSubmit, handleInvalidSubmit)}
+                    onSubmit={handleSubmit(handleFormSubmit)}
                     className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5"
                 >
                     {topContent}
@@ -250,7 +247,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                                 />
 
                                                 {field.description && (
-                                                    <p className="mt-1 text-[9px] leading-4 text-[#777789]">
+                                                    <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
                                                         {field.description}
                                                     </p>
                                                 )}
@@ -271,13 +268,11 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                             }
                                             errorMessage={validationErrorMessage}
                                             disabled={isDisabled}
+                                            value={watch(fieldName) ?? ''}
+                                            placeholder={field.placeholder ?? `Select ${field.label}`}
                                             {...register(fieldName)}
                                             className="h-8 px-2.5 text-[11px]"
                                         >
-                                            <option value="">
-                                                {field.placeholder ?? `Select ${field.label}`}
-                                            </option>
-
                                             {field.options?.map((option) => (
                                                 <option key={option.value} value={option.value}>
                                                     {option.label}
@@ -286,7 +281,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                         </Select>
 
                                         {field.description && (
-                                            <p className="mt-1 text-[9px] leading-4 text-[#777789]">
+                                            <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
                                                 {field.description}
                                             </p>
                                         )}
@@ -311,15 +306,15 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
 
                                             return (
                                                 <div className="flex flex-col">
-                                                    <label className="mb-1.5 text-[11px] font-medium text-[#343447]">
+                                                    <label className="mb-1.5 text-[11px] font-medium text-foreground">
                                                         {field.label}
                                                     </label>
 
                                                     <div
-                                                        className={`max-h-48 overflow-y-auto rounded-lg border bg-[#f5f5f8] p-1.5 ${
+                                                        className={`max-h-48 overflow-y-auto rounded-lg border bg-card p-1.5 ${
                                                             fieldError || serverFieldError
-                                                                ? 'border-[#c94a5c]'
-                                                                : 'border-[#d3d3df]'
+                                                                ? 'border-destructive'
+                                                                : 'border-border'
                                                         }`}
                                                     >
                                                         <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -352,35 +347,25 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                                                         }}
                                                                         className={`flex min-w-0 items-center gap-2 rounded-md border p-2 text-left transition-colors ${
                                                                             selected
-                                                                                ? 'border-[#b9b9cc] bg-[#ededf2]'
-                                                                                : 'border-transparent hover:bg-[#ededf2]'
+                                                                                ? 'border-border-strong bg-secondary'
+                                                                                : 'border-transparent hover:bg-secondary'
                                                                         }`}
                                                                     >
-                                                                        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#d3d3df]">
-                                                                            {option.imagePath ? (
-                                                                                <img
-                                                                                    src={
-                                                                                        option.imagePath
-                                                                                    }
-                                                                                    alt=""
-                                                                                    className="size-full object-cover"
-                                                                                />
-                                                                            ) : (
-                                                                                <span className="text-[10px] font-semibold text-[#777789]">
-                                                                                    {option.label
-                                                                                        .charAt(0)
-                                                                                        .toUpperCase()}
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
+                                                                        <EntityImage
+                                                                            src={option.imagePath}
+                                                                            alt={option.label}
+                                                                            icon={Tags}
+                                                                            className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground"
+                                                                            iconClassName="size-4"
+                                                                        />
 
                                                                         <div className="min-w-0 flex-1">
-                                                                            <p className="truncate text-[10px] font-semibold text-[#343447]">
+                                                                            <p className="truncate text-[10px] font-semibold text-foreground">
                                                                                 {option.label}
                                                                             </p>
 
                                                                             {option.description && (
-                                                                                <p className="truncate text-[9px] text-[#777789]">
+                                                                                <p className="truncate text-[9px] text-muted-foreground">
                                                                                     {
                                                                                         option.description
                                                                                     }
@@ -391,8 +376,8 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                                                         <div
                                                                             className={`flex size-4 shrink-0 items-center justify-center rounded-full border text-[9px] ${
                                                                                 selected
-                                                                                    ? 'border-[#343447] bg-[#343447] text-white'
-                                                                                    : 'border-[#b9b9cc]'
+                                                                                    ? 'border-primary bg-primary text-primary-foreground'
+                                                                                    : 'border-border-strong'
                                                                             }`}
                                                                         >
                                                                             {selected && '✓'}
@@ -405,16 +390,16 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
 
                                                     <div className="mt-1.5 flex min-h-4 items-center justify-between">
                                                         {fieldError || serverFieldError ? (
-                                                            <p className="text-[10px] leading-4 text-[#c94a5c]">
+                                                            <p className="text-[10px] leading-4 text-destructive">
                                                                 {validationErrorMessage}
                                                             </p>
                                                         ) : (
-                                                            <p className="text-[9px] text-[#777789]">
+                                                            <p className="text-[9px] text-muted-foreground">
                                                                 Select one or more categories
                                                             </p>
                                                         )}
 
-                                                        <span className="ml-auto text-[9px] text-[#777789]">
+                                                        <span className="ml-auto text-[9px] text-muted-foreground">
                                                             {selectedValues.length} selected
                                                         </span>
                                                     </div>
@@ -439,7 +424,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                     />
 
                                     {field.description && (
-                                        <p className="mt-1 text-[9px] leading-4 text-[#777789]">
+                                        <p className="mt-1 text-[9px] leading-4 text-muted-foreground">
                                             {field.description}
                                         </p>
                                     )}
@@ -448,7 +433,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                         })}
 
                         {errorMessage && (
-                            <p className="w-full pt-1 text-center text-[10px] leading-4 text-[#c94a5c]">
+                            <p className="w-full pt-1 text-center text-[10px] leading-4 text-destructive">
                                 {errorMessage}
                             </p>
                         )}
@@ -460,7 +445,7 @@ export function CreateDialog<TInput extends FieldValues, TOutput = TInput>({
                                 type="button"
                                 onClick={handleCancel}
                                 disabled={isSubmitting}
-                                className="h-8 w-full border border-[#d3d3df] bg-transparent px-3 text-[11px] font-semibold text-[#454556] hover:bg-[#ededf2] hover:text-[#343447] sm:h-8 sm:w-auto sm:px-3 sm:text-[11px]"
+                                className="h-8 w-full border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground sm:h-8 sm:w-auto sm:px-3 sm:text-[11px]"
                             >
                                 {cancelLabel}
                             </Button>

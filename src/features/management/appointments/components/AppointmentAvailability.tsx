@@ -2,6 +2,8 @@ import { ChevronDown, UserCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 
+import { EntityImage } from '../../../../components/EntityImage.tsx';
+
 import { AppointmentTimeType } from '../../../../models/enums/appointment-time-type.ts';
 
 import type {
@@ -60,19 +62,19 @@ function WorkerAvailabilityGroup({
     onToggle: () => void;
 }) {
     return (
-        <div className="overflow-hidden rounded-lg border border-[#d3d3df] bg-white">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
             <button
                 type="button"
                 onClick={onToggle}
-                className="flex w-full items-center justify-between gap-3 border-b border-[#d3d3df] bg-[#ededf2] px-3 py-2.5 text-left transition-colors hover:bg-[#e5e5ed]"
+                className="flex w-full items-center justify-between gap-3 border-b border-border bg-secondary px-3 py-2.5 text-left transition-colors hover:bg-muted"
                 aria-expanded={expanded}
             >
                 <div className="min-w-0">
-                    <p className="truncate text-[10px] font-semibold text-[#343447]">
+                    <p className="truncate text-[10px] font-semibold text-foreground">
                         {group.worker.firstName} {group.worker.lastName}
                     </p>
 
-                    <p className="mt-0.5 text-[9px] text-[#777789]">
+                    <p className="mt-0.5 text-[9px] text-muted-foreground">
                         {group.options.length}{' '}
                         {group.options.length === 1 ? 'available time' : 'available times'}
                     </p>
@@ -80,7 +82,7 @@ function WorkerAvailabilityGroup({
 
                 <ChevronDown
                     className={[
-                        'size-4 shrink-0 text-[#777789] transition-transform duration-200',
+                        'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
                         expanded ? 'rotate-180' : 'rotate-0',
                     ].join(' ')}
                 />
@@ -110,42 +112,33 @@ function WorkerAvailabilityGroup({
                                     className={[
                                         'group flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors',
                                         selected
-                                            ? 'border-[#343447] bg-[#ededf2]'
-                                            : 'border-[#d3d3df] bg-[#f5f5f8] hover:bg-[#ededf2]',
+                                            ? 'border-primary bg-secondary'
+                                            : 'border-border bg-card hover:bg-secondary',
                                     ].join(' ')}
                                 >
-                                    <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#d3d3df]">
-                                        <div
-                                            className={[
-                                                'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full transition-colors',
-                                                selected
-                                                    ? 'bg-[#ededf2]'
-                                                    : 'bg-[#f5f5f8] group-hover:bg-[#ededf2]',
-                                            ].join(' ')}
-                                        >
-                                            {group.worker.profilePicturePath ===
-                                            'DEFAULT_PICTURE_PATH' ? (
-                                                <UserCircle className="h-6 w-6 text-[#555566]" />
-                                            ) : (
-                                                <img
-                                                    src={group.worker.profilePicturePath}
-                                                    alt={`${group.worker.firstName} ${group.worker.lastName}`}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
+                                    <EntityImage
+                                        src={group.worker.profilePicturePath}
+                                        alt={`${group.worker.firstName} ${group.worker.lastName}`}
+                                        icon={UserCircle}
+                                        className={[
+                                            'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-secondary-foreground transition-colors',
+                                            selected
+                                                ? 'bg-secondary'
+                                                : 'bg-card group-hover:bg-secondary',
+                                        ].join(' ')}
+                                        iconClassName="size-5"
+                                    />
 
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
-                                            <p className="text-[10px] font-semibold text-[#343447]">
+                                            <p className="text-[10px] font-semibold text-foreground">
                                                 {formatDateInTimeZone(
                                                     option.scheduledStartAtUTC,
                                                     organizationTimeZone,
                                                 )}
                                             </p>
 
-                                            <span className="text-[9px] text-[#777789]">
+                                            <span className="text-[9px] text-muted-foreground">
                                                 {formatTimeInTimeZone(
                                                     option.scheduledStartAtUTC,
                                                     organizationTimeZone,
@@ -158,7 +151,7 @@ function WorkerAvailabilityGroup({
                                             </span>
                                         </div>
 
-                                        <p className="mt-0.5 truncate text-[9px] text-[#777789]">
+                                        <p className="mt-0.5 truncate text-[9px] text-muted-foreground">
                                             {option.room.name}
                                         </p>
                                     </div>
@@ -167,8 +160,8 @@ function WorkerAvailabilityGroup({
                                         className={[
                                             'flex size-4 shrink-0 items-center justify-center rounded-full border text-[9px]',
                                             selected
-                                                ? 'border-[#343447] bg-[#343447] text-white'
-                                                : 'border-[#b9b9cc] text-transparent',
+                                                ? 'border-primary bg-primary text-primary-foreground'
+                                                : 'border-border-strong text-transparent',
                                         ].join(' ')}
                                     >
                                         ✓
@@ -230,6 +223,16 @@ export function AppointmentAvailability({
     const [expandedWorkerUuid, setExpandedWorkerUuid] = useState<string | undefined>(
         initialWorkerUuid,
     );
+
+    /*
+     * In NEAREST mode the form intentionally does not store workerUuid,
+     * so the worker that owns the selected option is tracked here.
+     *
+     * Without it, options are resolved by start time alone across all
+     * workers, which highlights the first worker's slot even when the
+     * user picked another worker's slot.
+     */
+    const [nearestWorkerUuid, setNearestWorkerUuid] = useState<string | undefined>(undefined);
 
     /*
      * The worker passed by the calendar is only the initial expanded worker.
@@ -296,7 +299,7 @@ export function AppointmentAvailability({
      * Reset the selected availability whenever the scheduling inputs change.
      *
      * A previous selected time must never remain valid after changing
-     * the customer, service, or availability mode.
+     * the customer, service, availability mode, or search starting time.
      *
      * In NEAREST mode:
      * - workerUuid is NOT used
@@ -316,6 +319,9 @@ export function AppointmentAvailability({
             shouldDirty: false,
             shouldValidate: false,
         });
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setNearestWorkerUuid(undefined);
 
         if (timeType === AppointmentTimeType.NEAREST) {
             onAppointmentWorkerChange?.(undefined);
@@ -351,6 +357,7 @@ export function AppointmentAvailability({
         serviceUuid,
         timeType,
         workerUuid,
+        fromAtUTC,
         initialWorkerUuid,
         form,
         onAppointmentWorkerChange,
@@ -446,8 +453,8 @@ export function AppointmentAvailability({
      *
      * In NEAREST mode:
      * workerUuid is deliberately not stored in the form, so the
-     * selected availability is identified by the scheduled start
-     * time across all returned workers.
+     * selected availability is identified by the worker that owns
+     * the clicked option plus the scheduled start time.
      */
     const selectedOption = useMemo(() => {
         if (!scheduledStartAtUTC) {
@@ -462,8 +469,29 @@ export function AppointmentAvailability({
             );
         }
 
+        if (timeType === AppointmentTimeType.NEAREST && nearestWorkerUuid) {
+            const workerGroup = workerGroups.find(
+                (group) => group.worker.uuid === nearestWorkerUuid,
+            );
+
+            const option = workerGroup?.options.find(
+                (candidate) => candidate.scheduledStartAtUTC === scheduledStartAtUTC,
+            );
+
+            if (option) {
+                return option;
+            }
+        }
+
         return options.find((option) => option.scheduledStartAtUTC === scheduledStartAtUTC);
-    }, [timeType, workerUuid, scheduledStartAtUTC, workerGroups, options]);
+    }, [
+        timeType,
+        workerUuid,
+        nearestWorkerUuid,
+        scheduledStartAtUTC,
+        workerGroups,
+        options,
+    ]);
 
     /*
      * Selecting an option is the ONLY thing that selects a worker
@@ -493,10 +521,12 @@ export function AppointmentAvailability({
             /*
              * Do NOT write workerUuid to the form.
              *
-             * The selected worker is stored by the parent because
-             * workerUuid is intentionally absent from the NEAREST
-             * scheduling form state.
+             * The selected worker is tracked here for highlighting and
+             * reported to the parent because workerUuid is intentionally
+             * absent from the NEAREST scheduling form state.
              */
+            setNearestWorkerUuid(selectedWorkerUuid);
+
             onAppointmentWorkerChange?.(selectedWorkerUuid);
         }
 
@@ -540,8 +570,8 @@ export function AppointmentAvailability({
 
     if (!organizationUuid) {
         return (
-            <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] text-[#777789]">
+            <div className="rounded-lg border border-border bg-card px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">
                     Organization is required to find available times.
                 </p>
             </div>
@@ -550,8 +580,8 @@ export function AppointmentAvailability({
 
     if (!userUuid || !serviceUuid) {
         return (
-            <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] text-[#777789]">
+            <div className="rounded-lg border border-border bg-card px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">
                     Select a customer and service to view available times.
                 </p>
             </div>
@@ -560,8 +590,8 @@ export function AppointmentAvailability({
 
     if (timeType === AppointmentTimeType.WORKER && !workerUuid) {
         return (
-            <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] text-[#777789]">
+            <div className="rounded-lg border border-border bg-card px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">
                     Select a worker to view available times.
                 </p>
             </div>
@@ -570,8 +600,8 @@ export function AppointmentAvailability({
 
     if (timeType === AppointmentTimeType.NEAREST && !fromAtUTC) {
         return (
-            <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] text-[#777789]">
+            <div className="rounded-lg border border-border bg-card px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">
                     Select a start time to find available times.
                 </p>
             </div>
@@ -580,26 +610,26 @@ export function AppointmentAvailability({
 
     if (isLoading || isFetching) {
         return (
-            <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] text-[#777789]">Finding available times...</p>
+            <div className="rounded-lg border border-border bg-card px-3 py-3">
+                <p className="text-[10px] text-muted-foreground">Finding available times...</p>
             </div>
         );
     }
 
     if (isError) {
         return (
-            <div className="rounded-lg border border-[#c94a5c]/40 bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] text-[#c94a5c]">Failed to load available times.</p>
+            <div className="rounded-lg border border-destructive/40 bg-card px-3 py-3">
+                <p className="text-[10px] text-destructive">Failed to load available times.</p>
             </div>
         );
     }
 
     if (workerGroups.length === 0) {
         return (
-            <div className="rounded-lg border border-[#d3d3df] bg-[#f5f5f8] px-3 py-3">
-                <p className="text-[10px] font-medium text-[#343447]">No available times</p>
+            <div className="rounded-lg border border-border bg-card px-3 py-3">
+                <p className="text-[10px] font-medium text-foreground">No available times</p>
 
-                <p className="mt-0.5 text-[9px] text-[#777789]">
+                <p className="mt-0.5 text-[9px] text-muted-foreground">
                     Try another worker, availability type, or starting time.
                 </p>
             </div>
@@ -609,9 +639,9 @@ export function AppointmentAvailability({
     return (
         <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-                <p className="text-[11px] font-medium text-[#343447]">Available Times</p>
+                <p className="text-[11px] font-medium text-foreground">Available Times</p>
 
-                <span className="text-[9px] text-[#777789]">
+                <span className="text-[9px] text-muted-foreground">
                     {workerGroups.length} {workerGroups.length === 1 ? 'worker' : 'workers'}
                 </span>
             </div>

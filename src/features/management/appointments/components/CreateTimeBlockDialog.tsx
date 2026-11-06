@@ -10,6 +10,7 @@ import { useCreateOrganizationTimeBlock } from '../../hooks/time-block-hook.ts';
 import { createTimeBlockSchema } from '../../../../zod-schemas/time-block.schema.ts';
 
 import { formatDateTimeForInput, localDateTimeToISO } from '../../user-view/utils/date.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../utlis/api-error.ts';
 
 interface CreateTimeBlockDialogProps {
     organizationUuid?: string;
@@ -80,13 +81,18 @@ export function CreateTimeBlockDialog({
             endAtUTC: localDateTimeToISO(values.endAtUTC, organizationTimeZone),
         };
 
-        await toast.promise(createMutation.mutateAsync(payload), {
-            loading: 'Creating time block...',
-            success: 'Time block created successfully',
-            error: 'Failed to create time block',
-        });
+        try {
+            await toast.promise(createMutation.mutateAsync(payload), {
+                loading: 'Creating time block...',
+                success: 'Time block created successfully',
+                error: (mutationError) =>
+                    getApiErrorMessage(mutationError, 'Failed to create time block'),
+            });
 
-        onOpenChange(false);
+            onOpenChange(false);
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     }
 
     return (
@@ -101,10 +107,11 @@ export function CreateTimeBlockDialog({
             fields={fields}
             submitLabel="Add Time Block"
             errorMessage={
-                createMutation.isError
-                    ? 'Failed to create the time block. Please try again.'
+                createMutation.isError && !getApiFieldErrors(createMutation.error)
+                    ? getApiErrorMessage(createMutation.error, 'Failed to create the time block')
                     : undefined
             }
+            fieldErrors={getApiFieldErrors(createMutation.error)}
             onSubmit={handleSubmit}
         />
     );

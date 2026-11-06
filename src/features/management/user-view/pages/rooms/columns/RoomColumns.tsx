@@ -8,7 +8,7 @@ import {
     DropdownMenuTrigger,
 } from '../../../../../../components/DropdownMenu.tsx';
 
-import { Info, MoreHorizontalIcon } from 'lucide-react';
+import { BedDouble, Info, MoreHorizontalIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import {
@@ -18,7 +18,9 @@ import {
 } from '../../../../../../../@/components/ui/Tooltip.tsx';
 
 import { Button } from '../../../../../../components/Button.tsx';
+import { EntityImage } from '../../../../../../components/EntityImage.tsx';
 import { ActivationStatusRender } from '../../../../components/ActivationStatusRender.tsx';
+import { roomOccupancyStatusRecord } from '../../../../../../models/enums-mapping/room-occupancy-status.ts';
 
 export const ROOM_TABLE_COLUMN = {
     NAME: 'name',
@@ -45,16 +47,16 @@ export function getRoomColumns(
         {
             accessorKey: ROOM_TABLE_COLUMN.NAME,
             header: ROOM_TABLE_HEADER.NAME,
-            cell: ({ row }) => (
-                <RoomName name={row.original.name} description={row.original.description} />
-            ),
+            cell: ({ row }) => <RoomName room={row.original} />,
         },
         {
             accessorKey: ROOM_TABLE_COLUMN.OCCUPANCY_STATUS,
             header: ROOM_TABLE_HEADER.OCCUPANCY_STATUS,
             enableSorting: false,
             cell: ({ row }) => (
-                <span className="whitespace-nowrap">{row.original.occupancyStatus}</span>
+                <span className="whitespace-nowrap">
+                    {roomOccupancyStatusRecord[row.original.occupancyStatus]}
+                </span>
             ),
         },
         {
@@ -87,35 +89,45 @@ export function getRoomColumns(
     ];
 }
 
-function RoomName({ name, description }: { name: string; description?: string }) {
-    const hasDescription = Boolean(description?.trim());
-
-    if (!hasDescription) {
-        return <span className="block max-w-48 truncate">{name}</span>;
-    }
+function RoomName({ room }: { room: RoomResponse }) {
+    const hasDescription = Boolean(room.description?.trim());
 
     return (
-        <Tooltip>
-            <div className="flex w-full max-w-48 items-center justify-between gap-1">
-                <span className="min-w-0 truncate">{name}</span>
+        <div className="flex min-w-0 items-center gap-2">
+            <EntityImage
+                src={room.profilePicturePath}
+                alt={room.name}
+                icon={BedDouble}
+                className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary text-muted-foreground"
+                iconClassName="size-4"
+            />
 
-                <TooltipTrigger
-                    render={
-                        <span className="shrink-0 cursor-default">
-                            <Info className="size-3.5" />
-                        </span>
-                    }
-                />
-            </div>
+            {hasDescription ? (
+                <Tooltip>
+                    <div className="flex w-full max-w-48 items-center justify-between gap-1">
+                        <span className="min-w-0 truncate">{room.name}</span>
 
-            <TooltipContent
-                side="top"
-                align="center"
-                className="max-w-xs text-[11px] leading-4 whitespace-normal"
-            >
-                {description}
-            </TooltipContent>
-        </Tooltip>
+                        <TooltipTrigger
+                            render={
+                                <span className="shrink-0 cursor-default">
+                                    <Info className="size-3.5" />
+                                </span>
+                            }
+                        />
+                    </div>
+
+                    <TooltipContent
+                        side="top"
+                        align="center"
+                        className="max-w-xs text-[11px] leading-4 whitespace-normal"
+                    >
+                        {room.description}
+                    </TooltipContent>
+                </Tooltip>
+            ) : (
+                <span className="block max-w-48 truncate">{room.name}</span>
+            )}
+        </div>
     );
 }
 
@@ -143,7 +155,7 @@ function RoomActions({
                     render={
                         <Button
                             type="button"
-                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-slate-600 transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
+                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
                             aria-label={`Actions for ${room.name}`}
                         >
                             <MoreHorizontalIcon className="size-4 shrink-0" />

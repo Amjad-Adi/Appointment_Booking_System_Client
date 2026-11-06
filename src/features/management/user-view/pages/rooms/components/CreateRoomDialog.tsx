@@ -10,6 +10,7 @@ import {
 
 import { useCreateOrganizationRoom } from '../../../../hooks/room-hook.ts';
 import { createRoomSchema } from '../../../../../../zod-schemas/room.schema.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../utlis/api-error.ts';
 
 interface CreateRoomDialogProps {
     organizationUuid?: string;
@@ -40,11 +41,15 @@ export function CreateRoomDialog({ organizationUuid, open, onOpenChange }: Creat
     );
 
     async function handleSubmit(values: CreateRoomFormOutput) {
-        await toast.promise(createMutation.mutateAsync(values), {
-            loading: 'Creating room...',
-            success: 'Room created successfully',
-            error: 'Failed to create room',
-        });
+        try {
+            await toast.promise(createMutation.mutateAsync(values), {
+                loading: 'Creating room...',
+                success: 'Room created successfully',
+                error: (mutationError) => getApiErrorMessage(mutationError, 'Failed to create room'),
+            });
+        } catch {
+            return;
+        }
 
         onOpenChange(false);
     }
@@ -62,6 +67,12 @@ export function CreateRoomDialog({ organizationUuid, open, onOpenChange }: Creat
             }}
             fields={fields}
             submitLabel="Create Room"
+            errorMessage={
+                createMutation.isError && !getApiFieldErrors(createMutation.error)
+                    ? getApiErrorMessage(createMutation.error, 'Failed to create room')
+                    : undefined
+            }
+            fieldErrors={getApiFieldErrors(createMutation.error)}
             onSubmit={handleSubmit}
         />
     );

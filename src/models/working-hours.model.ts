@@ -1,33 +1,27 @@
-import { z } from 'zod';
-
+import type { DayOfWeek } from './enums/day-of-week';
 import {
-    updateWorkingHoursSchema,
     queryWorkingHoursSchema,
-} from '../zod-schemas/working-hours.schema.ts';
-
-import { DayOfWeek } from './enums/day-of-week.ts';
-
-import type { DataResponses } from './Query/query.model.ts';
+    updateDayWorkingHoursSchema,
+} from '../zod-schemas/working-hours.schema';
+import { z } from 'zod';
+import { DataResponses } from './Query/query.model.ts';
 
 export interface WorkingHours {
     uuid: string;
-
     dayOfWeek: DayOfWeek;
-
     startTime: string | null;
-
     endTime: string | null;
 }
 
 export interface WorkingHoursResponse extends WorkingHours, DataResponses {
     organizationUuid: string;
-
     organizationName: string;
 }
 
-export type UpdateWorkingHours = z.infer<typeof updateWorkingHoursSchema> & {
+export type UpdateDayWorkingHours = z.infer<typeof updateDayWorkingHoursSchema> & {
     uuid: string;
 };
 
+export type UpdateWorkingHours = UpdateDayWorkingHours;
 
-export type QueryWorkingHours = z.infer<typeof queryWorkingHoursSchema>;
+export type QueryWorkingHours = z.infer<typeof queryWorkingHoursSchema> & { offset?: number };

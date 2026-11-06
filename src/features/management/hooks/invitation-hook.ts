@@ -12,17 +12,20 @@ import {
     ORGANIZATION_INVITATIONS,
     PUBLIC_INVITATION,
 } from '../../../utlis/query-keys.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
 export function useOrganizationInvitations(
     organizationUuid: string | undefined,
     query: QueryInvitation,
 ) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [ORGANIZATION_INVITATIONS, organizationUuid, query],
+        queryKey: [ORGANIZATION_INVITATIONS, organizationUuid, debouncedQuery],
         queryFn: async (): Promise<QueryResponse<InvitationResponse>> => {
             const response = await api.get<QueryResponse<InvitationResponse>>(
                 `/api/organizations/${organizationUuid}/invitations`,
-                { params: query },
+                { params: debouncedQuery },
             );
             return response.data;
         },
@@ -92,16 +95,45 @@ export function usePublicInvitation(token: string | undefined) {
     });
 }
 
+export interface AcceptInvitationPayload {
+    token: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+    confirmPassword: string;
+    language: string;
+    profilePicture?: File | null;
+}
+
 export function useAcceptInvitation() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (token: string): Promise<InvitationResponse> => {
-            const response = await api.post<InvitationResponse>(`/api/invitations/${token}/accept`);
+        mutationFn: async ({
+            token,
+            profilePicture,
+            ...values
+        }: AcceptInvitationPayload): Promise<InvitationResponse> => {
+            const body = new FormData();
+
+            body.append('firstName', values.firstName);
+            body.append('lastName', values.lastName);
+            body.append('password', values.password);
+            body.append('confirmPassword', values.confirmPassword);
+            body.append('language', values.language);
+
+            if (profilePicture) {
+                body.append('profilePicture', profilePicture);
+            }
+
+            const response = await api.post<InvitationResponse>(
+                `/api/invitations/${token}/accept`,
+                body,
+            );
+
             return response.data;
         },
         onSuccess: async () => {
-            // Invalidate current user context to potentially fetch new roles/orgs
             await queryClient.invalidateQueries();
         },
     });

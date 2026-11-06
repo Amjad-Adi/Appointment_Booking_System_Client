@@ -3,6 +3,8 @@ import { type PaginationState, type SortingState } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 
 import { DataTable } from '../../../../../../components/DataTable.tsx';
+import { ErrorState } from '../../../../../../components/ErrorState.tsx';
+import { LoadingState } from '../../../../../../components/LoadingState.tsx';
 import { PAGE_SIZE } from '../../../../../../components/DataTableFeatures.ts';
 import { Select } from '../../../../../../components/Select.tsx';
 import { Button } from '../../../../../../components/Button.tsx';
@@ -10,10 +12,11 @@ import { Button } from '../../../../../../components/Button.tsx';
 import { Order } from '../../../../../../models/enums/order.ts';
 import { ActivationStatus } from '../../../../../../models/enums/activation-status.ts';
 import { Role } from '../../../../../../models/enums/roles.ts';
+import { activationStatusRecord } from '../../../../../../models/enums-mapping/activation-status.ts';
 
 import { GENERAL_DEBOUNCE_DELAY, useDebounce } from '../../../../../../hooks/deounce.ts';
 
-import { useServices } from '../../../../hooks/services-hook.ts';
+import { useOrganizationServices, useServices } from '../../../../hooks/services-hook.ts';
 import { useServiceCategories } from '../../../../hooks/service-categories-hook.ts';
 import { useCurrentUser } from '../../../../hooks/users-hook.ts';
 
@@ -22,7 +25,7 @@ import { ServiceCategorySelector } from '../../../../components/ServiceCategoryS
 
 import { useDialog } from '../../../../../../hooks/open-dialog.ts';
 
-import type { ServiceResponse } from '../../../../../../models/service.model.ts';
+import type { QueryService, ServiceResponse } from '../../../../../../models/service.model.ts';
 
 import { CreateServiceDialog } from '../components/CreateServiceDialog.tsx';
 import { EditServiceDialog } from '../components/EditServiceDialog.tsx';
@@ -44,7 +47,6 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
     });
 
     const [search, setSearch] = useState('');
-    const debounceSearch = useDebounce(search, GENERAL_DEBOUNCE_DELAY);
 
     const [serviceCategoryUuid, setServiceCategoryUuid] = useState<string | undefined>();
 
@@ -86,14 +88,14 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
 
     const order = sort ? (sort.desc ? Order.DESC : Order.ASC) : undefined;
 
-    const { data, isLoading, isError } = useServices({
+    const serviceQuery: QueryService = {
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
         sortBy,
         order,
-        search: debounceSearch || undefined,
+        search: search || undefined,
         filter: {
-            organizationUuid,
+            ...(organizationUuid && { organizationUuid }),
             ...(serviceCategoryUuid && {
                 serviceCategoryUuid,
             }),
@@ -110,14 +112,29 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
                 status,
             }),
         },
-    });
+    };
+
+    const publicServicesQuery = useServices(serviceQuery, !organizationUuid);
+
+    const organizationServicesQuery = useOrganizationServices(
+        organizationUuid,
+        serviceQuery,
+        Boolean(organizationUuid),
+    );
+
+    const { data, isLoading, isError, error, refetch } = organizationUuid
+        ? organizationServicesQuery
+        : publicServicesQuery;
 
     const { data: categoriesData } = useServiceCategories({
         page: 1,
         limit: 100,
     });
 
-    const columns = getServiceColumns(canManageServices ? serviceDialog.open : undefined);
+    const columns = getServiceColumns(
+        canManageServices ? serviceDialog.open : undefined,
+        isCustomer,
+    );
 
     const resetPage = () => {
         setPagination((previous) => ({
@@ -154,7 +171,7 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
 
                 {Object.values(ActivationStatus).map((status) => (
                     <option key={status} value={status}>
-                        {status}
+                        {activationStatusRecord[status]}
                     </option>
                 ))}
             </Select>
@@ -222,12 +239,14 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
             )}
         </div>
     );
-    if (isLoading) {
-        return <div>Loading services...</div>;
+    if (isError) {
+        return (
+            <ErrorState error={error} title="Failed to load services" onRetry={() => refetch()} />
+        );
     }
 
-    if (isError) {
-        return <div>Failed to load services.</div>;
+    if (isLoading && effectiveViewMode !== ViewMode.TABLE) {
+        return <LoadingState label="Loading services..." />;
     }
 
     return (
@@ -255,6 +274,8 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
                     rowCountLabel={`${
                         data?.pagination?.totalItems === 0 ? 'No' : data?.pagination?.totalItems
                     } Services`}
+                    isLoading={isLoading}
+                    emptyMessage="No services match the current filters."
                 />
             ) : (
                 <ServicesGrid
@@ -263,7 +284,16 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
                     onSearchChange={handleSearchChange}
                     filters={filters}
                     actions={actions}
+                    pagination={pagination}
+                    onPaginationChange={setPagination}
+                    rowCount={data?.pagination?.totalItems ?? 0}
+                    rowCountLabel={`${
+                        data?.pagination?.totalItems === 0 ? 'No' : data?.pagination?.totalItems
+                    } Services`}
+                    isLoading={isLoading}
                     canEdit={canManageServices}
+                    canBook={isCustomer}
+                    canFavourite={isCustomer}
                     onEdit={serviceDialog.open}
                 />
             )}
@@ -281,6 +311,7 @@ export function ServicesView({ organizationUuid }: ServicesViewProps) {
                 <EditServiceDialog
                     organizationUuid={organizationUuid}
                     service={serviceDialog.selectedItem}
+                    categories={categoriesData?.data ?? []}
                     open={serviceDialog.isOpen}
                     onOpenChange={(open) => {
                         if (!open) {

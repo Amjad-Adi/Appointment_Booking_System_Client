@@ -1,192 +1,256 @@
 import { z } from 'zod';
-
-import { AppointmentStatus } from '../models/enums/appointment-status.ts';
-import { AppointmentTimeType } from '../models/enums/appointment-time-type.ts';
-import { PaymentMethod } from '../models/enums/payment-method.ts';
-import { PaymentStatus } from '../models/enums/payment-status.ts';
-
-import { querySchema } from './query.schema.ts';
+import { querySchema } from './query.schema';
+import { AppointmentStatus } from '../models/enums/appointment-status';
+import { AppointmentTimeType } from '../models/enums/appointment-time-type';
+import { PaymentMethod } from '../models/enums/payment-method';
+import { PaymentStatus } from '../models/enums/payment-status';
 
 const SORT_BY_SCHEDULED_START_AT_UTC = 'scheduledStartAtUTC';
-
 const SORT_BY_SCHEDULED_END_AT_UTC = 'scheduledEndAtUTC';
-
 const SORT_BY_CREATED_AT_UTC = 'createdAtUTC';
 
-const uuidSchema = z.uuid('Invalid UUID');
+const uuidSchema = z.uuid({ error: 'Invalid UUID' });
 
-const colourSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid colour');
+const colourSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, { error: 'Invalid colour' });
 
-const scheduledStartSchema = z
-    .string()
-    .min(1, 'Start time is required')
-    .refine((value) => !Number.isNaN(new Date(value).getTime()), 'Invalid start time')
-    .transform((value) => new Date(value).toISOString());
-
-const fromAtUTCSchema = z
-    .string()
-    .datetime({ offset: true })
-    .or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, 'Invalid start time'));
-
-/*
- * Customer/User creates an appointment.
- */
 export const createAppointmentSchema = z
     .object({
-        userTitle: z.string().min(1).optional(),
-
+        userTitle: z
+            .string()
+            .trim()
+            .min(1, { error: 'Appointment name is required' })
+            .max(256, { error: 'Appointment name must not exceed 256 characters' }),
         serviceUuid: uuidSchema,
-
         timeType: z.enum(AppointmentTimeType),
-
         workerUuid: uuidSchema,
-
-        scheduledStartAtUTC: z.string().datetime({
-            offset: true,
-        }),
-
-        userNote: z.string().trim().max(4096).nullable().optional(),
-
+        scheduledStartAtUTC: z.iso.datetime({ offset: true }),
+        userNote: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Note must not exceed 4096 characters' })
+            .nullable()
+            .optional(),
         userColour: colourSchema.optional(),
-
         paymentMethod: z.enum(PaymentMethod).nullable().optional(),
     })
     .strict();
 
-/*
- * Organization creates an appointment.
- *
- * This is the FINAL API payload.
- *
- * timeType, fromAtUTC and roomUuid are
- * scheduling/form fields and are not sent.
- */
 export const createOrganizationAppointmentSchema = z
     .object({
-        organizationTitle: z.string().min(1),
-
+        organizationTitle: z
+            .string()
+            .trim()
+            .min(1, { error: 'Appointment name is required' })
+            .max(256, { error: 'Appointment name must not exceed 256 characters' }),
         userUuid: uuidSchema,
-
         serviceUuid: uuidSchema,
-
         workerUuid: uuidSchema,
-
-        scheduledStartAtUTC: z.string().datetime({
-            offset: true,
-        }),
-
-        organizationNote: z.string().optional(),
-
-        organizationColour: z.string().optional(),
-
-        paymentMethod: z.enum(PaymentMethod),
+        scheduledStartAtUTC: z.iso.datetime({ offset: true }),
+        organizationNote: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Note must not exceed 4096 characters' })
+            .nullable()
+            .optional(),
+        organizationColour: colourSchema.optional(),
+        paymentMethod: z.enum(PaymentMethod).optional(),
     })
     .strict();
 
-/*
- * User updates their appointment.
- */
 export const updateAppointmentSchemaByUser = z
     .object({
-        userTitle: z.string().min(1).optional(),
-
-        userNote: z.string().trim().max(4096).nullable().optional(),
-
+        userTitle: z
+            .string()
+            .trim()
+            .min(1, { error: 'Appointment name is required' })
+            .max(256, { error: 'Appointment name must not exceed 256 characters' })
+            .optional(),
+        userNote: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Note must not exceed 4096 characters' })
+            .nullable()
+            .optional(),
         userColour: colourSchema.optional(),
     })
-    .strict();
+    .strict()
+    .refine((data) => Object.values(data).some((value) => value !== undefined), {
+        message: 'At least one field must be provided',
+    });
 
-/*
- * Organization updates its appointment.
- */
 export const updateAppointmentSchemaByOrganization = z
     .object({
-        organizationTitle: z.string().min(1).optional(),
-
-        organizationNote: z.string().trim().max(4096).nullable().optional(),
-
+        organizationTitle: z
+            .string()
+            .trim()
+            .min(1, { error: 'Appointment name is required' })
+            .max(256, { error: 'Appointment name must not exceed 256 characters' })
+            .optional(),
+        organizationNote: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Note must not exceed 4096 characters' })
+            .nullable()
+            .optional(),
         organizationColour: colourSchema.optional(),
+        appointmentStatus: z.enum(AppointmentStatus).optional(),
+        rejectionReason: z
+            .string()
+            .trim()
+            .min(1, { error: 'Rejection reason is required' })
+            .max(4096, { error: 'Rejection reason must not exceed 4096 characters' })
+            .optional(),
+        paymentMethod: z.enum(PaymentMethod).optional(),
+        paymentStatus: z.enum(PaymentStatus).optional(),
     })
-    .strict();
+    .strict()
+    .refine((data) => Object.values(data).some((value) => value !== undefined), {
+        message: 'At least one field must be provided',
+    })
+    .superRefine((data, ctx) => {
+        if (
+            data.appointmentStatus === AppointmentStatus.REJECTED &&
+            data.rejectionReason === undefined
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['rejectionReason'],
+                message: 'Rejection reason is required',
+            });
+        }
 
-/*
- * Organization confirms an appointment.
- *
- * `name` was removed because appointment name
- * no longer exists in the appointment contract.
- */
-export const confirmAppointmentSchema = z
+        if (
+            data.appointmentStatus !== AppointmentStatus.REJECTED &&
+            data.rejectionReason !== undefined
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['rejectionReason'],
+                message: 'Rejection reason is only allowed when rejecting an appointment',
+            });
+        }
+    });
+
+export const createAppointmentFormSchema = z
     .object({
-        organizationColour: colourSchema.optional(),
-
-        organizationNote: z.string().trim().max(4096).nullable().optional(),
+        organizationTitle: z
+            .string()
+            .trim()
+            .min(1, { error: 'Appointment name is required' })
+            .max(256, { error: 'Appointment name must not exceed 256 characters' }),
+        userUuid: uuidSchema,
+        serviceUuid: uuidSchema,
+        timeType: z.enum(AppointmentTimeType),
+        workerUuid: z.string().optional(),
+        roomUuid: z.string().optional(),
+        fromAtUTC: z.string().optional(),
+        scheduledStartAtUTC: z
+            .string()
+            .min(1, { error: 'Please select an available appointment time' }),
+        organizationNote: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Note must not exceed 4096 characters' })
+            .optional(),
+        organizationColour: colourSchema.optional().or(z.literal('')),
+        paymentMethod: z.enum(PaymentMethod).optional(),
     })
-    .strict();
+    .strict()
+    .superRefine((data, ctx) => {
+        if (!data.scheduledStartAtUTC) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['scheduledStartAtUTC'],
+                message: 'Please select an available appointment time',
+            });
+        }
 
-/*
- * Reject appointment.
- */
-export const rejectAppointmentSchemaBy = z
+        if (data.timeType === AppointmentTimeType.WORKER && !data.workerUuid) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['workerUuid'],
+                message: 'Worker is required',
+            });
+        }
+
+        if (data.timeType === AppointmentTimeType.NEAREST && !data.fromAtUTC) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['fromAtUTC'],
+                message: 'Start time is required for nearest availability',
+            });
+        }
+    });
+
+export const customerBookingFormSchema = z
     .object({
-        rejectionReason: z.string().trim().min(1).max(4096),
+        userUuid: uuidSchema,
+        serviceUuid: uuidSchema,
+        userTitle: z
+            .string()
+            .trim()
+            .min(1, { error: 'Appointment name is required' })
+            .max(256, { error: 'Appointment name must not exceed 256 characters' }),
+        timeType: z.enum(AppointmentTimeType),
+        workerUuid: z.string().optional(),
+        roomUuid: z.string().optional(),
+        fromAtUTC: z.string().optional(),
+        scheduledStartAtUTC: z
+            .string()
+            .min(1, { error: 'Please select an available appointment time' }),
+        userNote: z
+            .string()
+            .trim()
+            .max(4096, { error: 'Note must not exceed 4096 characters' })
+            .optional(),
+        userColour: colourSchema.optional().or(z.literal('')),
+        paymentMethod: z.enum(PaymentMethod).optional(),
     })
-    .strict();
+    .strict()
+    .superRefine((data, ctx) => {
+        if (!data.scheduledStartAtUTC) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['scheduledStartAtUTC'],
+                message: 'Please select an available appointment time',
+            });
+        }
 
-/*
- * Update appointment status.
- */
-export const updateAppointmentSchemaStatus = z
-    .object({
-        appointmentStatus: z
-            .enum(AppointmentStatus)
-            .refine(
-                (status) =>
-                    status !== AppointmentStatus.PENDING_USER_CONFIRMATION &&
-                    status !== AppointmentStatus.PENDING_ORGANIZATION_APPROVAL &&
-                    status !== AppointmentStatus.REJECTED,
-                {
-                    message: 'Invalid status transition',
-                },
-            ),
-    })
-    .strict();
+        if (data.timeType === AppointmentTimeType.WORKER && !data.workerUuid) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['workerUuid'],
+                message: 'Worker is required',
+            });
+        }
 
-/*
- * Pay appointment.
- */
-export const payAppointmentSchema = z
-    .object({
-        paymentMethod: z.enum(PaymentMethod),
-    })
-    .strict();
+        if (data.timeType === AppointmentTimeType.NEAREST && !data.fromAtUTC) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['fromAtUTC'],
+                message: 'Start time is required for nearest availability',
+            });
+        }
+    });
 
-/*
- * Appointment filters.
- */
+export type CreateAppointmentFormInput = z.input<typeof createAppointmentFormSchema>;
+export type CreateAppointmentFormOutput = z.output<typeof createAppointmentFormSchema>;
+export type CustomerBookingFormInput = z.input<typeof customerBookingFormSchema>;
+export type CustomerBookingFormOutput = z.output<typeof customerBookingFormSchema>;
+
 export const appointmentFilterSchema = z
     .object({
         organizationUuid: uuidSchema.optional(),
-
         appointmentStatus: z.enum(AppointmentStatus).optional(),
-
         appointmentDate: z.iso.date().optional(),
-
         fromDate: z.iso.date().optional(),
-
         toDate: z.iso.date().optional(),
-
         userUuid: uuidSchema.optional(),
-
         approvalUserUuid: uuidSchema.optional(),
-
         workerUuid: uuidSchema.optional(),
-
         serviceUuid: uuidSchema.optional(),
-
         roomUuid: uuidSchema.optional(),
-
         paymentMethod: z.enum(PaymentMethod).optional(),
-
         paymentStatus: z.enum(PaymentStatus).optional(),
     })
     .strict()
@@ -202,17 +266,28 @@ export const appointmentFilterSchema = z
                 message: 'To date must be after or equal to from date',
             });
         }
+
+        if (
+            data.appointmentDate !== undefined &&
+            (data.fromDate !== undefined || data.toDate !== undefined)
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['appointmentDate'],
+                message: 'Use appointmentDate or a fromDate/toDate range, not both',
+            });
+        }
     });
 
-/*
- * Appointment query.
- */
 export const queryAppointmentSchema = querySchema
     .extend({
-        search: z.string().trim().nonempty().max(256).optional(),
-
+        search: z
+            .string()
+            .trim()
+            .min(1, { error: 'Search cannot be empty' })
+            .max(256, { error: 'Search must not exceed 256 characters' })
+            .optional(),
         filter: appointmentFilterSchema.optional(),
-
         sortBy: z
             .enum([
                 SORT_BY_SCHEDULED_START_AT_UTC,
@@ -222,76 +297,3 @@ export const queryAppointmentSchema = querySchema
             .optional(),
     })
     .strict();
-
-/*
- * Scheduling/form schema.
- *
- * This is NOT the final API payload.
- */
-export const createAppointmentFormSchema = z
-    .object({
-        organizationTitle: z.string().trim().min(1, 'Appointment title is required.'),
-
-        userUuid: uuidSchema,
-
-        serviceUuid: uuidSchema,
-
-        timeType: z.enum(AppointmentTimeType),
-
-        workerUuid: z.union([uuidSchema, z.literal('')]).optional(),
-
-        roomUuid: z.union([uuidSchema, z.literal('')]).optional(),
-
-        fromAtUTC: z.string().optional(),
-
-        scheduledStartAtUTC: z.string().min(1, 'Appointment time is required.'),
-
-        organizationNote: z.string().optional(),
-
-        organizationColour: z.string().optional(),
-
-        paymentMethod: z.enum(PaymentMethod),
-    })
-    .superRefine((data, ctx) => {
-        if (data.timeType === AppointmentTimeType.WORKER) {
-            if (!data.workerUuid) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['workerUuid'],
-                    message: 'Worker is required.',
-                });
-            }
-
-            if (data.fromAtUTC) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['fromAtUTC'],
-                    message: 'Start availability time is not allowed for a specific worker.',
-                });
-            }
-
-            return;
-        }
-
-        if (data.timeType === AppointmentTimeType.NEAREST) {
-            if (!data.fromAtUTC) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['fromAtUTC'],
-                    message: 'Start time is required for nearest availability.',
-                });
-            }
-
-            /*
-             * DO NOT reject workerUuid here.
-             *
-             * It may contain the worker from the
-             * clicked schedule column while the final
-             * worker is selected by availability.
-             */
-        }
-    });
-
-export type CreateAppointmentFormInput = z.input<typeof createAppointmentFormSchema>;
-
-export type CreateAppointmentFormOutput = z.output<typeof createAppointmentFormSchema>;

@@ -1,6 +1,8 @@
 import { useParams } from 'react-router';
 
 import { ManagementPage } from '../../../../components/ManagementPage.tsx';
+import { ErrorState } from '../../../../../../components/ErrorState.tsx';
+import { LoadingState } from '../../../../../../components/LoadingState.tsx';
 import { useUser } from '../../../../hooks/users-hook.ts';
 
 import { UserProfile } from './components/UserProfile.tsx';
@@ -12,7 +14,7 @@ export function UserProfilePage() {
         mode?: string;
     }>();
 
-    const { data: user, isLoading, isError } = useUser(userUuid ?? '');
+    const { data: user, isLoading, isError, error, refetch } = useUser(userUuid ?? '');
 
     if (isLoading) {
         return (
@@ -20,18 +22,36 @@ export function UserProfilePage() {
                 title="User Profile"
                 description={['View user information and organization details.']}
             >
-                <div className="text-[11px] text-[#777789]">Loading user profile...</div>
+                <LoadingState label="Loading user profile..." />
             </ManagementPage>
         );
     }
 
-    if (isError || !user) {
+    if (isError) {
         return (
             <ManagementPage
                 title="User Profile"
                 description={['View user information and organization details.']}
             >
-                <div className="text-[11px] text-[#c94a5c]">Failed to load user profile.</div>
+                <ErrorState
+                    error={error}
+                    title="Failed to load user profile"
+                    onRetry={() => refetch()}
+                />
+            </ManagementPage>
+        );
+    }
+
+    if (!user) {
+        return (
+            <ManagementPage
+                title="User Profile"
+                description={['View user information and organization details.']}
+            >
+                <ErrorState
+                    title="User not found"
+                    message="This user does not exist or is no longer available."
+                />
             </ManagementPage>
         );
     }

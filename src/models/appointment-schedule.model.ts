@@ -1,8 +1,4 @@
-import type {
-    OrganizationAppointment,
-    OrganizationAppointmentResponse,
-    UserAppointment,
-} from './appointment.model.ts';
+import type { OrganizationAppointmentResponse } from './appointment.model.ts';
 import type { TimeBlockResponse } from './time-block.model.ts';
 
 export interface WorkingInterval {

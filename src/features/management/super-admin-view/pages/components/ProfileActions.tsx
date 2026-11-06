@@ -31,9 +31,9 @@ export function ProfileActions({ editPath, onEdit }: ProfileActionsProps) {
             <Button
                 type="button"
                 onClick={handleClick}
-                className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 border border-[#d3d3df] bg-transparent px-3 text-[11px] font-semibold text-[#454556] hover:bg-[#ededf2] hover:text-[#343447]"
+                className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground"
             >
-                <Pencil className="size-3.5 transition-colors group-hover:text-[#343447]" />
+                <Pencil className="size-3.5 transition-colors group-hover:text-foreground" />
                 Edit
             </Button>
         </div>

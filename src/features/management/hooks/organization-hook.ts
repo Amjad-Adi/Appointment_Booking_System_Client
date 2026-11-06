@@ -7,21 +7,24 @@ import type {
     CreateOrganizationByAdmin,
     OrganizationResponse,
     QueryOrganization,
-    UpdateOrganizationByAdminForm,
-    UpdateOrganizationByAdmin,
+    UpdateOrganization,
     CreateOrganization,
 } from '../../../models/organization.model.ts';
 
 import { CURRENT_USER, ORGANIZATION, ORGANIZATION_TABLE } from '../../../utlis/query-keys.ts';
+import { toFormData } from '../../../utlis/form-data.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
 export function useOrganizations(query: QueryOrganization) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [ORGANIZATION_TABLE, query],
+        queryKey: [ORGANIZATION_TABLE, debouncedQuery],
         queryFn: async (): Promise<QueryResponse<OrganizationResponse>> => {
             const response = await api.get<QueryResponse<OrganizationResponse>>(
                 '/api/organizations',
                 {
-                    params: query,
+                    params: debouncedQuery,
                 },
             );
             return response.data;
@@ -47,9 +50,17 @@ export function useUpdateOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (organization: UpdateOrganizationByAdmin) => {
-            const { uuid, ...organizationData } = organization;
-            const response = await api.patch(`/api/organizations/${uuid}`, organizationData);
+        mutationFn: async (
+            organization: UpdateOrganization & { picture?: File | null },
+        ) => {
+            const { uuid, picture, ...organizationData } = organization;
+            const formData = toFormData(organizationData);
+
+            if (picture) {
+                formData.append('profilePicturePath', picture);
+            }
+
+            const response = await api.patch(`/api/organizations/${uuid}`, formData);
             return response.data;
         },
         onSuccess: async (organization: OrganizationResponse) => {
@@ -62,9 +73,6 @@ export function useUpdateOrganization() {
                 }),
             ]);
         },
-        onError: (error) => {
-            console.log(error);
-        },
     });
 }
 
@@ -72,8 +80,19 @@ export function useCreateOrganization() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (organization: CreateOrganizationByAdmin | CreateOrganization) => {
-            const response = await api.post('/api/organizations', organization);
+        mutationFn: async (
+            organization: (CreateOrganizationByAdmin | CreateOrganization) & {
+                picture?: File | null;
+            },
+        ) => {
+            const { picture, ...organizationData } = organization;
+            const formData = toFormData(organizationData);
+
+            if (picture) {
+                formData.append('profilePicturePath', picture);
+            }
+
+            const response = await api.post('/api/organizations', formData);
             return response.data;
         },
         onSuccess: async () => {
@@ -86,9 +105,6 @@ export function useCreateOrganization() {
                 }),
             ]);
         },
-        onError: (error) => {
-            console.log(error);
-        },
     });
 }
 
@@ -96,8 +112,19 @@ export function useCreateOrganizationBySuperAdmin() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (organization: CreateOrganizationByAdmin | CreateOrganization) => {
-            const response = await api.post('/api/organizations', organization);
+        mutationFn: async (
+            organization: (CreateOrganizationByAdmin | CreateOrganization) & {
+                picture?: File | null;
+            },
+        ) => {
+            const { picture, ...organizationData } = organization;
+            const formData = toFormData(organizationData);
+
+            if (picture) {
+                formData.append('profilePicturePath', picture);
+            }
+
+            const response = await api.post('/api/organizations', formData);
             return response.data;
         },
         onSuccess: async () => {
@@ -107,9 +134,5 @@ export function useCreateOrganizationBySuperAdmin() {
                 }),
             ]);
         },
-        onError: (error) => {
-            console.log(error);
-        },
     });
 }
-

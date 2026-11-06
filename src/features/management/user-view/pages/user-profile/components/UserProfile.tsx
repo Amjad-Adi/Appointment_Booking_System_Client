@@ -1,3 +1,5 @@
+import { useLocation } from 'react-router';
+
 import type { UserResponse } from '../../../../../../models/user.model.ts';
 
 import { UserProfileHeader } from '../../../../components/UserProfileHeader.tsx';
@@ -5,8 +7,6 @@ import { UserAboutCard } from '../../../../super-admin-view/pages/users/users-pr
 import { UserOrganizationCard } from '../../../../super-admin-view/pages/users/users-profile/components/UserOrganizationCard.tsx';
 import { UserAccountCard } from '../../../../super-admin-view/pages/users/users-profile/components/UserAccountCard.tsx';
 
-import { Role } from '../../../../../../models/enums/roles.ts';
-import { useCurrentUser } from '../../../../hooks/users-hook.ts';
 import { ProfileActions } from '../../../../super-admin-view/pages/components/ProfileActions.tsx';
 
 interface UserProfileProps {
@@ -14,13 +14,12 @@ interface UserProfileProps {
 }
 
 export function UserProfile({ user }: UserProfileProps) {
-    const { data } = useCurrentUser();
-
-    const canEdit = data?.role === Role.SUPER_ADMIN;
+    const { pathname } = useLocation();
+    const basePath = pathname.replace(/\/edit$/, '');
 
     return (
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-            <ProfileActions editPath="/profile/edit" />
+            <ProfileActions editPath={`${basePath}/edit`} />
 
             <UserProfileHeader user={user} />
 

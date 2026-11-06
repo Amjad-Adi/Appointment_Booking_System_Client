@@ -1,15 +1,18 @@
 import { useMemo } from 'react';
+import type { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { TextField } from '../../../../../../../components/TextField.tsx';
 import { EditDialog, type EditDialogField } from '../../../../../../../components/EditDialog.tsx';
-import { updateInvitationSchema } from '../../../../../../../zod-schemas/invitations.schema.ts';
+import { updateInvitationByOrganizationSchema } from '../../../../../../../zod-schemas/invitations.schema.ts';
 import { InvitationStatus } from '../../../../../../../models/enums/invitation-status.ts';
-import type {
-    InvitationResponse,
-    UpdateInvitation,
-} from '../../../../../../../models/invitation.model.ts';
+import { invitationStatusRecord } from '../../../../../../../models/enums-mapping/invitation-status.ts';
+import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
+import type { InvitationResponse } from '../../../../../../../models/invitation.model.ts';
 import { useUpdateOrganizationInvitation } from '../../../../../hooks/invitation-hook.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../../../../utlis/api-error.ts';
+
+type UpdateInvitationForm = z.infer<typeof updateInvitationByOrganizationSchema>;
 
 interface EditInvitationDialogProps {
     organizationUuid: string;
@@ -26,62 +29,71 @@ export function EditInvitationDialog({
 }: EditInvitationDialogProps) {
     const updateMutation = useUpdateOrganizationInvitation(organizationUuid);
 
-    const defaultValues = useMemo<UpdateInvitation>(
+    const defaultValues = useMemo<UpdateInvitationForm>(
         () => ({
             status:
-                invitation.status === InvitationStatus.PENDING
-                    ? undefined
-                    : (invitation.status as any),
+                invitation.status === InvitationStatus.CANCELLED
+                    ? InvitationStatus.CANCELLED
+                    : undefined,
         }),
         [invitation.status],
     );
 
-    const fields = useMemo<readonly EditDialogField<UpdateInvitation>[]>(
+    const fields = useMemo<readonly EditDialogField<UpdateInvitationForm>[]>(
         () => [
             {
                 name: 'status',
                 label: 'Status Action',
                 type: 'select',
                 placeholder: 'Keep Pending (No Change)',
-                options: [
-                    { value: InvitationStatus.CANCELLED, label: 'Cancel Invitation' },
-                    { value: InvitationStatus.EXPIRED, label: 'Mark as Expired' },
-                ],
+                options: [{ value: InvitationStatus.CANCELLED, label: 'Cancel Invitation' }],
             },
         ],
         [],
     );
 
-    const handleSubmit = async (changedValues: Partial<UpdateInvitation>) => {
+    const handleSubmit = async (changedValues: Partial<UpdateInvitationForm>) => {
         if (!changedValues.status) {
             onOpenChange(false);
             return;
         }
 
-        await toast.promise(
-            updateMutation.mutateAsync({
-                uuid: invitation.uuid,
-                ...changedValues,
-            }),
-            {
-                loading: 'Updating invitation...',
-                success: 'Invitation updated successfully',
-                error: (err: any) => err?.response?.data?.message || 'Failed to update invitation',
-            },
-        );
+        try {
+            await toast.promise(
+                updateMutation.mutateAsync({
+                    uuid: invitation.uuid,
+                    ...changedValues,
+                }),
+                {
+                    loading: 'Updating invitation...',
+                    success: 'Invitation updated successfully',
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to update invitation'),
+                },
+            );
+        } catch {
+            return;
+        }
+
         onOpenChange(false);
     };
 
     return (
-        <EditDialog<UpdateInvitation>
+        <EditDialog<UpdateInvitationForm>
             open={open}
             onOpenChange={onOpenChange}
             title="Manage Invitation"
-            description="Cancel this invitation or mark it as expired."
-            resolver={zodResolver(updateInvitationSchema) as any}
+            description="Cancel this invitation."
+            resolver={zodResolver(updateInvitationByOrganizationSchema)}
             defaultValues={defaultValues}
             fields={fields}
             submitLabel="Update Status"
+            errorMessage={
+                updateMutation.isError && !getApiFieldErrors(updateMutation.error)
+                    ? getApiErrorMessage(updateMutation.error, 'Failed to update invitation')
+                    : undefined
+            }
+            fieldErrors={getApiFieldErrors(updateMutation.error)}
             onSubmit={handleSubmit}
             readOnlyContent={
                 <>
@@ -91,11 +103,16 @@ export function EditInvitationDialog({
                         value={invitation.recipientEmail}
                         disabled
                     />
-                    <TextField label="Assigned Role" id="role" value={invitation.role} disabled />
+                    <TextField
+                        label="Assigned Role"
+                        id="role"
+                        value={roleRecord[invitation.role]}
+                        disabled
+                    />
                     <TextField
                         label="Current Status"
                         id="currentStatus"
-                        value={invitation.status}
+                        value={invitationStatusRecord[invitation.status]}
                         disabled
                     />
                 </>

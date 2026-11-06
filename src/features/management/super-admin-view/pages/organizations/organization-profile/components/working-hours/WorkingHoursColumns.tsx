@@ -2,6 +2,7 @@ import type { WorkingHours } from '../../../../../../../../models/working-hours.
 import type { DataTableColumn } from '../../../../../../../../components/DataTableFeatures.ts';
 import { Button } from '../../../../../../../../components/Button.tsx';
 import { Clipboard, ClipboardPaste, Clock, MoreHorizontalIcon, Pencil } from 'lucide-react';
+import { dayOfWeekRecord } from '../../../../../../../../models/enums-mapping/day-of-week.ts';
 
 import {
     DropdownMenu,
@@ -31,8 +32,8 @@ export function getWorkingHoursColumns(
             cell: ({ row }) => {
                 const day = row.original.dayOfWeek;
                 return (
-                    <span className="font-medium text-[#343447] capitalize">
-                        {day.toLowerCase()}
+                    <span className="font-medium text-foreground">
+                        {dayOfWeekRecord[day]}
                     </span>
                 );
             },
@@ -44,13 +45,13 @@ export function getWorkingHoursColumns(
             cell: ({ row }) => {
                 const isOpen = Boolean(row.original.startTime && row.original.endTime);
                 return (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d3d3df] bg-[#f5f5f8] px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-0.5">
                         <span
                             className={`size-1.5 shrink-0 rounded-full ${
-                                isOpen ? 'bg-[#10b981]' : 'bg-[#9999aa]'
+                                isOpen ? 'bg-success' : 'bg-muted-foreground'
                             }`}
                         />
-                        <span className="text-[10px] font-medium text-[#454556]">
+                        <span className="text-[10px] font-medium text-secondary-foreground">
                             {isOpen ? 'Open' : 'Closed'}
                         </span>
                     </span>
@@ -80,7 +81,7 @@ export function getWorkingHoursColumns(
                             render={
                                 <Button
                                     type="button"
-                                    className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-[#777789] transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6"
+                                    className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6"
                                 >
                                     <MoreHorizontalIcon className="size-4 shrink-0" />
                                     <span className="sr-only">Open menu</span>
@@ -98,7 +99,7 @@ export function getWorkingHoursColumns(
                             Edit Hours
                         </DropdownMenuItem>
 
-                        <DropdownMenuSeparator className="my-1 bg-[#d3d3df]" />
+                        <DropdownMenuSeparator className="my-1 bg-muted" />
 
                         <DropdownMenuItem
                             className="flex h-7 items-center gap-2 px-2 text-[11px]"
@@ -125,7 +126,7 @@ export function getWorkingHoursColumns(
 
 function FormattedTime({ time }: { time: string | null }) {
     if (!time) {
-        return <span className="text-[#9999aa]">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     const [hours, minutes] = time.split(':');
@@ -135,8 +136,8 @@ function FormattedTime({ time }: { time: string | null }) {
     const formatted = `${h12.toString().padStart(2, '0')}:${minutes} ${ampm}`;
 
     return (
-        <div className="flex items-center gap-1.5 text-[11px] text-[#454556]">
-            <Clock className="size-3 text-[#777789]" />
+        <div className="flex items-center gap-1.5 text-[11px] text-secondary-foreground">
+            <Clock className="size-3 text-muted-foreground" />
             <span>{formatted}</span>
         </div>
     );

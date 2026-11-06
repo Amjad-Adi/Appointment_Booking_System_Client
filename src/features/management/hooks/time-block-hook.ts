@@ -13,19 +13,22 @@ import type {
 import { ORGANIZATION_TIME_BLOCK, ORGANIZATION_TIME_BLOCKS } from '../../../utlis/query-keys.ts';
 
 import { api } from '../../../services/axios.ts';
+import { useDebouncedQuery } from '../../../hooks/deounce.ts';
 
 export function useOrganizationTimeBlocks(
     organizationUuid: string | undefined,
     query: QueryTimeBlock,
 ) {
+    const debouncedQuery = useDebouncedQuery(query);
+
     return useQuery({
-        queryKey: [ORGANIZATION_TIME_BLOCKS, organizationUuid, query],
+        queryKey: [ORGANIZATION_TIME_BLOCKS, organizationUuid, debouncedQuery],
 
         queryFn: async (): Promise<QueryResponse<TimeBlockResponse>> => {
             const response = await api.get<QueryResponse<TimeBlockResponse>>(
                 `/api/organizations/${organizationUuid}/time-blocks`,
                 {
-                    params: query,
+                    params: debouncedQuery,
                 },
             );
 

@@ -1,17 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, CalendarDays, Check, ShieldCheck } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { z } from 'zod';
 
-import type { OrganizationResponse } from '../../../../../../../models/organization.model.ts';
+import type {
+    OrganizationResponse,
+    UpdateOrganization,
+} from '../../../../../../../models/organization.model.ts';
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
 
 import { Button } from '../../../../../../../components/Button.tsx';
 import { Select } from '../../../../../../../components/Select.tsx';
 import { TextField } from '../../../../../../../components/TextField.tsx';
 import { Label } from '../../../../../../../components/Label.tsx';
-import { Toast } from '../../../../../../../utlis/toast.ts';
+import { ImagePicker } from '../../../../../../../components/ImagePicker.tsx';
+import { getApiErrorMessage } from '../../../../../../../utlis/api-error.ts';
 
 import { useUpdateOrganization } from '../../../../../hooks/organization-hook.ts';
 
@@ -48,6 +53,18 @@ interface FormValues {
     };
 }
 
+const editOrganizationFormSchema = z.object({
+    status: z.enum(ActivationStatus),
+    name: z.string().trim().max(256),
+    phoneNumber: z.string().trim(),
+    bio: z.string().trim().max(4096),
+    location: z.object({
+        name: z.string().trim().max(1024),
+        locationOnMap: z.tuple([z.number().nullable(), z.number().nullable()]),
+        timezone: z.string().trim().min(1),
+    }),
+});
+
 const loadingMessage = 'Updating organization...';
 const successMessage = 'Organization updated successfully';
 const errorMessage = 'Failed to update organization';
@@ -61,6 +78,7 @@ export function EditOrganizationProfile({
     onClose,
 }: EditOrganizationProfileProps) {
     const updateOrganizationMutation = useUpdateOrganization();
+    const [picture, setPicture] = useState<File | null>(null);
 
     const [origLongitude = null, origLatitude = null] = organization.location?.locationOnMap ?? [
         null,
@@ -87,9 +105,7 @@ export function EditOrganizationProfile({
         reset,
         formState: { isSubmitting, isDirty, errors },
     } = useForm<FormValues>({
-        resolver: zodResolver(
-            canEditStatus ? updateOrganizationByAdminSchema : updateOrganizationSchema,
-        ) as any,
+        resolver: zodResolver(editOrganizationFormSchema) as any,
         defaultValues,
     });
 
@@ -143,20 +159,52 @@ export function EditOrganizationProfile({
             }
         }
 
-        if (Object.keys(changedValues).length === 0) {
+        if (Object.keys(changedValues).length === 0 && picture === null) {
             onClose?.();
             return;
+        }
+
+        if (Object.keys(changedValues).length === 0) {
+            // The server requires at least one body field alongside the uploaded file.
+            if (canEditStatus) {
+                changedValues.status = organization.status;
+            } else {
+                changedValues.name = organization.name;
+            }
+        }
+
+        let payload: Record<string, unknown> = changedValues;
+
+        if (picture === null) {
+            const payloadSchema = canEditStatus
+                ? updateOrganizationByAdminSchema
+                : updateOrganizationSchema;
+
+            const validation = payloadSchema.safeParse(changedValues);
+
+            if (!validation.success) {
+                toast.error(validation.error.issues[0]?.message ?? errorMessage);
+                return;
+            }
+
+            payload = validation.data;
         }
 
         try {
             await toast.promise(
                 updateOrganizationMutation.mutateAsync({
+                    ...(payload as UpdateOrganization),
                     uuid: organization.uuid,
-                    ...changedValues,
+                    picture,
                 }),
-                new Toast(loadingMessage, successMessage, errorMessage),
+                {
+                    loading: loadingMessage,
+                    success: successMessage,
+                    error: (mutationError) => getApiErrorMessage(mutationError, errorMessage),
+                },
             );
 
+            setPicture(null);
             onClose?.();
         } catch {
             // Keep state on failure
@@ -175,15 +223,15 @@ export function EditOrganizationProfile({
                     type="button"
                     onClick={onClose}
                     disabled={isSubmitting}
-                    className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 border border-[#d3d3df] bg-transparent px-3 text-[11px] font-semibold text-[#454556] hover:bg-[#ededf2] hover:text-[#343447]"
+                    className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground"
                 >
-                    <ArrowLeft className="size-3.5 transition-colors group-hover:text-[#343447]" />
+                    <ArrowLeft className="size-3.5 transition-colors group-hover:text-foreground" />
                     Close
                 </Button>
 
                 <Button
                     type="submit"
-                    disabled={isSubmitting || !isDirty}
+                    disabled={isSubmitting || (!isDirty && picture === null)}
                     className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 px-3 text-[11px] font-semibold"
                 >
                     <Check className="size-3.5 transition-colors" />
@@ -195,13 +243,32 @@ export function EditOrganizationProfile({
 
             <OrganizationProfileHeader organization={organization} />
 
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
+                <div className="min-w-0">
+                    <h3 className="text-[13px] font-semibold text-foreground">Organization Picture</h3>
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+                        Upload a new picture to replace the current one.
+                    </p>
+                </div>
+
+                <div className="mt-4">
+                    <ImagePicker
+                        file={picture}
+                        onChange={setPicture}
+                        currentPath={organization.profilePicturePath}
+                        label="Picture"
+                        disabled={isSubmitting}
+                    />
+                </div>
+            </section>
+
             {canEditDetails && (
-                <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
+                <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
                     <div className="min-w-0">
-                        <h3 className="text-[13px] font-semibold text-[#343447]">
+                        <h3 className="text-[13px] font-semibold text-foreground">
                             Organization Information
                         </h3>
-                        <p className="mt-0.5 text-[10px] leading-4 text-[#777789]">
+                        <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                             General details and geographic coordinates.
                         </p>
                     </div>
@@ -229,7 +296,7 @@ export function EditOrganizationProfile({
                                 id="bio"
                                 rows={3}
                                 {...register('bio')}
-                                className="w-full rounded-lg border border-[#d3d3df] bg-white p-2.5 text-[11px] text-[#343447] focus:border-[#454556] focus:outline-none"
+                                className="w-full rounded-lg border border-border bg-card p-2.5 text-[11px] text-foreground focus:border-ring focus:outline-none"
                             />
                         </div>
 
@@ -251,12 +318,12 @@ export function EditOrganizationProfile({
             )}
 
             {!canEditDetails && <OrganizationLocationCard location={organization.location} />}
-            <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
                 <div className="min-w-0">
-                    <h3 className="text-[13px] font-semibold text-[#343447]">
+                    <h3 className="text-[13px] font-semibold text-foreground">
                         Account Information
                     </h3>
-                    <p className="mt-0.5 text-[10px] leading-4 text-[#777789]">
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                         Administrative information associated with this organization.
                     </p>
                 </div>
@@ -285,7 +352,6 @@ export function EditOrganizationProfile({
     );
 }
 
-
 function AccountItem({
     icon,
     label,
@@ -297,16 +363,16 @@ function AccountItem({
 }) {
     return (
         <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                 {icon}
             </div>
 
             <div className="min-w-0 flex-1">
-                <p className="text-[9px] font-medium tracking-wide text-[#9999aa] uppercase">
+                <p className="text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
                     {label}
                 </p>
 
-                <div className="mt-0.5 truncate text-[11px] font-medium text-[#454556]">
+                <div className="mt-0.5 truncate text-[11px] font-medium text-secondary-foreground">
                     {value}
                 </div>
             </div>

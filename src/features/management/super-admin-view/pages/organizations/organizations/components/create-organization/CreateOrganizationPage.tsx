@@ -1,4 +1,3 @@
-
 import { ManagementPage } from '../../../../../../components/ManagementPage.tsx';
 import { CreateOrganizationForm } from './CreateOrganizationForm.tsx';
 

@@ -14,7 +14,7 @@ export function UserLayout() {
                 profile: {
                     name: `${data?.firstName} ${data?.lastName}`,
                     email: `${data?.email}`,
-                    url: `/user/profile`,
+                    url: `/customer/profile`,
                 },
             }}
         />

@@ -8,6 +8,7 @@ import { CreateDialog, type CreateDialogField } from '../../../../components/Cre
 import { useCreateOrganizationSpecialDay } from '../../hooks/special-days-hook.ts';
 
 import { createSpecialDaySchema } from '../../../../zod-schemas/special-days.schema.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../utlis/api-error.ts';
 
 interface CreateSpecialDayDialogProps {
     organizationUuid?: string;
@@ -60,13 +61,27 @@ export function CreateSpecialDayDialog({
     );
 
     async function handleSubmit(values: CreateSpecialDayFormOutput) {
-        await toast.promise(createMutation.mutateAsync(values), {
-            loading: 'Marking day as special...',
-            success: 'Special day created successfully',
-            error: 'Failed to create special day',
-        });
+        const description = values.description?.trim();
 
-        onOpenChange(false);
+        try {
+            await toast.promise(
+                createMutation.mutateAsync({
+                    name: values.name,
+                    dayDate: values.dayDate,
+                    ...(description ? { description } : {}),
+                }),
+                {
+                    loading: 'Marking day as special...',
+                    success: 'Special day created successfully',
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to create special day'),
+                },
+            );
+
+            onOpenChange(false);
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     }
 
     return (
@@ -81,10 +96,11 @@ export function CreateSpecialDayDialog({
             fields={fields}
             submitLabel="Mark Day"
             errorMessage={
-                createMutation.isError
-                    ? 'Failed to create the special day. Please try again.'
+                createMutation.isError && !getApiFieldErrors(createMutation.error)
+                    ? getApiErrorMessage(createMutation.error, 'Failed to create the special day')
                     : undefined
             }
+            fieldErrors={getApiFieldErrors(createMutation.error)}
             onSubmit={handleSubmit}
         />
     );

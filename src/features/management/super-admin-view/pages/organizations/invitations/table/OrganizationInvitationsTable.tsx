@@ -3,17 +3,24 @@ import { type PaginationState, type SortingState } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 
 import { DataTable } from '../../../../../../../components/DataTable.tsx';
+import { ErrorState } from '../../../../../../../components/ErrorState.tsx';
 import { PAGE_SIZE } from '../../../../../../../components/DataTableFeatures.ts';
 import { Select } from '../../../../../../../components/Select.tsx';
 import { Button } from '../../../../../../../components/Button.tsx';
-import { useDebounce, GENERAL_DEBOUNCE_DELAY } from '../../../../../../../hooks/deounce.ts';
 import { Order } from '../../../../../../../models/enums/order.ts';
 import { InvitationStatus } from '../../../../../../../models/enums/invitation-status.ts';
+import { invitationStatusRecord } from '../../../../../../../models/enums-mapping/invitation-status.ts';
 import type {
     InvitationResponse,
     QueryInvitation,
 } from '../../../../../../../models/invitation.model.ts';
 import { useOrganizationInvitations } from '../../../../../hooks/invitation-hook.ts';
+import { useCurrentUser } from '../../../../../hooks/users-hook.ts';
+import { rolesPermissions } from '../../../../../../../permissions/roles-permissions.ts';
+import {
+    CREATE_ORGANIZATION_INVITATIONS,
+    UPDATE_ORGANIZATION_INVITATIONS,
+} from '../../../../../../../permissions/permissions.ts';
 import { getOrganizationInvitationColumns } from '../columns/OrganizationInvitationColumns.tsx';
 import { CreateInvitationDialog } from '../components/CreateInvitationDialog.tsx';
 import { useDialog } from '../../../../../../../hooks/open-dialog.ts';
@@ -33,13 +40,19 @@ export function OrganizationInvitationsTable({
     });
 
     const [search, setSearch] = useState('');
-    const debounceSearch = useDebounce(search, GENERAL_DEBOUNCE_DELAY);
     const [status, setStatus] = useState<InvitationStatus | undefined>();
 
     const createDialog = useDialog();
     const editDialog = useDialog<InvitationResponse>();
 
-    const columns = getOrganizationInvitationColumns(editDialog.open);
+    const { data: currentUser } = useCurrentUser();
+    const permissions = currentUser ? rolesPermissions[currentUser.role] : undefined;
+    const canCreateInvitation =
+        permissions?.includes(CREATE_ORGANIZATION_INVITATIONS) ?? false;
+    const canUpdateInvitation =
+        permissions?.includes(UPDATE_ORGANIZATION_INVITATIONS) ?? false;
+
+    const columns = getOrganizationInvitationColumns(editDialog.open, canUpdateInvitation);
 
     const sort = sorting[0];
     const sortBy = sort
@@ -54,11 +67,14 @@ export function OrganizationInvitationsTable({
         limit: pagination.pageSize,
         sortBy,
         order,
-        search: debounceSearch || undefined,
+        search: search || undefined,
         filter: { ...(status && { status }) },
     };
 
-    const { data, isError, isLoading } = useOrganizationInvitations(organizationUuid, query);
+    const { data, isError, isLoading, error, refetch } = useOrganizationInvitations(
+        organizationUuid,
+        query,
+    );
 
     const filters = (
         <div className="flex min-w-0 flex-1 gap-2 max-sm:justify-between sm:gap-[4%]">
@@ -77,26 +93,20 @@ export function OrganizationInvitationsTable({
                 <option value="">All statuses</option>
                 {Object.values(InvitationStatus).map((stat) => (
                     <option key={stat} value={stat}>
-                        {stat}
+                        {invitationStatusRecord[stat]}
                     </option>
                 ))}
             </Select>
         </div>
     );
 
-    if (isLoading) {
-        return (
-            <div className="py-8 text-center text-[11px] text-[#777789]">
-                Loading invitations...
-            </div>
-        );
-    }
-
     if (isError) {
         return (
-            <div className="py-8 text-center text-[11px] text-[#c94a5c]">
-                Failed to load invitations.
-            </div>
+            <ErrorState
+                error={error}
+                title="Failed to load invitations"
+                onRetry={() => refetch()}
+            />
         );
     }
 
@@ -114,30 +124,36 @@ export function OrganizationInvitationsTable({
                 onSearchChange={setSearch}
                 filters={filters}
                 actions={
-                    <Button
-                        type="button"
-                        onClick={() => createDialog.open()}
-                        className="flex h-8 min-h-0 w-auto shrink-0 items-center gap-1.5 px-3 text-[11px] font-semibold"
-                    >
-                        <Plus className="size-3.5" strokeWidth={2} />
-                        Add Invitation
-                    </Button>
+                    canCreateInvitation ? (
+                        <Button
+                            type="button"
+                            onClick={() => createDialog.open()}
+                            className="flex h-8 min-h-0 w-auto shrink-0 items-center gap-1.5 px-3 text-[11px] font-semibold"
+                        >
+                            <Plus className="size-3.5" strokeWidth={2} />
+                            Add Invitation
+                        </Button>
+                    ) : undefined
                 }
                 rowCount={data?.pagination?.totalItems ?? 0}
                 rowCountLabel={`${data?.pagination?.totalItems === 0 ? 'No' : data?.pagination?.totalItems} Invitations`}
+                isLoading={isLoading}
+                emptyMessage="No invitations match the current filters."
             />
 
-            <CreateInvitationDialog
-                organizationUuid={organizationUuid}
-                open={createDialog.isOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        createDialog.close();
-                    }
-                }}
-            />
+            {canCreateInvitation && (
+                <CreateInvitationDialog
+                    organizationUuid={organizationUuid}
+                    open={createDialog.isOpen}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            createDialog.close();
+                        }
+                    }}
+                />
+            )}
 
-            {editDialog.selectedItem && (
+            {canUpdateInvitation && editDialog.selectedItem && (
                 <EditInvitationDialog
                     organizationUuid={organizationUuid}
                     invitation={editDialog.selectedItem}

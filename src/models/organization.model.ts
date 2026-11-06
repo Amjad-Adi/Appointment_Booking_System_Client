@@ -1,13 +1,14 @@
-import { z } from 'zod';
-import { ActivationStatus } from './enums/activation-status.js';
+import type { z } from 'zod';
+import { ActivationStatus } from './enums/activation-status';
 import {
     createOrganizationSchema,
     updateOrganizationSchema,
     updateOrganizationByAdminSchema,
     queryOrganizationSchema,
     createOrganizationByAdminSchema,
-} from '../zod-schemas/organization.schema.js';
-import type { LocationResponse } from './location.model.js';
+} from '../zod-schemas/organization.schema';
+import type { LocationResponse } from './location.model';
+import type { DataResponses } from './Query/query.model';
 
 export interface Organization {
     uuid: string;
@@ -17,12 +18,12 @@ export interface Organization {
     bio: string;
     locationId: number;
     profilePicturePath: string;
-    createdAtUTC: Date;
-    updatedAtUTC: Date;
+    createdAtUTC: string;
+    updatedAtUTC: string;
     status: ActivationStatus;
 }
 
-export interface OrganizationResponse {
+export interface OrganizationResponse extends DataResponses {
     uuid: string;
     name: string;
     email: string;
@@ -30,8 +31,8 @@ export interface OrganizationResponse {
     bio: string;
     location: LocationResponse;
     profilePicturePath: string;
-    createdAtUTC: Date;
-    updatedAtUTC: Date;
+    createdAtUTC: string;
+    updatedAtUTC: string;
     status: ActivationStatus;
 }
 
@@ -43,26 +44,46 @@ export interface OrganizationRow {
     bio: string;
     profilePicturePath: string;
     locationName: string | null;
+    timezone: string;
     longitude: number | null;
     latitude: number | null;
-    locationCreatedAtUTC: Date | null;
-    locationUpdatedAtUTC: Date | null;
-    createdAtUTC: Date;
-    updatedAtUTC: Date;
+    locationCreatedAtUTC: string | null;
+    locationUpdatedAtUTC: string | null;
+    createdAtUTC: string;
+    updatedAtUTC: string;
     status: ActivationStatus;
 }
 
-export type CreateOrganization = z.infer<typeof createOrganizationSchema>;
+export type CreateOrganization = z.infer<typeof createOrganizationSchema> & {
+    profilePicturePath?: string;
+    profilePictureId?: string;
+};
 
-export type CreateOrganizationByAdmin = z.infer<typeof createOrganizationByAdminSchema>;
-
-export type UpdateOrganization = z.infer<typeof updateOrganizationSchema> & {
+export type UpdateOrganizationByUser = z.infer<typeof updateOrganizationSchema> & {
     uuid: string;
     userUuid: string;
+    profilePicturePath?: string;
+    profilePictureId?: string;
 };
 
 export type UpdateOrganizationByAdminForm = z.infer<typeof updateOrganizationByAdminSchema>;
 
-export type UpdateOrganizationByAdmin = UpdateOrganizationByAdminForm & { uuid: string };
+export type UpdateOrganizationByAdmin = z.infer<typeof updateOrganizationByAdminSchema> & {
+    uuid: string;
+};
 
-export type QueryOrganization = z.infer<typeof queryOrganizationSchema>;
+const combinedUpdateOrganizationSchema = updateOrganizationByAdminSchema
+    .extend(updateOrganizationSchema.shape)
+    .partial({ status: true });
+
+export type UpdateOrganization = z.infer<typeof combinedUpdateOrganizationSchema> & {
+    uuid: string;
+    profilePicturePath?: string;
+    profilePictureId?: string;
+};
+
+export type QueryOrganization = z.infer<typeof queryOrganizationSchema> & {
+    offset?: number;
+};
+
+export type CreateOrganizationByAdmin = z.infer<typeof createOrganizationByAdminSchema>;

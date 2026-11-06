@@ -8,7 +8,9 @@ import { CreateDialog, type CreateDialogField } from '../../../../components/Cre
 
 import { useCreateOrganizationAppointment } from '../../hooks/appointment-hook.ts';
 
-import { useUsers } from '../../hooks/users-hook.ts';
+import { useOrganizationCustomers } from '../../hooks/users-hook.ts';
+
+import { useOrganizationWorkers } from '../../hooks/scheduling-hook.ts';
 
 import { useOrganizationServices } from '../../hooks/services-hook.ts';
 
@@ -19,13 +21,14 @@ import {
     type CreateAppointmentFormOutput,
 } from '../../../../zod-schemas/appointment.schema.ts';
 
-import { Role } from '../../../../models/enums/roles.ts';
-
 import { ActivationStatus } from '../../../../models/enums/activation-status.ts';
 
 import { PaymentMethod } from '../../../../models/enums/payment-method.ts';
+import { getApiErrorMessage, getApiFieldErrors } from '../../../../utlis/api-error.ts';
 
 import { AppointmentTimeType } from '../../../../models/enums/appointment-time-type.ts';
+import { appointmentTimeTypeRecord } from '../../../../models/enums-mapping/appointment-time-type.ts';
+import { paymentMethodRecord } from '../../../../models/enums-mapping/payment-method.ts';
 
 import { PAGE_SIZE } from '../../../../components/DataTableFeatures.ts';
 
@@ -111,18 +114,14 @@ export function CreateAppointmentDialog({
         setSelectedAppointmentWorkerUuid(initialSelectedWorkerUuid);
     }, [initialSelectedWorkerUuid]);
 
-    const { data: customersData, isLoading: customersLoading } = useUsers({
-        page: 1,
-        limit: PAGE_SIZE,
-
-        search: debouncedCustomerSearch || undefined,
-
-        filter: {
-            role: Role.CUSTOMER,
-
-            status: ActivationStatus.ACTIVE,
+    const { data: customersData, isPending: customersLoading } = useOrganizationCustomers(
+        organizationUuid,
+        {
+            page: 1,
+            limit: 100,
+            search: debouncedCustomerSearch || undefined,
         },
-    });
+    );
 
     const { data: servicesData, isLoading: servicesLoading } = useOrganizationServices(
         organizationUuid,
@@ -140,20 +139,7 @@ export function CreateAppointmentDialog({
         },
     );
 
-    const { data: workersData, isLoading: workersLoading } = useUsers({
-        page: 1,
-        limit: PAGE_SIZE,
-
-        search: debouncedWorkerSearch || undefined,
-
-        filter: {
-            role: Role.WORKER,
-
-            status: ActivationStatus.ACTIVE,
-
-            organizationUuid,
-        },
-    });
+    const { data: workersData, isPending: workersLoading } = useOrganizationWorkers(organizationUuid);
 
     const customerOptions = useMemo(
         () =>
@@ -175,15 +161,21 @@ export function CreateAppointmentDialog({
         [servicesData],
     );
 
-    const workerOptions = useMemo(
-        () =>
-            (workersData?.data ?? []).map((user) => ({
+    const workerOptions = useMemo(() => {
+        const search = debouncedWorkerSearch.trim().toLowerCase();
+
+        return (workersData ?? [])
+            .filter((user) =>
+                search
+                    ? `${user.firstName} ${user.lastName}`.toLowerCase().includes(search)
+                    : true,
+            )
+            .map((user) => ({
                 value: user.uuid,
 
                 label: `${user.firstName} ${user.lastName}`,
-            })),
-        [workersData],
-    );
+            }));
+    }, [workersData, debouncedWorkerSearch]);
 
     const defaultStart = useMemo(
         () => getDefaultStart(selectedDate, selectedTime, organizationTimeZone),
@@ -249,13 +241,13 @@ export function CreateAppointmentDialog({
                     {
                         value: AppointmentTimeType.NEAREST,
 
-                        label: 'Nearest available',
+                        label: appointmentTimeTypeRecord[AppointmentTimeType.NEAREST],
                     },
 
                     {
                         value: AppointmentTimeType.WORKER,
 
-                        label: 'Specific worker',
+                        label: appointmentTimeTypeRecord[AppointmentTimeType.WORKER],
                     },
                 ],
 
@@ -381,7 +373,7 @@ export function CreateAppointmentDialog({
                 options: Object.values(PaymentMethod).map((method) => ({
                     value: method,
 
-                    label: method,
+                    label: paymentMethodRecord[method],
                 })),
 
                 placeholder: 'Select payment method',
@@ -451,22 +443,27 @@ export function CreateAppointmentDialog({
         const result = createOrganizationAppointmentSchema.safeParse(appointment);
 
         if (!result.success) {
-            console.error('Create appointment validation failed:', result.error.flatten());
-
-            toast.error('Please check the appointment details.');
+            toast.error(
+                result.error.issues[0]?.message ?? 'Please check the appointment details.',
+            );
 
             return;
         }
 
-        await toast.promise(createMutation.mutateAsync(result.data), {
-            loading: 'Creating appointment...',
+        try {
+            await toast.promise(createMutation.mutateAsync(result.data), {
+                loading: 'Creating appointment...',
 
-            success: 'Appointment created successfully',
+                success: 'Appointment created successfully',
 
-            error: 'Failed to create appointment',
-        });
+                error: (mutationError) =>
+                    getApiErrorMessage(mutationError, 'Failed to create appointment'),
+            });
 
-        onOpenChange(false);
+            onOpenChange(false);
+        } catch {
+            // toast.promise already surfaced the error.
+        }
     }
 
     const appointmentDateKey = useMemo(
@@ -487,10 +484,11 @@ export function CreateAppointmentDialog({
             topContent={<OrganizationTimeInfo timeZone={organizationTimeZone} />}
             submitLabel="Create Appointment"
             errorMessage={
-                createMutation.isError
-                    ? 'Failed to create appointment. Please try again.'
+                createMutation.isError && !getApiFieldErrors(createMutation.error)
+                    ? getApiErrorMessage(createMutation.error, 'Failed to create appointment')
                     : undefined
             }
+            fieldErrors={getApiFieldErrors(createMutation.error)}
             onSubmit={handleSubmit}
         />
     );

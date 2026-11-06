@@ -1,6 +1,9 @@
-import { Info } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Info, Tags } from 'lucide-react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../@/components/ui/Tooltip.tsx';
+
+import { EntityImage } from '../../../components/EntityImage.tsx';
 
 import type { ServiceCategoryResponse } from '../../../models/service-category.model.ts';
 
@@ -15,29 +18,84 @@ export function ServiceCategorySelector({
     selectedCategoryUuid,
     onSelect,
 }: ServiceCategorySelectorProps) {
+    const scrollerRef = useRef<HTMLDivElement>(null);
+
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const updateScrollState = useCallback(() => {
+        const element = scrollerRef.current;
+
+        if (!element) {
+            return;
+        }
+
+        setCanScrollLeft(element.scrollLeft > 4);
+        setCanScrollRight(element.scrollLeft + element.clientWidth < element.scrollWidth - 4);
+    }, []);
+
+    useEffect(() => {
+        const element = scrollerRef.current;
+
+        if (!element) {
+            return;
+        }
+
+        const frame = window.requestAnimationFrame(updateScrollState);
+
+        element.addEventListener('scroll', updateScrollState, { passive: true });
+
+        const observer = new ResizeObserver(updateScrollState);
+        observer.observe(element);
+
+        return () => {
+            window.cancelAnimationFrame(frame);
+            element.removeEventListener('scroll', updateScrollState);
+            observer.disconnect();
+        };
+    }, [updateScrollState]);
+
+    const scrollCategories = (direction: -1 | 1) => {
+        const element = scrollerRef.current;
+
+        if (!element) {
+            return;
+        }
+
+        element.scrollBy({
+            left: direction * Math.max(220, element.clientWidth * 0.7),
+            behavior: 'smooth',
+        });
+    };
+
     return (
-        <div className="mb-3 w-full overflow-hidden rounded-lg border border-[#d3d3df] bg-[#dedee8]">
-            <div className="flex w-full gap-2 overflow-x-auto p-2">
+        <div className="relative mb-3 w-full overflow-hidden rounded-lg border border-border bg-muted">
+            <div
+                ref={scrollerRef}
+                className="flex w-full gap-2 overflow-x-auto p-2"
+                role="group"
+                aria-label="Service categories"
+            >
                 {/* All services */}
                 <button
                     type="button"
                     onClick={() => onSelect(undefined)}
                     className={`flex h-14 shrink-0 items-center gap-2 rounded-md border px-3 transition-colors ${
                         selectedCategoryUuid === undefined
-                            ? 'border-[#b9b9cc] bg-[#f5f5f8]'
-                            : 'border-transparent hover:bg-[#ededf2]'
+                            ? 'border-border-strong bg-card'
+                            : 'border-transparent hover:bg-secondary'
                     }`}
                 >
-                    <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#d3d3df]">
-                        <span className="text-[10px] font-semibold text-[#777789]">ALL</span>
+                    <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                        <span className="text-[10px] font-semibold text-muted-foreground">ALL</span>
                     </div>
 
                     <div className="flex min-w-0 flex-col text-left">
-                        <span className="text-[11px] font-semibold text-[#343447]">
+                        <span className="text-[11px] font-semibold text-foreground">
                             All Services
                         </span>
 
-                        <span className="text-[9px] text-[#777789]">Show all services</span>
+                        <span className="text-[9px] text-muted-foreground">Show all services</span>
                     </div>
                 </button>
 
@@ -52,29 +110,20 @@ export function ServiceCategorySelector({
                             onClick={() => onSelect(category.uuid)}
                             className={`flex h-14 shrink-0 items-center gap-2 rounded-md border px-3 transition-colors ${
                                 selected
-                                    ? 'border-[#b9b9cc] bg-[#f5f5f8]'
-                                    : 'border-transparent hover:bg-[#ededf2]'
+                                    ? 'border-border-strong bg-card'
+                                    : 'border-transparent hover:bg-secondary'
                             }`}
                         >
-                            <div className="size-9 shrink-0 overflow-hidden rounded-md bg-[#d3d3df]">
-                                {category.picturePath &&
-                                category.picturePath !== 'DEFAULT_PICTURE_PATH' ? (
-                                    <img
-                                        src={category.picturePath}
-                                        alt=""
-                                        className="size-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="flex size-full items-center justify-center">
-                                        <span className="text-[10px] font-semibold text-[#777789]">
-                                            {category.name.charAt(0).toUpperCase()}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
+                            <EntityImage
+                                src={category.picturePath}
+                                alt={category.name}
+                                icon={Tags}
+                                className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground"
+                                iconClassName="size-4"
+                            />
 
                             <div className="flex max-w-32 min-w-0 items-center gap-1 text-left">
-                                <span className="min-w-0 truncate text-[11px] font-semibold text-[#343447]">
+                                <span className="min-w-0 truncate text-[11px] font-semibold text-foreground">
                                     {category.name}
                                 </span>
 
@@ -83,7 +132,7 @@ export function ServiceCategorySelector({
                                         render={
                                             <span className="shrink-0 cursor-default">
                                                 <Info
-                                                    className="size-3.5 text-[#777789]"
+                                                    className="size-3.5 text-muted-foreground"
                                                     strokeWidth={1.8}
                                                 />
                                             </span>
@@ -113,6 +162,28 @@ export function ServiceCategorySelector({
                     );
                 })}
             </div>
+
+            {canScrollLeft ? (
+                <button
+                    type="button"
+                    onClick={() => scrollCategories(-1)}
+                    aria-label="Scroll categories left"
+                    className="absolute top-1/2 left-1 z-10 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-secondary-foreground shadow-sm transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                    <ChevronLeft className="size-3.5" strokeWidth={2} />
+                </button>
+            ) : null}
+
+            {canScrollRight ? (
+                <button
+                    type="button"
+                    onClick={() => scrollCategories(1)}
+                    aria-label="Scroll categories right"
+                    className="absolute top-1/2 right-1 z-10 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-secondary-foreground shadow-sm transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                    <ChevronRight className="size-3.5" strokeWidth={2} />
+                </button>
+            ) : null}
         </div>
     );
 }

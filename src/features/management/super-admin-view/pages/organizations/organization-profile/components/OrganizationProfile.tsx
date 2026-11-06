@@ -8,6 +8,7 @@ import { OrganizationBioCard } from './OrganizationBioCard.tsx';
 import { OrganizationAccountCard } from './OrganizationAccountCard.tsx';
 import { OrganizationTimeInfo } from './OrganizationTimeInfo.tsx';
 import { BackButton } from '../../../../../components/BackButton.tsx';
+import { OrganizationSchedule } from '../../../../../components/OrganizationSchedule.tsx';
 import { OrganizationWorkingHoursCard } from './working-hours/OrganizationWorkingHoursCard.tsx';
 
 interface OrganizationProfileProps {
@@ -23,7 +24,7 @@ export function OrganizationProfile({
     backPath,
     canEdit = false,
     onEdit,
-    canEditWorkingHours=false,
+    canEditWorkingHours = false,
 }: OrganizationProfileProps) {
     const timeZone =
         organization.location?.timezone ||
@@ -49,6 +50,11 @@ export function OrganizationProfile({
             <OrganizationWorkingHoursCard
                 organization={organization}
                 canEdit={canEditWorkingHours}
+            />
+            <OrganizationSchedule
+                organizationUuid={organization.uuid}
+                timeZone={timeZone}
+                showWorkingHours={false}
             />
             <OrganizationAccountCard organization={organization} />
         </div>

@@ -27,7 +27,7 @@ function Calendar({
         <DayPicker
             showOutsideDays={showOutsideDays}
             className={cn(
-                'group/calendar bg-[#EDEDF2] p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)]',
+                'group/calendar bg-secondary p-2 [--cell-radius:var(--radius-md)] [--cell-size:--spacing(7)]',
                 'in-data-[slot=card-content]:bg-transparent',
                 'in-data-[slot=popover-content]:bg-transparent',
                 String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
@@ -62,10 +62,10 @@ function Calendar({
                     'size-(--cell-size) p-0 select-none',
                     'transition-colors duration-150',
                     'aria-disabled:opacity-50',
-                    'hover:bg-[#D3D3DF]',
-                    'hover:text-[#343447]',
+                    'hover:bg-muted',
+                    'hover:text-foreground',
                     'focus-visible:ring-2',
-                    'focus-visible:ring-[#777789]/30',
+                    'focus-visible:ring-muted-foreground/30',
                     defaultClassNames.button_previous,
                 ),
 
@@ -76,10 +76,10 @@ function Calendar({
                     'size-(--cell-size) p-0 select-none',
                     'transition-colors duration-150',
                     'aria-disabled:opacity-50',
-                    'hover:bg-[#D3D3DF]',
-                    'hover:text-[#343447]',
+                    'hover:bg-muted',
+                    'hover:text-foreground',
                     'focus-visible:ring-2',
-                    'focus-visible:ring-[#777789]/30',
+                    'focus-visible:ring-muted-foreground/30',
                     defaultClassNames.button_next,
                 ),
 
@@ -113,7 +113,7 @@ function Calendar({
                 weekdays: cn('flex', defaultClassNames.weekdays),
 
                 weekday: cn(
-                    'flex-1 rounded-(--cell-radius) text-[0.8rem] font-normal text-[#777789] select-none',
+                    'flex-1 rounded-(--cell-radius) text-[0.8rem] font-normal text-muted-foreground select-none',
                     defaultClassNames.weekday,
                 ),
 
@@ -125,7 +125,7 @@ function Calendar({
                 ),
 
                 week_number: cn(
-                    'text-[0.8rem] text-[#777789] select-none',
+                    'text-[0.8rem] text-muted-foreground select-none',
                     defaultClassNames.week_number,
                 ),
 
@@ -154,17 +154,17 @@ function Calendar({
                 ),
 
                 today: cn(
-                    'text-[#343447]',
+                    'text-foreground',
                     'data-[selected=true]:rounded-none',
                     defaultClassNames.today,
                 ),
 
                 outside: cn(
-                    'text-[#777789]/50 aria-selected:text-[#777789]/50',
+                    'text-muted-foreground/50 aria-selected:text-muted-foreground/50',
                     defaultClassNames.outside,
                 ),
 
-                disabled: cn('text-[#777789] opacity-50', defaultClassNames.disabled),
+                disabled: cn('text-muted-foreground opacity-50', defaultClassNames.disabled),
 
                 hidden: cn('invisible', defaultClassNames.hidden),
 
@@ -276,17 +276,17 @@ function CalendarDayButton({
                     'transition-colors duration-150',
 
                     // Focus rings applied directly on the padded inner element
-                    'group-focus-visible/day-btn:ring-2 group-focus-visible/day-btn:ring-[#777789]/40',
+                    'group-focus-visible/day-btn:ring-2 group-focus-visible/day-btn:ring-muted-foreground/40',
                     'group-data-[focused=true]/day:ring-ring/50 group-data-[focused=true]/day:ring-[1.25px]',
 
                     // Hover has the same visual area as selected/today.
-                    'hover:bg-[#D3D3DF] hover:text-[#343447]',
+                    'hover:bg-muted hover:text-foreground',
 
                     // Selected.
-                    isSelected && 'bg-[#D3D3DF] text-[#343447]',
+                    isSelected && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
 
                     // Today, unless it is already selected.
-                    isToday && !isSelected && 'bg-[#E2E2EC]/60 text-[#343447]',
+                    isToday && !isSelected && 'bg-muted/60 text-foreground',
                 )}
             >
                 <span className="relative z-10">{day.date.getDate()}</span>
@@ -296,7 +296,7 @@ function CalendarDayButton({
                         aria-hidden="true"
                         className={cn(
                             'absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full',
-                            'bg-[#343447]',
+                            'bg-current',
                             'transition-transform duration-150',
                             'group-hover/day:scale-125',
                         )}

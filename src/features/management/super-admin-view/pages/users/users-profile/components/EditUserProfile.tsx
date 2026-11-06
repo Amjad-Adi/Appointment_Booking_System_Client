@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowLeft, CalendarDays, Check, ShieldCheck, UserRound } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -11,8 +12,9 @@ import type {
 
 import { Button } from '../../../../../../../components/Button.tsx';
 import { Select } from '../../../../../../../components/Select.tsx';
+import { ImagePicker } from '../../../../../../../components/ImagePicker.tsx';
 
-import { Toast } from '../../../../../../../utlis/toast.ts';
+import { getApiErrorMessage } from '../../../../../../../utlis/api-error.ts';
 
 import { updateUserByAdminSchema } from '../../../../../../../zod-schemas/user.schema.ts';
 
@@ -25,6 +27,7 @@ import { UserProfileHeader } from '../../../../../components/UserProfileHeader.t
 import { UserAboutCard } from './UserAboutCard.tsx';
 import { UserOrganizationCard } from './UserOrganizationCard.tsx';
 import { roleRecord } from '../../../../../../../models/enums-mapping/roles.ts';
+import { activationStatusRecord } from '../../../../../../../models/enums-mapping/activation-status.ts';
 
 interface EditUserProfileProps {
     user: UserResponse;
@@ -37,6 +40,7 @@ const error = 'Failed to update user';
 export function EditUserProfile({ user }: EditUserProfileProps) {
     const navigate = useNavigate();
     const updateUserMutation = useUpdateUser();
+    const [picture, setPicture] = useState<File | null>(null);
 
     const defaultValues: UpdateUserByAdminForm = {
         role: user.role,
@@ -67,7 +71,7 @@ export function EditUserProfile({ user }: EditUserProfileProps) {
             changedValues.status = status;
         }
 
-        if (Object.keys(changedValues).length === 0) {
+        if (Object.keys(changedValues).length === 0 && picture === null) {
             navigate(`/admin/users/${user.uuid}`);
             return;
         }
@@ -77,10 +81,16 @@ export function EditUserProfile({ user }: EditUserProfileProps) {
                 updateUserMutation.mutateAsync({
                     uuid: user.uuid,
                     ...changedValues,
+                    profilePicture: picture,
                 }),
-                new Toast(loading, success, error),
+                {
+                    loading,
+                    success,
+                    error: (mutationError) => getApiErrorMessage(mutationError, error),
+                },
             );
 
+            setPicture(null);
             navigate(`/admin/users/${user.uuid}`);
         } catch {
             // Stay on the edit page if the update fails.
@@ -97,15 +107,15 @@ export function EditUserProfile({ user }: EditUserProfileProps) {
                     type="button"
                     onClick={() => navigate(`/admin/users/${user.uuid}`)}
                     disabled={isSubmitting}
-                    className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 border border-[#d3d3df] bg-transparent px-3 text-[11px] font-semibold text-[#454556] hover:bg-[#ededf2] hover:text-[#343447]"
+                    className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground"
                 >
-                    <ArrowLeft className="size-3.5 transition-colors group-hover:text-[#343447]" />
+                    <ArrowLeft className="size-3.5 transition-colors group-hover:text-foreground" />
                     Close
                 </Button>
 
                 <Button
                     type="submit"
-                    disabled={isSubmitting || !isDirty}
+                    disabled={isSubmitting || (!isDirty && picture === null)}
                     className="group flex h-8 w-auto shrink-0 items-center justify-center gap-1.5 px-3 text-[11px] font-semibold"
                 >
                     <Check className="group-hover size-3.5 transition-colors" />
@@ -115,31 +125,53 @@ export function EditUserProfile({ user }: EditUserProfileProps) {
 
             <UserProfileHeader user={user} />
 
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
+                <div className="min-w-0">
+                    <h3 className="text-[13px] font-semibold text-foreground">Profile Picture</h3>
+
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
+                        Upload a new picture to replace the current one.
+                    </p>
+                </div>
+
+                <div className="mt-4">
+                    <ImagePicker
+                        file={picture}
+                        onChange={setPicture}
+                        currentPath={user.profilePicturePath}
+                        label="Picture"
+                        rounded="full"
+                        disabled={isSubmitting}
+                    />
+                </div>
+            </section>
+
             <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
                 <UserAboutCard user={user} />
 
                 <UserOrganizationCard organizationUuid={user.organizationUuid} />
             </div>
 
-            <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
+            <section className="min-w-0 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6">
                 <div className="min-w-0">
-                    <h3 className="text-[13px] font-semibold text-[#343447]">
+                    <h3 className="text-[13px] font-semibold text-foreground">
                         Account Information
                     </h3>
 
-                    <p className="mt-0.5 text-[10px] leading-4 text-[#777789]">
+                    <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                         Administrative information associated with this account.
                     </p>
                 </div>
 
                 <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                             <UserRound className="size-4" />
                         </div>
                         <Select
                             id="role"
                             hasError={false}
+                            value={role ?? ''}
                             {...register('role')}
                             className="mt-1 h-8 w-full px-2.5 text-[11px]"
                             label={'Role'}
@@ -153,36 +185,37 @@ export function EditUserProfile({ user }: EditUserProfileProps) {
                     </div>
 
                     <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                             <ShieldCheck className="size-4" />
                         </div>
                         <Select
                             id="status"
                             hasError={false}
+                            value={status ?? ''}
                             {...register('status')}
                             className="mt-1 h-8 w-full px-2.5 text-[11px]"
                             label={'Status'}
                         >
                             {Object.values(ActivationStatus).map((status) => (
                                 <option key={status} value={status}>
-                                    {status}
+                                    {activationStatusRecord[status]}
                                 </option>
                             ))}
                         </Select>
                     </div>
 
                     <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                             <CalendarDays className="size-4" />
                         </div>
 
                         <div className="min-w-0 flex-1">
-                            <p className="text-[9px] font-medium tracking-wide text-[#9999aa] uppercase">
+                            <p className="text-[9px] font-medium tracking-wide text-muted-foreground uppercase">
                                 Last Updated
                             </p>
 
                             <p
-                                className="mt-0.5 truncate text-[11px] font-medium text-[#454556]"
+                                className="mt-0.5 truncate text-[11px] font-medium text-secondary-foreground"
                                 title={formatDate(user.updatedAtUTC)}
                             >
                                 {formatDate(user.updatedAtUTC)}

@@ -1,9 +1,6 @@
-import { z } from 'zod';
 import { Order } from '../enums/order.ts';
-import { useQueryClient } from '@tanstack/react-query';
-
-export interface Filter {}
-export interface DataResponses {}
+export type Filter = object
+export type DataResponses = object
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 20;
 
@@ -12,6 +9,7 @@ export interface Query {
     filter?: Filter;
     sortBy?: string;
     order?: Order;
+    page?:number
     offset?: number;
     limit?: number;
 }

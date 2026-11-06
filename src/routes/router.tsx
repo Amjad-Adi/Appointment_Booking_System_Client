@@ -4,22 +4,27 @@ import { Login } from '../features/auth/pages/login/Login.tsx';
 import { Register } from '../features/auth/pages/register/Register.tsx';
 import { AuthLayout } from '../features/auth/layouts/Auth.tsx';
 
-import { NotFoundPage } from '../features/NotFoundPage.tsx';
+import { ErrorPage } from '../features/ErrorPage.tsx';
 
 // Super Admin
 import { SuperAdminLayout } from '../features/management/super-admin-view/layout/SuperAdminLayout.tsx';
+import { SuperAdminDashboardPage } from '../features/management/super-admin-view/pages/dashboard/SuperAdminDashboardPage.tsx';
 import { SuperAdminUsersPage } from '../features/management/super-admin-view/pages/users/users/UsersPage.tsx';
 import { UserProfilePage } from '../features/management/super-admin-view/pages/users/users-profile/UserProfilePage.tsx';
 import { SuperAdminOrganizationsPage } from '../features/management/super-admin-view/pages/organizations/OrganizationsPage.tsx';
 import { OrganizationProfilePage } from '../features/management/super-admin-view/pages/organizations/organization-profile/OrganizationProfilePage.tsx';
+import { ServiceCategoriesPage } from '../features/management/super-admin-view/pages/service-categories/ServiceCategoriesPage.tsx';
 
 // Organization
 import { OrganizationLayout } from '../features/management/organizations/layout/OrganizationLayout.tsx';
-import { OrganizationWelcomePage } from '../features/management/super-admin-view/pages/organizations/organizations/components/OrganizationWelcomePage.tsx';
+import { OrganizationDashboardPage } from '../features/management/dashboard/OrganizationDashboardPage.tsx';
 import { CreateOrganizationPage } from '../features/management/super-admin-view/pages/organizations/organizations/components/create-organization/CreateOrganizationPage.tsx';
 
 // User
 import { UserLayout } from '../features/management/user-view/layout/UserLayout.tsx';
+import { CustomerDashboardPage } from '../features/management/user-view/pages/dashboard/CustomerDashboardPage.tsx';
+import { CustomerAppointmentsPage } from '../features/management/user-view/pages/appointments/CustomerAppointmentsPage.tsx';
+import { CustomerBookingPage } from '../features/management/user-view/pages/booking/CustomerBookingPage.tsx';
 import { ProfilePage } from '../features/management/user-view/pages/user-profile/ProfilePage.tsx';
 import { ServicesPage } from '../features/management/user-view/pages/services/ServicePage.tsx';
 import { ServiceProfilePage } from '../features/management/user-view/pages/service-profile/ServiceProfilePage.tsx';
@@ -27,6 +32,12 @@ import { RoomPage } from '../features/management/user-view/pages/rooms/RoomPage.
 import { RoomProfilePage } from '../features/management/user-view/pages/rooms-profile/RoomProfilePage.tsx';
 import { AppointmentPage } from '../features/management/appointments/AppointmentPage.tsx';
 import { AppointmentProfilePage } from '../features/management/appointments/appointment-profile/AppointmentProfilePage.tsx';
+import { FavouritesPage } from '../features/management/user-view/pages/favourites/FavouritesPage.tsx';
+import { ReviewsPage } from '../features/management/user-view/pages/reviews/ReviewsPage.tsx';
+import { CustomerInvitationsPage } from '../features/management/user-view/pages/invitations/CustomerInvitationsPage.tsx';
+import { UserSettingsPage } from '../features/management/pages/UserSettingsPage.tsx';
+import { OrganizationCustomersPage } from '../features/management/organizations/pages/customers/OrganizationCustomersPage.tsx';
+import { OrganizationCustomerInvitationsPage } from '../features/management/organizations/pages/customer-invitations/OrganizationCustomerInvitationsPage.tsx';
 
 // Invitations
 import { InvitationPage } from '../features/management/super-admin-view/pages/organizations/invitations/InvitationPage.tsx';
@@ -37,31 +48,32 @@ import { RoleBasedRouter } from './RoleBasedRouter.tsx';
 import {
     HAS_LOGIN,
     SUPER_ADMIN_ACCESS,
+    SUPER_ADMIN_DASHBOARD_PAGE,
     SUPER_ADMIN_USER_MANAGEMENT_PAGE,
     SUPER_ADMIN_ORGANIZATIONS_MANAGEMENT_PAGE,
     SUPER_ADMIN_SERVICE_CATEGORIES_MANAGEMENT_PAGE,
-    OWNER_DASHBOARD_PAGE,
-    MANAGER_DASHBOARD_PAGE,
-    CRM_DASHBOARD_PAGE,
-    WORKER_DASHBOARD_PAGE,
+    SUPER_ADMIN_SERVICES_PAGE,
+    ORGANIZATION_DASHBOARD_PAGE,
+    ORGANIZATION_CREATE_PAGE,
     CUSTOMER_DASHBOARD_PAGE,
     ORGANIZATION_MANAGEMENT_PAGE,
     USER_SERVICES_PAGE,
     USER_ROOMS_PAGE,
     USER_APPOINTMENTS_PAGE,
-    USER_INVITATIONS_PAGE,
     USER_PROFILE_PAGE,
+    USER_SETTINGS_PAGE,
     USER_FAVOURITES_PAGE,
     USER_REVIEWS_PAGE,
-    USER_SETTINGS_PAGE,
+    USER_INVITATIONS_PAGE,
     ORGANIZATION_INVITATION_PAGE,
+    ORGANIZATION_CUSTOMERS_PAGE,
+    ORGANIZATION_CUSTOMER_INVITATIONS_PAGE,
 } from '../permissions/permissions.ts';
-
-import { Role } from '../models/enums/roles.ts';
 
 export const router = createBrowserRouter([
     {
         path: '/',
+        errorElement: <ErrorPage />,
         children: [
             // ==================================================
             // First Page
@@ -116,7 +128,11 @@ export const router = createBrowserRouter([
                         children: [
                             {
                                 index: true,
-                                element: <Navigate to="users" replace />,
+                                element: (
+                                    <RoleBasedRouter permission={SUPER_ADMIN_DASHBOARD_PAGE}>
+                                        <SuperAdminDashboardPage />
+                                    </RoleBasedRouter>
+                                ),
                             },
                             {
                                 path: 'users',
@@ -173,12 +189,49 @@ export const router = createBrowserRouter([
                                 ],
                             },
                             {
+                                path: 'services',
+                                children: [
+                                    {
+                                        index: true,
+                                        element: (
+                                            <RoleBasedRouter permission={SUPER_ADMIN_SERVICES_PAGE}>
+                                                <ServicesPage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                    {
+                                        path: ':serviceUuid',
+                                        element: (
+                                            <RoleBasedRouter permission={SUPER_ADMIN_SERVICES_PAGE}>
+                                                <ServiceProfilePage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
+                                ],
+                            },
+                            {
                                 path: 'service-categories',
                                 element: (
                                     <RoleBasedRouter
                                         permission={SUPER_ADMIN_SERVICE_CATEGORIES_MANAGEMENT_PAGE}
                                     >
-                                        <div>Super Admin Service Categories</div>
+                                        <ServiceCategoriesPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+                            {
+                                path: 'settings',
+                                element: (
+                                    <RoleBasedRouter permission={USER_SETTINGS_PAGE}>
+                                        <UserSettingsPage title="Administrator Settings" />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+                            {
+                                path: 'profile/:mode?',
+                                element: (
+                                    <RoleBasedRouter permission={USER_PROFILE_PAGE}>
+                                        <ProfilePage />
                                     </RoleBasedRouter>
                                 ),
                             },
@@ -192,9 +245,7 @@ export const router = createBrowserRouter([
             // ==================================================
             {
                 element: (
-                    <RoleBasedRouter
-                        permission={HAS_LOGIN}
-                    >
+                    <RoleBasedRouter permission={HAS_LOGIN}>
                         <OrganizationLayout />
                     </RoleBasedRouter>
                 ),
@@ -204,59 +255,45 @@ export const router = createBrowserRouter([
 
                         children: [
                             // ------------------------------
-                            // Owner Dashboard
+                            // Dashboard (all organization roles)
                             // ------------------------------
+                            {
+                                index: true,
+                                element: (
+                                    <RoleBasedRouter permission={ORGANIZATION_DASHBOARD_PAGE}>
+                                        <OrganizationDashboardPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+
+                            // ------------------------------
+                            // Owner: create the organization
+                            // ------------------------------
+                            {
+                                path: 'create',
+                                element: (
+                                    <RoleBasedRouter permission={ORGANIZATION_CREATE_PAGE}>
+                                        <CreateOrganizationPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+
+                            // Legacy role dashboard paths
                             {
                                 path: 'owner',
-                                element: (
-                                    <RoleBasedRouter
-                                        permission={OWNER_DASHBOARD_PAGE}
-                                    >
-                                        <div>Owner Dashboard</div>
-                                    </RoleBasedRouter>
-                                ),
+                                element: <Navigate to="/organization" replace />,
                             },
-
-                            // ------------------------------
-                            // Manager Dashboard
-                            // ------------------------------
                             {
                                 path: 'manager',
-                                element: (
-                                    <RoleBasedRouter
-                                        permission={MANAGER_DASHBOARD_PAGE}
-                                    >
-                                        <div>Manager Dashboard</div>
-                                    </RoleBasedRouter>
-                                ),
+                                element: <Navigate to="/organization" replace />,
                             },
-
-                            // ------------------------------
-                            // CRM Dashboard
-                            // ------------------------------
                             {
                                 path: 'crm',
-                                element: (
-                                    <RoleBasedRouter
-                                        permission={CRM_DASHBOARD_PAGE}
-                                    >
-                                        <div>CRM Dashboard</div>
-                                    </RoleBasedRouter>
-                                ),
+                                element: <Navigate to="/organization" replace />,
                             },
-
-                            // ------------------------------
-                            // Worker Dashboard
-                            // ------------------------------
                             {
                                 path: 'worker',
-                                element: (
-                                    <RoleBasedRouter
-                                        permission={WORKER_DASHBOARD_PAGE}
-                                    >
-                                        <div>Worker Dashboard</div>
-                                    </RoleBasedRouter>
-                                ),
+                                element: <Navigate to="/organization" replace />,
                             },
 
                             // ------------------------------
@@ -352,10 +389,42 @@ export const router = createBrowserRouter([
                             {
                                 path: 'invitations',
                                 element: (
-                                    <RoleBasedRouter
-                                        permission={ORGANIZATION_INVITATION_PAGE}
-                                    >
+                                    <RoleBasedRouter permission={ORGANIZATION_INVITATION_PAGE}>
                                         <InvitationPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+
+                            // ------------------------------
+                            // Customers
+                            // ------------------------------
+                            {
+                                path: 'customers',
+                                element: (
+                                    <RoleBasedRouter permission={ORGANIZATION_CUSTOMERS_PAGE}>
+                                        <OrganizationCustomersPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+                            {
+                                path: 'customer-invitations',
+                                element: (
+                                    <RoleBasedRouter
+                                        permission={ORGANIZATION_CUSTOMER_INVITATIONS_PAGE}
+                                    >
+                                        <OrganizationCustomerInvitationsPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+
+                            // ------------------------------
+                            // Settings
+                            // ------------------------------
+                            {
+                                path: 'settings',
+                                element: (
+                                    <RoleBasedRouter permission={USER_SETTINGS_PAGE}>
+                                        <UserSettingsPage title="Organization Settings" />
                                     </RoleBasedRouter>
                                 ),
                             },
@@ -395,10 +464,8 @@ export const router = createBrowserRouter([
                             {
                                 index: true,
                                 element: (
-                                    <RoleBasedRouter
-                                        permission={CUSTOMER_DASHBOARD_PAGE}
-                                    >
-                                        <div>Customer Dashboard</div>
+                                    <RoleBasedRouter permission={CUSTOMER_DASHBOARD_PAGE}>
+                                        <CustomerDashboardPage />
                                     </RoleBasedRouter>
                                 ),
                             },
@@ -425,6 +492,14 @@ export const router = createBrowserRouter([
                                             </RoleBasedRouter>
                                         ),
                                     },
+                                    {
+                                        path: ':serviceUuid/book',
+                                        element: (
+                                            <RoleBasedRouter permission={USER_SERVICES_PAGE}>
+                                                <CustomerBookingPage />
+                                            </RoleBasedRouter>
+                                        ),
+                                    },
                                 ],
                             },
 
@@ -438,7 +513,7 @@ export const router = createBrowserRouter([
                                         index: true,
                                         element: (
                                             <RoleBasedRouter permission={USER_APPOINTMENTS_PAGE}>
-                                                <div>Customer Appointments</div>
+                                                <CustomerAppointmentsPage />
                                             </RoleBasedRouter>
                                         ),
                                     },
@@ -446,7 +521,7 @@ export const router = createBrowserRouter([
                                         path: ':appointmentUuid',
                                         element: (
                                             <RoleBasedRouter permission={USER_APPOINTMENTS_PAGE}>
-                                                <div>Customer Appointment</div>
+                                                <AppointmentProfilePage />
                                             </RoleBasedRouter>
                                         ),
                                     },
@@ -460,7 +535,7 @@ export const router = createBrowserRouter([
                                 path: 'favourites',
                                 element: (
                                     <RoleBasedRouter permission={USER_FAVOURITES_PAGE}>
-                                        <div>Customer Favourites</div>
+                                        <FavouritesPage />
                                     </RoleBasedRouter>
                                 ),
                             },
@@ -472,19 +547,31 @@ export const router = createBrowserRouter([
                                 path: 'reviews',
                                 element: (
                                     <RoleBasedRouter permission={USER_REVIEWS_PAGE}>
-                                        <div>Customer Reviews</div>
+                                        <ReviewsPage />
                                     </RoleBasedRouter>
                                 ),
                             },
 
                             // ------------------------------
-                            // Invitations
+                            // Invitations received from organizations
                             // ------------------------------
                             {
                                 path: 'invitations',
                                 element: (
                                     <RoleBasedRouter permission={USER_INVITATIONS_PAGE}>
-                                        <div>My Invitations</div>
+                                        <CustomerInvitationsPage />
+                                    </RoleBasedRouter>
+                                ),
+                            },
+
+                            // ------------------------------
+                            // Settings
+                            // ------------------------------
+                            {
+                                path: 'settings',
+                                element: (
+                                    <RoleBasedRouter permission={USER_SETTINGS_PAGE}>
+                                        <UserSettingsPage />
                                     </RoleBasedRouter>
                                 ),
                             },
@@ -500,18 +587,6 @@ export const router = createBrowserRouter([
                                     </RoleBasedRouter>
                                 ),
                             },
-
-                            // ------------------------------
-                            // Settings
-                            // ------------------------------
-                            {
-                                path: 'settings',
-                                element: (
-                                    <RoleBasedRouter permission={USER_SETTINGS_PAGE}>
-                                        <div>Customer Settings</div>
-                                    </RoleBasedRouter>
-                                ),
-                            },
                         ],
                     },
                 ],
@@ -522,7 +597,12 @@ export const router = createBrowserRouter([
             // ==================================================
             {
                 path: '*',
-                element: <NotFoundPage />,
+                loader: () => {
+                    throw new Response(
+                        'The page you are looking for does not exist or has moved.',
+                        { status: 404 },
+                    );
+                },
             },
         ],
     },

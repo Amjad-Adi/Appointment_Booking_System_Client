@@ -1,4 +1,4 @@
-export enum AppointmentTimeType{
-    WORKER="WORKER",
-    NEAREST="NEAREST",
+export enum AppointmentTimeType {
+    WORKER = 'WORKER',
+    NEAREST = 'NEAREST',
 }

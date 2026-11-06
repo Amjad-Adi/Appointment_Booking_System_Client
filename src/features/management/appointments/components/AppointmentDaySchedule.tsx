@@ -110,26 +110,26 @@ export function AppointmentDaySchedule({
     };
 
     return (
-        <section className="flex max-h-[calc(100vh-8rem)] min-h-0 min-w-0 flex-col rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-4">
+        <section className="flex max-h-[calc(100vh-8rem)] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card p-4">
             <div className="mb-4 shrink-0">
-                <h2 className="text-base font-semibold text-[#343447]">Daily Schedule</h2>
+                <h2 className="text-base font-semibold text-foreground">Daily Schedule</h2>
 
-                <p className="mt-0.5 text-[11px] text-[#777789]">
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {formatDateInTimeZone(date, organizationTimeZone)}
                 </p>
             </div>
 
             {workerSchedules.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#d3d3df] bg-white p-6 text-center">
-                    <p className="text-sm font-medium text-[#343447]">No worker schedule</p>
+                <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
+                    <p className="text-sm font-medium text-foreground">No worker schedule</p>
 
-                    <p className="mt-1 text-[11px] text-[#777789]">
+                    <p className="mt-1 text-[11px] text-muted-foreground">
                         There are no workers available for this date.
                     </p>
                 </div>
             ) : (
                 <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-                    <div className="divide-y divide-[#d3d3df]">
+                    <div className="divide-y divide-border">
                         {workerSchedules.map((workerSchedule) => {
                             const isCollapsed = collapsedWorkers.has(workerSchedule.workerUuid);
 
@@ -141,19 +141,19 @@ export function AppointmentDaySchedule({
                                     <button
                                         type="button"
                                         onClick={() => toggleWorker(workerSchedule.workerUuid)}
-                                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-[#e2e2ec]"
+                                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted"
                                         aria-expanded={!isCollapsed}
                                     >
                                         <ChevronDown
                                             className={[
-                                                'size-4 shrink-0 text-[#777789] transition-transform duration-200',
+                                                'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
                                                 isCollapsed ? 'rotate-0' : 'rotate-180',
                                             ].join(' ')}
                                         />
 
-                                        <span className="h-2 w-2 shrink-0 rounded-full bg-[#777789]" />
+                                        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
 
-                                        <span className="min-w-0 truncate text-xs font-semibold text-[#343447]">
+                                        <span className="min-w-0 truncate text-xs font-semibold text-foreground">
                                             {workerSchedule.workerName}
                                         </span>
                                     </button>
@@ -169,7 +169,7 @@ export function AppointmentDaySchedule({
                                         <div className="min-h-0 overflow-hidden">
                                             <div
                                                 className={[
-                                                    'mt-2 overflow-hidden rounded-xl border border-[#d3d3df] bg-white transition-transform duration-200',
+                                                    'mt-2 overflow-hidden rounded-xl border border-border bg-card transition-transform duration-200',
                                                     isCollapsed
                                                         ? '-translate-y-1'
                                                         : 'translate-y-0',

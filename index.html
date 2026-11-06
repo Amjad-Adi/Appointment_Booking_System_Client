@@ -25,7 +25,22 @@
             href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
             rel="stylesheet"
         />
-        <meta name="theme-color" content="#fafafa" />
+        <meta name="theme-color" content="#f4f6f9" />
+        <script>
+            (function () {
+                try {
+                    var theme = localStorage.getItem('appointment-theme') || 'SYSTEM';
+                    var isDark =
+                        theme === 'DARK' ||
+                        (theme === 'SYSTEM' &&
+                            window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    document.documentElement.classList.add(isDark ? 'dark' : 'light');
+                    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                } catch (error) {
+                    document.documentElement.classList.add('light');
+                }
+            })();
+        </script>
     </head>
 
     <body>

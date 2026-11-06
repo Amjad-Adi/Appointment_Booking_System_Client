@@ -8,7 +8,8 @@ import {
     DropdownMenuTrigger,
 } from '../../../../../../../components/DropdownMenu.tsx';
 import { Button } from '../../../../../../../components/Button.tsx';
-import { MoreHorizontalIcon } from 'lucide-react';
+import { EntityImage } from '../../../../../../../components/EntityImage.tsx';
+import { MoreHorizontalIcon, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { ActivationStatus } from '../../../../../../../models/enums/activation-status.ts';
 import { ActivationStatusRender } from '../../../../../components/ActivationStatusRender.tsx';
@@ -47,6 +48,7 @@ export function getUserColumns(
             id: USER_TABLE_COLUMN.NAME,
             accessorFn: (user) => `${user.firstName} ${user.lastName}`,
             header: USER_TABLE_HEADER.NAME,
+            cell: ({ row }) => <UserName user={row.original} />,
         },
         {
             accessorKey: USER_TABLE_COLUMN.EMAIL,
@@ -78,6 +80,26 @@ export function getUserColumns(
     ];
 }
 
+function UserName({ user }: { user: UserResponse }) {
+    const fullName = `${user.firstName} ${user.lastName}`.trim();
+
+    return (
+        <div className="flex min-w-0 items-center gap-2">
+            <EntityImage
+                src={user.profilePicturePath}
+                alt={fullName}
+                icon={UserRound}
+                className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary text-muted-foreground"
+                iconClassName="size-4"
+            />
+
+            <span className="block max-w-48 truncate" title={fullName}>
+                {fullName}
+            </span>
+        </div>
+    );
+}
+
 function UserActions({
     user,
     onEdit,
@@ -93,7 +115,7 @@ function UserActions({
                     render={
                         <Button
                             type="button"
-                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-slate-600 transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
+                            className="size-6 min-h-0 min-w-0 !border-transparent !bg-transparent p-0 text-muted-foreground transition-transform duration-200 group-hover:-translate-y-0.5 hover:!bg-transparent sm:h-6 sm:w-6 sm:px-0 md:h-6 md:w-6"
                         >
                             <MoreHorizontalIcon className="size-4 shrink-0" />
                             <span className="sr-only">Open menu</span>
@@ -118,7 +140,9 @@ function UserActions({
                         <DropdownMenuSeparator className="my-1" />
                         <DropdownMenuItem
                             className="h-7 px-2 text-[11px]"
-                            onClick={() => navigate(`admin/organizations/${user.organizationUuid}`)}
+                            onClick={() =>
+                                navigate(`/admin/organizations/${user.organizationUuid}`)
+                            }
                         >
                             View Organization Profile
                         </DropdownMenuItem>

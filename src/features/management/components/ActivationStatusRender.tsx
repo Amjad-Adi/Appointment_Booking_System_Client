@@ -8,12 +8,12 @@ export function ActivationStatusRender({ status }: { status: ActivationStatus })
         <div className="justify-left flex items-center">
             <span className="relative size-2.5">
                 {isActive && (
-                    <span className="absolute inset-0 size-2.5 rounded-full bg-emerald-500 opacity-15" />
+                    <span className="absolute inset-0 size-2.5 rounded-full bg-success opacity-15" />
                 )}
 
                 <span
                     className={`absolute inset-0 size-2.5 rounded-full ${
-                        isActive ? 'bg-emerald-500' : 'bg-red-400'
+                        isActive ? 'bg-success' : 'bg-destructive'
                     }`}
                 />
             </span>

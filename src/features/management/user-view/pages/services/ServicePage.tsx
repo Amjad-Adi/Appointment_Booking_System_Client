@@ -3,7 +3,7 @@ import { ServicesView } from './tables/ServiceTable.tsx';
 import { useCurrentUser } from '../../../hooks/users-hook.ts';
 
 export function ServicesPage() {
-    const {data:currentUser}=useCurrentUser()
+    const { data: currentUser } = useCurrentUser();
     return (
         <ManagementPage
             title="Services"

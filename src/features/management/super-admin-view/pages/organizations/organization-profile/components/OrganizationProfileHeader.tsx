@@ -1,6 +1,7 @@
 import { Building2 } from 'lucide-react';
 
 import type { OrganizationResponse } from '../../../../../../../models/organization.model.ts';
+import { EntityImage } from '../../../../../../../components/EntityImage.tsx';
 import { ActivationStatusRender } from '../../../../../components/ActivationStatusRender.tsx';
 
 interface OrganizationProfileHeaderProps {
@@ -9,22 +10,27 @@ interface OrganizationProfileHeaderProps {
 
 export function OrganizationProfileHeader({ organization }: OrganizationProfileHeaderProps) {
     return (
-        <section className="rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 shadow-sm sm:p-6">
+        <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
             <div className="flex min-w-0 items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex size-20 shrink-0 items-center justify-center rounded-full border border-[#d3d3df] bg-[#e7e8ef] text-[#777789] shadow-sm sm:size-24">
-                        <Building2 className="size-10 sm:size-12" strokeWidth={1.5} />
-                    </div>
+                    <EntityImage
+                        src={organization.profilePicturePath}
+                        alt={organization.name}
+                        icon={Building2}
+                        className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted text-muted-foreground shadow-sm sm:size-24"
+                        iconClassName="size-10 sm:size-12"
+                        strokeWidth={1.5}
+                    />
 
                     <div className="min-w-0 text-left">
                         <h2
-                            className="truncate text-[18px] font-semibold tracking-tight text-[#343447]"
+                            className="truncate text-[18px] font-semibold tracking-tight text-foreground"
                             title={organization.name}
                         >
                             {organization.name}
                         </h2>
 
-                        <p className="mt-1 truncate text-[11px] text-[#777789]">
+                        <p className="mt-1 truncate text-[11px] text-muted-foreground">
                             {organization.email}
                         </p>
                     </div>
@@ -35,12 +41,12 @@ export function OrganizationProfileHeader({ organization }: OrganizationProfileH
                 </div>
             </div>
 
-            <div className="mt-5 border-t border-[#d3d3df] pt-4 text-left">
-                <p className="text-[10px] tracking-wide text-[#9999aa] uppercase">
+            <div className="mt-5 border-t border-border pt-4 text-left">
+                <p className="text-[10px] tracking-wide text-muted-foreground uppercase">
                     Organization since
                 </p>
 
-                <p className="mt-1 text-[11px] font-medium text-[#454556]">
+                <p className="mt-1 text-[11px] font-medium text-secondary-foreground">
                     {formatDate(organization.createdAtUTC)}
                 </p>
             </div>

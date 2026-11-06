@@ -1,6 +1,8 @@
-import { useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 
 import { ManagementPage } from '../../../components/ManagementPage.tsx';
+import { ErrorState } from '../../../../../components/ErrorState.tsx';
+import { LoadingState } from '../../../../../components/LoadingState.tsx';
 import { useCurrentUser } from '../../../hooks/users-hook.ts';
 
 import { UserProfile } from '../../../super-admin-view/pages/users/users-profile/components/UserProfile.tsx';
@@ -11,7 +13,10 @@ export function ProfilePage() {
         mode?: string;
     }>();
 
-    const { data: user, isLoading, isError } = useCurrentUser();
+    const { pathname } = useLocation();
+    const basePath = pathname.replace(/\/edit$/, '');
+
+    const { data: user, isLoading, isError, error, refetch } = useCurrentUser();
 
     if (isLoading) {
         return (
@@ -19,18 +24,36 @@ export function ProfilePage() {
                 title="My Profile"
                 description={['View and manage your profile information.']}
             >
-                <div className="text-[11px] text-[#777789]">Loading profile...</div>
+                <LoadingState label="Loading profile..." />
             </ManagementPage>
         );
     }
 
-    if (isError || !user) {
+    if (isError) {
         return (
             <ManagementPage
                 title="My Profile"
                 description={['View and manage your profile information.']}
             >
-                <div className="text-[11px] text-[#c94a5c]">Failed to load profile.</div>
+                <ErrorState
+                    error={error}
+                    title="Failed to load profile"
+                    onRetry={() => refetch()}
+                />
+            </ManagementPage>
+        );
+    }
+
+    if (!user) {
+        return (
+            <ManagementPage
+                title="My Profile"
+                description={['View and manage your profile information.']}
+            >
+                <ErrorState
+                    title="Profile not found"
+                    message="Your profile could not be loaded. Please sign in again."
+                />
             </ManagementPage>
         );
     }
@@ -44,7 +67,16 @@ export function ProfilePage() {
                     : 'View and manage your personal information and account details.',
             ]}
         >
-            {mode === 'edit' ? <EditProfile user={user} /> : <UserProfile user={user} />}
+            {mode === 'edit' ? (
+                <EditProfile user={user} />
+            ) : (
+                <UserProfile
+                    user={user}
+                    backPath=""
+                    editPath={`${basePath}/edit`}
+                    canEdit
+                />
+            )}
         </ManagementPage>
     );
 }

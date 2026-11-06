@@ -26,15 +26,18 @@ export function OrganizationWorkingHoursCard({
     const workingHours = workingHoursData?.data ?? [];
 
     return (
-        <section className="min-w-0 rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-5 text-left shadow-sm sm:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5">
+        <section
+            id="working-hours"
+            className="min-w-0 scroll-mt-24 rounded-xl border border-border bg-card p-5 text-left shadow-sm sm:p-6"
+        >
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#d3d3df] bg-[#ededf2] text-[#777789]">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
                         <CalendarClock className="size-5" />
                     </div>
                     <div>
-                        <h3 className="text-[13px] font-semibold text-[#343447]">Working Hours</h3>
-                        <p className="mt-0.5 text-[10px] leading-4 text-[#777789]">
+                        <h3 className="text-[13px] font-semibold text-foreground">Working Hours</h3>
+                        <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">
                             Weekly schedule and operating times.
                         </p>
                     </div>

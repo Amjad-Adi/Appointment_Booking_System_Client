@@ -1,8 +1,3 @@
-import type {
-    CreateServiceJunctionCategory,
-    UpdateServiceJunctionCategory,
-} from '../../../models/service-junction-category.model.ts';
-
 import { SERVICE_TABLE, SERVICE } from '../../../utlis/query-keys.ts';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,14 +9,9 @@ async function createServiceJunctionCategories(
     serviceUuid: string,
     serviceCategoryUuids: string[],
 ) {
-    const data: CreateServiceJunctionCategory = {
-        serviceUuid,
-        serviceCategoryUuids,
-    };
-
     const response = await api.post(
         `/api/organizations/${organizationUuid}/services/${serviceUuid}/categories`,
-        data,
+        { serviceCategoryUuids },
     );
 
     return response.data;
@@ -67,10 +57,10 @@ export function useUpdateServiceJunctionCategories(organizationUuid: string, ser
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (data: UpdateServiceJunctionCategory) => {
+        mutationFn: async (data: { serviceCategoryUuids: string[] }) => {
             const response = await api.patch(
                 `/api/organizations/${organizationUuid}/services/${serviceUuid}/categories`,
-                data,
+                { serviceCategoryUuids: data.serviceCategoryUuids },
             );
 
             return response.data;

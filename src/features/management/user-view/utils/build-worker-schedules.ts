@@ -1,7 +1,4 @@
-import type {
-    OrganizationAppointment,
-    OrganizationAppointmentResponse,
-} from '../../../../models/appointment.model.ts';
+import type { OrganizationAppointmentResponse } from '../../../../models/appointment.model.ts';
 import type { WorkingHours } from '../../../../models/working-hours.model.ts';
 import type { TimeBlockResponse } from '../../../../models/time-block.model.ts';
 import type { WorkerSchedule } from '../../../../models/appointment-schedule.model.ts';

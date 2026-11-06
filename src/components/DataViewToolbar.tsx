@@ -16,7 +16,7 @@ export function DataViewToolbar({
     actions,
 }: DataViewToolbarProps) {
     return (
-        <div className="flex min-w-0 flex-col gap-2 rounded-t-xl border border-[#dedee8] bg-[#dedee8] p-2">
+        <div className="flex min-w-0 flex-col gap-2 rounded-t-xl border border-border bg-muted p-2">
             {/* Primary controls */}
             <div className="flex min-w-0 items-center justify-between gap-2">
                 <TextField

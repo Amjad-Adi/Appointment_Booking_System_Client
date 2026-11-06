@@ -155,9 +155,7 @@ export const SearchableSelect = forwardRef<HTMLSelectElement, SearchableSelectPr
 
             onBlur?.(event);
         };
-        console.log('SearchableSelect value:', value);
-        console.log('selectedValue:', selectedValue);
-        console.log('selectedOption:', selectedOption);
+
         return (
             <div ref={containerRef} className={twMerge('relative w-full', wrapperClassName)}>
                 {!isLabelDisabled && <Label htmlFor={id}>{label}</Label>}
@@ -194,19 +192,19 @@ export const SearchableSelect = forwardRef<HTMLSelectElement, SearchableSelectPr
                     }}
                     className={twMerge(
                         'font-inter box-border flex h-8 w-full items-center justify-between rounded-lg border px-2 py-1 text-left text-[11px] outline-none',
-                        'bg-input text-input-placeholder',
-                        'border-input-border',
-                        'hover:border-input-border-hover hover:bg-input-hover',
-                        'focus:border-input-border-focus focus:ring-primary/20 focus:ring-2',
-                        'disabled:bg-input-disabled disabled:text-input-disabled-text disabled:cursor-not-allowed',
+                        'bg-card text-muted-foreground',
+                        'border-input',
+                        'hover:border-border-strong hover:bg-muted',
+                        'focus:border-ring focus:ring-primary/20 focus:ring-2',
+                        'disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed',
                         hasError || errorMessage
-                            ? 'border-error focus:border-error focus:ring-error/20'
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive/20'
                             : '',
                         className,
                     )}
                 >
                     <span
-                        className={twMerge('truncate', !selectedOption && 'text-input-placeholder')}
+                        className={twMerge('truncate', !selectedOption && 'text-muted-foreground')}
                     >
                         {selectedOption?.label ?? placeholder}
                     </span>
@@ -215,19 +213,19 @@ export const SearchableSelect = forwardRef<HTMLSelectElement, SearchableSelectPr
                 </button>
 
                 {open && (
-                    <div className="border-input-border bg-input absolute z-50 mt-1 w-full rounded-lg border p-1 shadow-md">
+                    <div className="border-input bg-card absolute z-50 mt-1 w-full rounded-lg border p-1 shadow-md">
                         <input
                             ref={searchInputRef}
                             type="text"
                             value={search}
                             onChange={handleSearchChange}
                             placeholder={searchPlaceholder}
-                            className="font-inter border-input-border bg-input focus:border-input-border-focus focus:ring-primary/20 mb-1 h-7 w-full rounded-md border px-2 text-[11px] outline-none focus:ring-2"
+                            className="font-inter border-input bg-card focus:border-ring focus:ring-primary/20 mb-1 h-7 w-full rounded-md border px-2 text-[11px] outline-none focus:ring-2"
                         />
 
                         <div role="listbox" className="max-h-48 overflow-y-auto">
                             {filteredOptions.length === 0 ? (
-                                <div className="px-2 py-2 text-[11px] text-[#777789]">
+                                <div className="px-2 py-2 text-[11px] text-muted-foreground">
                                     No results found.
                                 </div>
                             ) : (
@@ -238,7 +236,7 @@ export const SearchableSelect = forwardRef<HTMLSelectElement, SearchableSelectPr
                                         role="option"
                                         aria-selected={option.value === selectedValue}
                                         onClick={() => handleSelect(option.value)}
-                                        className="hover:bg-input-hover flex h-7 w-full items-center justify-between rounded-md px-2 text-left text-[11px]"
+                                        className="hover:bg-muted flex h-7 w-full items-center justify-between rounded-md px-2 text-left text-[11px]"
                                     >
                                         <span className="truncate">{option.label}</span>
 

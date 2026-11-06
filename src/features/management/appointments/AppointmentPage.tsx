@@ -1,18 +1,28 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import toast from 'react-hot-toast';
+import { CalendarOff, RotateCcw } from 'lucide-react';
 
 import { ManagementPage } from '../components/ManagementPage.tsx';
+import { Button } from '../../../components/Button.tsx';
+import { LoadingState } from '../../../components/LoadingState.tsx';
+import { ErrorState } from '../../../components/ErrorState.tsx';
 
 import { useCurrentUser, useUsers } from '../hooks/users-hook.ts';
 import { useOrganization } from '../hooks/organization-hook.ts';
 import { useOrganizationAppointments } from '../hooks/appointment-hook.ts';
 import { useOrganizationWorkingHours } from '../hooks/working-hours-hook.ts';
 import { useOrganizationTimeBlocks } from '../hooks/time-block-hook.ts';
-import { useOrganizationSpecialDays } from '../hooks/special-days-hook.ts';
+import {
+    useOrganizationSpecialDays,
+    useUpdateOrganizationSpecialDay,
+} from '../hooks/special-days-hook.ts';
 
 import { Role } from '../../../models/enums/roles.ts';
 import { ActivationStatus } from '../../../models/enums/activation-status.ts';
 import type { OrganizationAppointmentResponse } from '../../../models/appointment.model.ts';
+
+import { getApiErrorMessage } from '../../../utlis/api-error.ts';
 
 import { AppointmentCalendar } from './components/AppointmentCalendar.tsx';
 import { AppointmentDaySchedule } from './components/AppointmentDaySchedule.tsx';
@@ -77,9 +87,13 @@ export function AppointmentPage() {
 
     const canManageAppointments =
         Boolean(organizationUuid) &&
-        (currentUser?.role === Role.MANAGER || currentUser?.role === Role.OWNER);
+        (currentUser?.role === Role.MANAGER ||
+            currentUser?.role === Role.OWNER ||
+            currentUser?.role === Role.CRM);
 
-    const canCreateTimeBlock = Boolean(organizationUuid) && currentUser?.role === Role.WORKER;
+    const canCreateTimeBlock =
+        Boolean(organizationUuid) &&
+        (currentUser?.role === Role.WORKER || currentUser?.role === Role.CRM);
 
     const canCreateSpecialDay = canManageAppointments && date >= todayDate;
 
@@ -172,6 +186,8 @@ export function AppointmentPage() {
         isError: specialDaysError,
     } = useOrganizationSpecialDays(organizationUuid);
 
+    const updateSpecialDayMutation = useUpdateOrganizationSpecialDay(organizationUuid);
+
     const {
         data: usersData,
         isLoading: usersLoading,
@@ -263,6 +279,31 @@ export function AppointmentPage() {
         setCreateSpecialDayOpen(open);
     };
 
+    const canReopenSpecialDay = canManageAppointments && date > todayDate;
+
+    const handleReopenSpecialDay = async (specialDayUuid: string) => {
+        if (!window.confirm('Reopen this day and restore the normal working hours?')) {
+            return;
+        }
+
+        try {
+            await toast.promise(
+                updateSpecialDayMutation.mutateAsync({
+                    uuid: specialDayUuid,
+                    status: ActivationStatus.INACTIVE,
+                }),
+                {
+                    loading: 'Reopening day...',
+                    success: 'Special day disabled. The normal schedule is restored.',
+                    error: (mutationError) =>
+                        getApiErrorMessage(mutationError, 'Failed to reopen this day'),
+                },
+            );
+        } catch {
+            // toast.promise already surfaced the error.
+        }
+    };
+
     const handleEditOpenChange = (open: boolean) => {
         setEditAppointmentOpen(open);
 
@@ -311,15 +352,25 @@ export function AppointmentPage() {
         usersError;
 
     if (isLoading) {
-        return <div>Loading appointments...</div>;
+        return <LoadingState label="Loading appointments..." rows={4} />;
     }
 
     if (isError) {
-        return <div>Failed to load appointment schedule.</div>;
+        return (
+            <ErrorState
+                title="Failed to load appointment schedule"
+                message="The schedule could not be loaded. Please refresh the page or try again later."
+            />
+        );
     }
 
     if (!organizationUuid || !organization) {
-        return <div>Organization not found.</div>;
+        return (
+            <ErrorState
+                title="Organization not found"
+                message="Your account is not linked to an organization, or the organization is unavailable."
+            />
+        );
     }
 
     return (
@@ -328,7 +379,21 @@ export function AppointmentPage() {
             description={['View and manage organization appointments and their schedules.']}
         >
             <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-                <section className="min-w-0 self-start rounded-xl border border-[#d3d3df] bg-[#EDEDF2] p-2 shadow-sm lg:sticky lg:top-4">
+                {canCreateSpecialDay && !activeSpecialDay ? (
+                    <div className="flex justify-end lg:col-span-2">
+                        <Button
+                            type="button"
+                            onClick={() => setCreateSpecialDayOpen(true)}
+                            title={`Mark ${formatDateInTimeZone(selectedDate, organizationTimeZone)} as a special day`}
+                            className="flex h-8 w-auto items-center justify-center gap-1.5 border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground"
+                        >
+                            <CalendarOff className="size-3.5" strokeWidth={1.8} />
+                            Mark as Special Day
+                        </Button>
+                    </div>
+                ) : null}
+
+                <section className="min-w-0 self-start rounded-xl border border-border bg-secondary p-2 shadow-sm lg:sticky lg:top-4">
                     <AppointmentCalendar
                         selectedDate={selectedDate}
                         onDateChange={handleCalendarDateChange}
@@ -340,31 +405,61 @@ export function AppointmentPage() {
 
                 <div className="min-w-0">
                     {activeSpecialDay ? (
-                        <section className="flex max-h-[calc(100vh-8rem)] min-h-0 min-w-0 flex-col rounded-xl border border-[#d3d3df] bg-[#f5f5f8] p-4">
+                        <section className="flex max-h-[calc(100vh-8rem)] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card p-4">
                             <div className="mb-4 shrink-0 text-center">
-                                <h2 className="text-base font-semibold text-[#343447]">
+                                <h2 className="text-base font-semibold text-foreground">
                                     Daily Schedule
                                 </h2>
 
-                                <p className="mt-0.5 text-[11px] text-[#777789]">
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
                                     {formatDateInTimeZone(selectedDate, organizationTimeZone)}
                                 </p>
                             </div>
 
                             <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-                                <div className="rounded-xl border border-dashed border-[#d3d3df] bg-white p-6 text-center">
-                                    <p className="text-sm font-medium text-[#343447]">
+                                <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
+                                    <p className="text-sm font-medium text-foreground">
                                         {activeSpecialDay.name}
                                     </p>
 
-                                    <p className="mt-1 text-[11px] text-[#777789]">
+                                    <p className="mt-1 text-[11px] text-muted-foreground">
                                         Special day · Schedule unavailable
                                     </p>
 
                                     {activeSpecialDay.description ? (
-                                        <p className="mx-auto mt-3 max-w-lg text-[11px] leading-5 text-[#777789]">
+                                        <p className="mx-auto mt-3 max-w-lg text-[11px] leading-5 text-muted-foreground">
                                             {activeSpecialDay.description}
                                         </p>
+                                    ) : null}
+
+                                    {canManageAppointments ? (
+                                        <div className="mt-4 flex flex-col items-center gap-2">
+                                            {canReopenSpecialDay ? (
+                                                <Button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleReopenSpecialDay(
+                                                            activeSpecialDay.uuid,
+                                                        )
+                                                    }
+                                                    disabled={updateSpecialDayMutation.isPending}
+                                                    className="flex h-8 w-auto items-center justify-center gap-1.5 border border-border bg-transparent px-3 text-[11px] font-semibold text-secondary-foreground hover:bg-secondary hover:text-foreground"
+                                                >
+                                                    <RotateCcw
+                                                        className="size-3.5"
+                                                        strokeWidth={1.8}
+                                                    />
+                                                    {updateSpecialDayMutation.isPending
+                                                        ? 'Reopening...'
+                                                        : 'Disable Special Day'}
+                                                </Button>
+                                            ) : (
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    This day has already started and can no longer
+                                                    be reopened.
+                                                </p>
+                                            )}
+                                        </div>
                                     ) : null}
                                 </div>
                             </div>
