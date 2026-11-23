@@ -1,34 +1,42 @@
-import registerImageGeneral from '../../../../assets/images/register_images/register-image-general.png';
-import registerImageFlow from '../../../../assets/images/register_images/register-image-flow.png';
-import { Image } from '../../../../components/Image.tsx';
+import { useState } from 'react';
+import { AuthArtwork } from '../../components/AuthArtwork.tsx';
 import { RegisterForm } from './components/RegisterForm.tsx';
 
 export function Register() {
+    const [firstImageReady, setFirstImageReady] = useState(false);
+    const [slidesReady, setSlidesReady] = useState(false);
     return (
-        <main className="border-secondary flex w-[80%] flex-col items-center gap-y-[2vw] rounded-[20px] border-[3px] border-solid bg-muted py-[2vw] sm:flex-row sm:p-[2vw]">
+        <main className="border-secondary bg-muted flex w-[80%] flex-col items-center gap-y-[2vw] rounded-[20px] border-[3px] border-solid py-[2vw] sm:flex-row sm:p-[2vw]">
             <div className="relative flex aspect-3/4 w-[90%] items-center justify-center sm:aspect-auto sm:w-1/2 sm:self-stretch sm:p-[1.5vw] md:w-[35%]">
-                <div className="border-border relative h-full w-full overflow-hidden border bg-muted">
-                    <div className="animate-slide absolute inset-0 flex h-full w-[200%]">
+                <div className="border-border bg-muted relative h-full w-full overflow-hidden border">
+                    <div
+                        className={`absolute inset-0 flex h-full w-[200%] ${slidesReady ? 'animate-slide' : ''}`}
+                    >
                         <div className="h-full w-1/2 shrink-0">
-                            <Image
-                                src={registerImageGeneral}
+                            <AuthArtwork
+                                kind="registerGeneral"
+                                priority
+                                onLoad={() => setFirstImageReady(true)}
                                 alt="Appointment Booking System Showcase"
                                 className="h-full w-full object-fill"
                             />
                         </div>
 
                         <div className="h-full w-1/2 shrink-0">
-                            <Image
-                                src={registerImageFlow}
-                                alt="Appointment booking flow"
-                                className="h-full w-full object-fill"
-                            />
+                            {firstImageReady && (
+                                <AuthArtwork
+                                    kind="registerFlow"
+                                    onLoad={() => setSlidesReady(true)}
+                                    alt="Appointment booking flow"
+                                    className="h-full w-full object-fill"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="h-px w-[90%] shrink-0 bg-border sm:h-auto sm:w-px sm:self-stretch" />
+            <div className="bg-border h-px w-[90%] shrink-0 sm:h-auto sm:w-px sm:self-stretch" />
 
             <RegisterForm />
         </main>
