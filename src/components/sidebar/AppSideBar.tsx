@@ -18,7 +18,7 @@ import {
 import type { SidebarProps } from './sidebar.types';
 import { useLogout } from '../../features/management/hooks/users-hook.ts';
 import { Toast } from '../../utlis/toast.ts';
-import icon from '../../assets/images/icons/icon.png';
+import icon from '../../assets/images/icons/icon-480.webp';
 import { Image } from '../Image.tsx';
 
 const loading = 'Logout user...';

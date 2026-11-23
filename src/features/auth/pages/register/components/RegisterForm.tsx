@@ -48,7 +48,7 @@ export function RegisterForm() {
                 className="flex w-full flex-col items-center gap-1 sm:gap-[0.5vw]"
                 onSubmit={handleSubmit(submitRegister)}
             >
-                <p className="w-full text-center text-[16px] font-bold text-foreground sm:text-[20px] md:text-[22px] lg:text-[24px]">
+                <p className="text-foreground w-full text-center text-[16px] font-bold sm:text-[20px] md:text-[22px] lg:text-[24px]">
                     Create an account
                 </p>
 
@@ -218,7 +218,7 @@ export function RegisterForm() {
                         />
                     </div>
                 </div>
-                <div className="w-full min-w-0">
+                <div className="w-full min-w-0 [&_label]:min-w-0 [&_label]:shrink [&_label_span]:break-words [&_label_span]:whitespace-normal">
                     <CheckboxField {...register('privacyPolicy')}>
                         I have read and agree to the Terms of Service and acknowledge the{' '}
                         <button

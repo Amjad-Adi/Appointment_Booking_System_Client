@@ -1,76 +1,58 @@
-# React + TypeScript + Vite
+# Appointment Booking System · Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/TypeScript frontend for a multi-organization appointment booking platform. Customers browse services and rooms, find booking options, and manage appointments. Organization staff manage their services, schedules, rooms, and customers through role-based views.
 
-Currently, two official plugins are available:
+[Live demo](https://appointment-booking-system-client.vercel.app/) · [Server source and setup](https://github.com/Amjad-Adi/Appointment_Booking_System_Server)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Screenshots
 
-## React Compiler
+These are real screenshots of the public authentication screens, captured from a local build with the proposed image optimization. No customer data or signed-in account is shown.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+![Login screen](docs/screenshots/login-desktop.png)
+![Registration screen](docs/screenshots/register-desktop.png)
 
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
+## Features and stack
 
-## Expanding the ESLint configuration
+- Customer booking, appointment history, favourites, and reviews.
+- Organization and super-admin management views for users, organizations, services, rooms, and invitations.
+- Map-based location selection with Leaflet and React Leaflet.
+- Firebase authentication, Axios API calls with credential cookies, and React Query server state.
+- React 19, TypeScript, React Router, Tailwind CSS, React Hook Form, and Zod schemas.
+- Light/dark themes and responsive layouts.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Run locally
 
-```js
-export default defineConfig([
-    globalIgnores(['dist']),
-    {
-        files: ['**/*.{ts,tsx}'],
-        extends: [
-            // Other configs...
+1. Install a current Node.js LTS release and npm.
+2. Clone and install:
 
-            // Remove tseslint.configs.recommended and replace with this
-            tseslint.configs.recommendedTypeChecked,
-            // Alternatively, use this for stricter rules
-            tseslint.configs.strictTypeChecked,
-            // Optionally, add this for stylistic rules
-            tseslint.configs.stylisticTypeChecked,
+   ```sh
+   git clone https://github.com/Amjad-Adi/Appointment_Booking_System_Client.git
+   cd Appointment_Booking_System_Client
+   npm ci
+   cp .env.example .env.local
+   ```
 
-            // Other configs...
-        ],
-        languageOptions: {
-            parserOptions: {
-                project: ['./tsconfig.node.json', './tsconfig.app.json'],
-                tsconfigRootDir: import.meta.dirname,
-            },
-            // other options...
-        },
-    },
-]);
+3. In `.env.local`, set `VITE_NODE_ENV=development`, `VITE_CLIENT_PORT=8080`, `VITE_SERVER_PORT=3000`, and `VITE_DEVELOPMENT_SERVER=http://localhost`.
+4. Supply the web-app Firebase configuration for your own project: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and **`VITE_FIREBASE_APP_ID`**. The current example omits the `VITE_` prefix on its final app-ID variable; the code requires it. Do not put Firebase Admin credentials in this client.
+5. Configure and start the server using its README. Match the server's allowed client origin to `http://localhost:8080`.
+6. Run `npm run dev` and open the local URL printed by Vite.
+
+For a production build, set `VITE_PRODUCTION_SERVER` to the API origin before building. The client chooses the development API whenever Vite runs in development mode, regardless of `VITE_NODE_ENV`.
+
+```sh
+npm run build
+npm run preview
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+The scripts build TypeScript and Vite output, preview it, and run ESLint. The repository does not currently define an automated test script. Firebase configuration is embedded in browser builds; Admin secrets and SMTP/Cloudinary secrets belong only on the server.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x';
-import reactDom from 'eslint-plugin-react-dom';
+## Authentication image performance
 
-export default defineConfig([
-    globalIgnores(['dist']),
-    {
-        files: ['**/*.{ts,tsx}'],
-        extends: [
-            // Other configs...
-            // Enable lint rules for React
-            reactX.configs['recommended-typescript'],
-            // Enable lint rules for React DOM
-            reactDom.configs.recommended,
-        ],
-        languageOptions: {
-            parserOptions: {
-                project: ['./tsconfig.node.json', './tsconfig.app.json'],
-                tsconfigRootDir: import.meta.dirname,
-            },
-            // other options...
-        },
-    },
-]);
-```
+The proposed implementation uses WebP variants selected with `srcSet`/`sizes`, explicit image dimensions, asynchronous decoding, and high priority for the first visible artwork. Registration requests its second slide only after the first image loads and starts the animation once the second is ready. This avoids animating into an unloaded slide. The sidebar also uses a compressed icon.
+
+Original PNGs remain as source assets. See `docs/image-performance.md` for byte measurements, checks, and limits. Smaller images do not remove the separate large-JavaScript-bundle warning in the current build.
+
+## Demo scope
+
+The demo link was checked on 24 November 2026. Screenshots cover login and registration only. Signed-in booking, email delivery, and production API behavior were not exercised as part of this documentation update.
