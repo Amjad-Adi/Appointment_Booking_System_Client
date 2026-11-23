@@ -47,12 +47,6 @@ npm run lint
 
 The scripts build TypeScript and Vite output, preview it, and run ESLint. The repository does not currently define an automated test script. Firebase configuration is embedded in browser builds; Admin secrets and SMTP/Cloudinary secrets belong only on the server.
 
-## Authentication image performance
-
-The proposed implementation uses WebP variants selected with `srcSet`/`sizes`, explicit image dimensions, asynchronous decoding, and high priority for the first visible artwork. Registration requests its second slide only after the first image loads and starts the animation once the second is ready. This avoids animating into an unloaded slide. The sidebar also uses a compressed icon.
-
-Original PNGs remain as source assets. See `docs/image-performance.md` for byte measurements, checks, and limits. Smaller images do not remove the separate large-JavaScript-bundle warning in the current build.
-
 ## Demo scope
 
 The demo link was checked on 24 November 2026. Screenshots cover login and registration only. Signed-in booking, email delivery, and production API behavior were not exercised as part of this documentation update.
